@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排课表工具</title>
+    <style>
+        :root {
+            --joint-color: #0f7a47;
+            --topbar-seam-light: #63bb86;
+            --sidebar-bottom-light: #4db37b;
+            --search-expanded-width: 520px;
+            --search-collapsed-width: 260px;
+            /* TODO: 后续可在此替换两栏渐变主色 */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at 18% 20%, #f4fff6 0%, #e8f8ee 45%, #e4f1ec 100%);
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+
+        #Topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 112px 0 20px;
+            background-image:
+                linear-gradient(to bottom, var(--joint-color) 0px, var(--topbar-seam-light) 96px),
+                linear-gradient(to left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.22) 100%);
+            background-size: 100% 96px, 100% 96px;
+            background-repeat: no-repeat;
+            background-position: top left, top left;
+            transition: height 0.35s ease-in-out;
+            z-index: 20;
+        }
+
+        #Topbar:hover,
+        #Topbar:focus-within {
+            height: 96px;
+        }
+
+        .topbar-search {
+            position: relative;
+            width: min(var(--search-expanded-width), calc(100vw - 180px));
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.88) 0%, rgba(226, 247, 236, 0.82) 100%);
+            transition: width 0.35s ease-in-out, background-color 0.35s ease-in-out, background-image 0.35s ease-in-out;
+            z-index: 40;
+        }
+
+        #Topbar:not(:hover):not(:focus-within) .topbar-search {
+            width: min(var(--search-collapsed-width), calc(100vw - 180px));
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+
+        #CourseSearchInput {
+            width: 100%;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.58);
+            border-radius: 12px;
+            padding: 0 12px;
+            font-size: 15px;
+            color: #183328;
+            background: transparent;
+            outline: none;
+            transition: box-shadow 0.2s ease, opacity 0.35s ease-in-out;
+        }
+
+        #CourseSearchInput:focus {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.26);
+        }
+
+        #Topbar:not(:hover):not(:focus-within) #CourseSearchInput {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #Topbar:not(:hover):not(:focus-within) #CourseSuggestionBox {
+            display: none;
+        }
+
+        .selected-preview {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            right: 12px;
+            transform: translateY(-50%);
+            color: #f3fffa;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        #Topbar:not(:hover):not(:focus-within) .topbar-search.has-selection .selected-preview {
+            opacity: 1;
+        }
+
+        #CourseSuggestionBox {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: 100%;
+            max-height: 320px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(43, 101, 73, 0.22);
+            border-radius: 12px;
+            box-shadow: 0 14px 28px rgba(9, 53, 38, 0.16);
+        }
+
+        .suggestion-item {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            text-align: left;
+            padding: 10px 12px;
+            color: #214435;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 156, 18, 0.09);
+        }
+
+        .suggestion-empty {
+            margin: 0;
+            padding: 10px 12px;
+            color: #4e6a5d;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #Sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 88px;
+            height: 100vh;
+            background: linear-gradient(to top, var(--sidebar-bottom-light) 0%, var(--topbar-seam-light) calc(100% - 96px), var(--joint-color) 100%);
+            z-index: 30;
+        }
+
+        @media (max-width: 720px) {
+            #Topbar {
+                padding-right: 96px;
+            }
+
+            .topbar-search {
+                width: calc(100vw - 120px);
+            }
+
+            #Sidebar {
+                width: 72px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="Topbar">
+        <div class="topbar-search">
+            <input id="CourseSearchInput" type="text" placeholder="输入课程编号或课程名称进行检索" autocomplete="off">
+            <div id="CourseSelectedPreview" class="selected-preview"></div>
+            <div id="CourseSuggestionBox" class="hidden"></div>
+        </div>
+    </div>
+    <div id="Sidebar"></div>
+    <script src="./js/CourseArrangement.js"></script>
+</body>
+</html>
