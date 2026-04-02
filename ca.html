@@ -9,8 +9,10 @@
             --joint-color: #0f7a47;
             --topbar-seam-light: #63bb86;
             --sidebar-bottom-light: #4db37b;
-            --search-expanded-width: 520px;
-            --search-collapsed-width: 260px;
+            --search-expanded-width: 780px;
+            --search-collapsed-width: 340px;
+            --search-gap: 10px;
+            --topbar-horizontal-padding: 20px;
             /* TODO: 后续可在此替换两栏渐变主色 */
         }
 
@@ -30,11 +32,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 0 112px 0 20px;
+            height: 64px;
+            padding-right: 112px;
             background-image:
                 linear-gradient(to bottom, var(--joint-color) 0px, var(--topbar-seam-light) 96px),
                 linear-gradient(to left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.22) 100%);
@@ -47,25 +46,69 @@
 
         #Topbar:hover,
         #Topbar:focus-within {
-            height: 96px;
+            height: 176px;
         }
 
-        .topbar-search {
-            position: relative;
-            width: min(var(--search-expanded-width), calc(100vw - 180px));
-            height: 40px;
-            border-radius: 12px;
-            background: linear-gradient(120deg, rgba(255, 255, 255, 0.88) 0%, rgba(226, 247, 236, 0.82) 100%);
-            transition: width 0.35s ease-in-out, background-color 0.35s ease-in-out, background-image 0.35s ease-in-out;
+        .search-layer {
+            left: var(--topbar-horizontal-padding);
+            right: calc(88px + var(--topbar-horizontal-padding));
             z-index: 40;
         }
 
-        #Topbar:not(:hover):not(:focus-within) .topbar-search {
+        #PrimarySearchLayer {
+            position: fixed;
+            top: 8px;
+        }
+
+        #SecondarySearchLayer {
+            position: absolute;
+            top: 64px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--search-gap);
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-12px);
+            pointer-events: none;
+            transition: opacity 0.35s ease-in-out, transform 0.35s ease-in-out, max-height 0.35s ease-in-out;
+        }
+
+        #Topbar:hover #SecondarySearchLayer,
+        #Topbar:focus-within #SecondarySearchLayer {
+            max-height: 72px;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .search-bar {
+            position: relative;
+            width: min(var(--search-expanded-width), calc(100vw - 180px));
+            min-height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.88) 0%, rgba(226, 247, 236, 0.82) 100%);
+            transition: width 0.35s ease-in-out, background-color 0.35s ease-in-out, background-image 0.35s ease-in-out;
+            padding: 8px;
+        }
+
+        #PrimarySearchLayer .search-bar {
+            width: min(var(--search-expanded-width), calc(100vw - 180px));
+        }
+
+        #SecondarySearchLayer .search-bar {
+            width: 100%;
+        }
+
+        #Topbar:not(:hover):not(:focus-within) #PrimarySearchLayer .search-bar {
             width: min(var(--search-collapsed-width), calc(100vw - 180px));
             background: linear-gradient(120deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 100%);
         }
 
-        #CourseSearchInput {
+        .search-field {
+            position: relative;
+        }
+
+        .search-input {
             width: 100%;
             height: 40px;
             border: 1px solid rgba(255, 255, 255, 0.58);
@@ -78,16 +121,21 @@
             transition: box-shadow 0.2s ease, opacity 0.35s ease-in-out;
         }
 
-        #CourseSearchInput:focus {
+        .search-input:focus {
             box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.26);
         }
 
-        #Topbar:not(:hover):not(:focus-within) #CourseSearchInput {
+        #Topbar:not(:hover):not(:focus-within) #PrimarySearchLayer .search-input {
             opacity: 0;
             pointer-events: none;
         }
 
-        #Topbar:not(:hover):not(:focus-within) #CourseSuggestionBox {
+        #Topbar:not(:hover):not(:focus-within) #SecondarySearchLayer .search-input {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #Topbar:not(:hover):not(:focus-within) .suggestion-box {
             display: none;
         }
 
@@ -107,11 +155,45 @@
             pointer-events: none;
         }
 
-        #Topbar:not(:hover):not(:focus-within) .topbar-search.has-selection .selected-preview {
+        #Topbar:not(:hover):not(:focus-within) #CourseSearchBar.has-selection .selected-preview {
             opacity: 1;
         }
 
-        #CourseSuggestionBox {
+        @keyframes restoreSearchBar {
+            from {
+                transform: translateY(-8px);
+                opacity: 0.78;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes restoreSearchInput {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        #Topbar:hover #PrimarySearchLayer .search-bar,
+        #Topbar:focus-within #PrimarySearchLayer .search-bar,
+        #Topbar:hover #SecondarySearchLayer .search-bar,
+        #Topbar:focus-within #SecondarySearchLayer .search-bar {
+            animation: restoreSearchBar 0.28s ease-out;
+        }
+
+        #Topbar:hover .search-input,
+        #Topbar:focus-within .search-input {
+            animation: restoreSearchInput 0.26s ease-out;
+        }
+
+        .suggestion-box {
             position: absolute;
             top: calc(100% + 8px);
             left: 0;
@@ -165,8 +247,23 @@
                 padding-right: 96px;
             }
 
-            .topbar-search {
+            .search-layer {
+                left: 12px;
+                right: calc(72px + 12px);
+            }
+
+            .search-bar {
                 width: calc(100vw - 120px);
+            }
+
+            #SecondarySearchLayer {
+                grid-template-columns: 1fr;
+                top: 60px;
+            }
+
+            #Topbar:hover,
+            #Topbar:focus-within {
+                height: 224px;
             }
 
             #Sidebar {
@@ -177,10 +274,28 @@
 </head>
 <body>
     <div id="Topbar">
-        <div class="topbar-search">
-            <input id="CourseSearchInput" type="text" placeholder="输入课程编号或课程名称进行检索" autocomplete="off">
-            <div id="CourseSelectedPreview" class="selected-preview"></div>
-            <div id="CourseSuggestionBox" class="hidden"></div>
+        <div id="PrimarySearchLayer" class="search-layer">
+            <div id="CourseSearchBar" class="search-bar">
+                <div class="search-field">
+                    <input id="CourseSearchInput" class="search-input" type="text" placeholder="课程检索：课程编号或课程名称" autocomplete="off">
+                    <div id="CourseSuggestionBox" class="suggestion-box hidden"></div>
+                </div>
+                <div id="CourseSelectedPreview" class="selected-preview"></div>
+            </div>
+        </div>
+        <div id="SecondarySearchLayer" class="search-layer">
+            <div class="search-bar">
+                <div class="search-field">
+                    <input id="TeacherSearchInput" class="search-input" type="text" placeholder="授课教师检索" autocomplete="off">
+                    <div id="TeacherSuggestionBox" class="suggestion-box hidden"></div>
+                </div>
+            </div>
+            <div class="search-bar">
+                <div class="search-field">
+                    <input id="TimeSearchInput" class="search-input" type="text" placeholder="上课时间检索" autocomplete="off">
+                    <div id="TimeSuggestionBox" class="suggestion-box hidden"></div>
+                </div>
+            </div>
         </div>
     </div>
     <div id="Sidebar"></div>
