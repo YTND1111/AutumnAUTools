@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>排课表工具</title>
+    <link rel="stylesheet" href="./css/GlobalStyle.css">
     <style>
         :root {
             --joint-color: #0f7a47;
@@ -34,12 +35,7 @@
             width: 100%;
             height: 64px;
             padding-right: 112px;
-            background-image:
-                linear-gradient(to bottom, var(--joint-color) 0px, var(--topbar-seam-light) 96px),
-                linear-gradient(to left, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.22) 100%);
             background-size: 100% 96px, 100% 96px;
-            background-repeat: no-repeat;
-            background-position: top left, top left;
             transition: height 0.35s ease-in-out;
             z-index: 20;
         }
@@ -235,11 +231,17 @@
         #Sidebar {
             position: fixed;
             top: 0;
-            right: 0;
+            left: 0;
             width: 88px;
             height: 100vh;
-            background: linear-gradient(to top, var(--sidebar-bottom-light) 0%, var(--topbar-seam-light) calc(100% - 96px), var(--joint-color) 100%);
+            transform: translate3d(-100%, 0, 0);
+            transition: transform 0.32s cubic-bezier(0.25, 0.10, 0.25, 1.00);
+            will-change: transform;
             z-index: 30;
+        }
+
+        #Sidebar.is-open {
+            transform: translate3d(0, 0, 0);
         }
 
         @media (max-width: 720px) {
@@ -273,7 +275,7 @@
     </style>
 </head>
 <body>
-    <div id="Topbar">
+    <div id="Topbar" class="ca-gradient-surface">
         <div id="PrimarySearchLayer" class="search-layer">
             <div id="CourseSearchBar" class="search-bar">
                 <div class="search-field">
@@ -298,7 +300,31 @@
             </div>
         </div>
     </div>
-    <div id="Sidebar"></div>
+    <div id="Sidebar" class="ca-gradient-surface"></div>
     <script src="./js/CourseArrangement.js"></script>
+    <script>
+        // 侧边栏交互：点顶栏展开，点侧边栏外部收起
+        const topbar = document.getElementById("Topbar");
+        const sidebar = document.getElementById("Sidebar");
+
+        topbar.addEventListener("click", (event) => {
+            // 点击顶栏时展开；点击侧边栏内部区域不触发该逻辑
+            if (!event.target.closest("#Sidebar")) {
+                sidebar.classList.add("is-open");
+            }
+        });
+
+        document.addEventListener("click", (event) => {
+            // 点击非侧边栏区域时收起
+            if (!event.target.closest("#Sidebar")) {
+                sidebar.classList.remove("is-open");
+            }
+        });
+
+        sidebar.addEventListener("click", (event) => {
+            // 阻止冒泡，保证点击侧边栏内部不会触发外部收起
+            event.stopPropagation();
+        });
+    </script>
 </body>
 </html>

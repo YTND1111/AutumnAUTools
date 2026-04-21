@@ -1,0 +1,4 @@
+.ca-gradient-surface {
+	/* 复用 ca 顶栏渐变：后续统一使用该全局类 */
+	background: linear-gradient(180deg, var(--topbar-seam-light, #63bb86) 0%, var(--joint-color, #0f7a47) 58%, var(--sidebar-bottom-light, #4db37b) 100%);
+}

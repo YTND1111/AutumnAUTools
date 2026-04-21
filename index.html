@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秋功</title>
+    <link rel="stylesheet" href="./css/GlobalStyle.css">
+    <style>
+        :root {
+            --joint-color: #0f7a47;
+            --topbar-seam-light: #63bb86;
+            --sidebar-bottom-light: #4db37b;
+        }
+
+        #floatingBall {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background-color: #0f7a47;
+            border-radius: 50%;
+            animation: float 3s ease-in-out infinite;
+            touch-action: none;
+            transition: background-color 0.26s ease, filter 0.2s ease;
+            will-change: transform, background-color, filter;
+            z-index: 11;
+        }
+
+        #floatingBall:hover {
+            /* hover 反馈：使用相近色阴影提升悬停辨识度 */
+            filter: drop-shadow(0 0 14px rgba(15, 122, 71, 0.6));
+        }
+
+        #floatingBall.is-expanded {
+            /* 展开态：悬浮球变为蓝色，并使用颜色过渡动画 */
+            background-color: #2b6cff;
+        }
+
+        #PageBackdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 20, 14, 0.32);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.24s ease;
+            will-change: opacity;
+            z-index: 9;
+        }
+
+        #PageBackdrop.is-active {
+            opacity: 1;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+        }
+
+        #Sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 88px;
+            transform: translate3d(-100%, 0, 0);
+            transition: transform 0.32s cubic-bezier(0.25, 0.10, 0.25, 1.00);
+            will-change: transform;
+            z-index: 10;
+        }
+
+        #Sidebar.is-open {
+            transform: translate3d(0, 0, 0);
+        }
+    </style>
+</head>
+<body>
+    <div id="floatingBall"></div>
+    <div id="PageBackdrop"></div>
+    <div id="Sidebar" class="ca-gradient-surface"></div>
+
+    <script>
+        // 读取基础节点：悬浮球、遮罩与侧边栏
+        const floatingBall = document.getElementById("floatingBall");
+        const pageBackdrop = document.getElementById("PageBackdrop");
+        const sidebar = document.getElementById("Sidebar");
+
+        // 统一开关函数：同步控制侧边栏与背景暗化虚化
+        function setSidebarOpen(isOpen) {
+            // 同步侧边栏状态到悬浮球展开态
+            sidebar.classList.toggle("is-open", isOpen);
+            pageBackdrop.classList.toggle("is-active", isOpen);
+            floatingBall.classList.toggle("is-expanded", isOpen);
+        }
+
+        // 初始化拖动位置：改为 transform 位移，避免频繁触发布局
+        const startRect = floatingBall.getBoundingClientRect();
+        floatingBall.style.left = "0px";
+        floatingBall.style.top = "0px";
+
+        let posX = startRect.left;
+        let posY = startRect.top;
+        let nextX = posX;
+        let nextY = posY;
+        let rafId = 0;
+        let pointerId = -1;
+        let downX = 0;
+        let downY = 0;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragged = false;
+        let suppressClick = false;
+
+        function paintBall() {
+            rafId = 0;
+            floatingBall.style.transform = `translate3d(${nextX}px, ${nextY}px, 0)`;
+        }
+
+        function onPointerDown(event) {
+            // 记录起点并捕获指针，保证拖动连续
+            pointerId = event.pointerId;
+            downX = event.clientX;
+            downY = event.clientY;
+            dragStartX = posX;
+            dragStartY = posY;
+            dragged = false;
+            floatingBall.setPointerCapture(pointerId);
+        }
+
+        function onPointerMove(event) {
+            if (event.pointerId !== pointerId) {
+                return;
+            }
+
+            // 仅更新目标位置，由 rAF 合帧渲染
+            nextX = dragStartX + (event.clientX - downX);
+            nextY = dragStartY + (event.clientY - downY);
+            if (!dragged && Math.hypot(event.clientX - downX, event.clientY - downY) > 3) {
+                dragged = true;
+            }
+
+            if (!rafId) {
+                rafId = requestAnimationFrame(paintBall);
+            }
+        }
+
+        function onPointerEnd(event) {
+            if (event.pointerId !== pointerId) {
+                return;
+            }
+
+            // 收尾时提交当前位置，并在发生拖动时屏蔽本次点击切换
+            posX = nextX;
+            posY = nextY;
+            suppressClick = dragged;
+            if (floatingBall.hasPointerCapture(pointerId)) {
+                floatingBall.releasePointerCapture(pointerId);
+            }
+            pointerId = -1;
+        }
+
+        // 首帧渲染到初始化位置
+        paintBall();
+        floatingBall.addEventListener("pointerdown", onPointerDown);
+        floatingBall.addEventListener("pointermove", onPointerMove);
+        floatingBall.addEventListener("pointerup", onPointerEnd);
+        floatingBall.addEventListener("pointercancel", onPointerEnd);
+
+        floatingBall.addEventListener("click", (event) => {
+            // 点击悬浮球开关侧边栏；拖动后的 click 不触发开关
+            event.stopPropagation();
+            if (suppressClick) {
+                suppressClick = false;
+                return;
+            }
+            setSidebarOpen(!sidebar.classList.contains("is-open"));
+        });
+
+        sidebar.addEventListener("click", (event) => {
+            // 点击侧边栏内部不触发外部区域收起
+            event.stopPropagation();
+        });
+
+        pageBackdrop.addEventListener("click", () => {
+            // 点击遮罩层直接收起
+            setSidebarOpen(false);
+        });
+
+        document.addEventListener("click", (event) => {
+            // 点击非侧边栏区域时收起侧边栏
+            if (!event.target.closest("#Sidebar") && !event.target.closest("#floatingBall")) {
+                setSidebarOpen(false);
+            }
+        });
+    </script>
+</body>
+</html>
