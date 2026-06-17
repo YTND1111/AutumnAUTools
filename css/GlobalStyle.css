@@ -2,3 +2,125 @@
 	/* 复用 ca 顶栏渐变：后续统一使用该全局类 */
 	background: linear-gradient(180deg, var(--topbar-seam-light, #63bb86) 0%, var(--joint-color, #0f7a47) 58%, var(--sidebar-bottom-light, #4db37b) 100%);
 }
+
+/* ========================
+   悬浮球导航组件（全局复用）
+   ======================== */
+
+#floatingBall {
+	position: fixed;
+	top: 0;
+	left: 0;
+	transform: translate3d(0, 0, 0);
+	width: 100px;
+	height: 100px;
+	background-color: #0f7a47;
+	border-radius: 50%;
+	animation: float 3s ease-in-out infinite;
+	touch-action: none;
+	opacity: 0;
+	visibility: hidden;
+	transition: background-color 0.26s ease, filter 0.2s ease;
+	will-change: transform, background-color, filter;
+	z-index: 200;
+}
+
+#floatingBall.is-ready {
+	/* 初始化完成后再显示，避免首屏偶发位移可见 */
+	opacity: 1;
+	visibility: visible;
+}
+
+#floatingBall.is-motion-ready {
+	/* 初始化完成后才启用 transform 过渡 */
+	transition: background-color 0.26s ease, filter 0.2s ease, transform 0.32s cubic-bezier(0.25, 0.10, 0.25, 1.00);
+}
+
+#floatingBall:focus {
+	/* 焦点仅用于触发失焦吸附，不改变外观 */
+	outline: none;
+}
+
+#floatingBall:hover {
+	/* hover 反馈：使用相近色阴影提升悬停辨识度 */
+	filter: drop-shadow(0 0 14px rgba(15, 122, 71, 0.6));
+}
+
+#floatingBall.is-expanded {
+	/* 展开态：悬浮球变为蓝色，并使用颜色过渡动画 */
+	background-color: #2b6cff;
+}
+
+#floatingBall.is-dragging {
+	/* 拖动期关闭 transform 过渡，避免跟手延迟 */
+	transition: background-color 0.26s ease, filter 0.2s ease;
+}
+
+#PageBackdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(10, 20, 14, 0.32);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.24s ease;
+	will-change: opacity;
+	z-index: 190;
+}
+
+#PageBackdrop.is-active {
+	opacity: 1;
+	pointer-events: auto;
+	backdrop-filter: blur(4px);
+}
+
+#NavSidebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 88px;
+	transform: translate3d(-100%, 0, 0);
+	transition: transform 0.32s cubic-bezier(0.25, 0.10, 0.25, 1.00);
+	will-change: transform;
+	z-index: 195;
+}
+
+#NavSidebar.is-open {
+	transform: translate3d(0, 0, 0);
+}
+
+#Navigater, #Tool, #News {
+	width: 100%;
+	height: 88px;
+	background-color: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+}
+
+.href {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	color: #fff;
+	text-decoration: none;
+	font-weight: bold;
+	border-radius: 12px;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.href:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+	color: #fff;
+	filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+}
+
+#OtherLink {
+	margin-top: 12px;
+	width: 100%;
+	height: 88px;
+	position: relative;
+	top: 100%;
+	background-color: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+}

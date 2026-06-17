@@ -1,7 +1,7 @@
 // 读取基础节点：悬浮球、遮罩与侧边栏
 const floatingBall = document.getElementById("floatingBall");
 const pageBackdrop = document.getElementById("PageBackdrop");
-const sidebar = document.getElementById("Sidebar");
+const sidebar = document.getElementById("NavSidebar");
 
 // 统一几何常量：直径/半径与最小可见量（四分之一直径）
 const BALL_SIZE = 100;
@@ -273,7 +273,7 @@ pageBackdrop.addEventListener("click", () => {
 
 document.addEventListener("click", (event) => {
 	// 点击非侧边栏区域时收起侧边栏，并使悬浮球失焦触发吸附判定
-	if (!event.target.closest("#Sidebar") && !event.target.closest("#floatingBall")) {
+	if (!event.target.closest("#NavSidebar") && !event.target.closest("#floatingBall")) {
 		setSidebarOpen(false);
 		if (document.activeElement === floatingBall) {
 			floatingBall.blur();
