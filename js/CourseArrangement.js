@@ -28,6 +28,7 @@ const softToast = document.getElementById("SoftToast");
 const clearPoolTopButton = document.getElementById("ClearPoolTopButton");
 const generatePlanTopButton = document.getElementById("GeneratePlanTopButton");
 const copyClassToPlanButton = document.getElementById("CopyClassToPlanButton");
+const exportTimetableButton = document.getElementById("ExportTimetableButton");
 
 let courseList = [];
 let scheduleMode = "plan";
@@ -73,6 +74,84 @@ function showToast(message) {
     toastTimer = window.setTimeout(() => {
         softToast.classList.remove("is-show");
     }, 2100);
+}
+
+function formatNowForFilename() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+}
+
+function parseCredit(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+}
+
+function exportTimetable() {
+    const activeCourses = getActiveCoursesForDisplay();
+    if (!activeCourses.length) {
+        showToast("当前课表没有课程，无需导出");
+        return;
+    }
+
+    const seen = new Set();
+    const uniqueCourses = [];
+    let totalCredit = 0;
+
+    activeCourses.forEach((course) => {
+        const uniqueKey = [
+            String(course.record["通知单号"] ?? ""),
+            String(course.record["课程编号"] ?? ""),
+            String(course.record["课序号"] ?? ""),
+            String(course.record["上课时间"] ?? "")
+        ].join("|");
+
+        if (seen.has(uniqueKey)) {
+            return;
+        }
+        seen.add(uniqueKey);
+        uniqueCourses.push(course);
+
+        totalCredit += parseCredit(course.record["学分"]);
+    });
+
+    const lines = [];
+    lines.push("课表课程清单");
+    lines.push(`导出时间：${formatNowForFilename().replace("_", " ")}`);
+    lines.push(`课程总数：${uniqueCourses.length} 门`);
+    lines.push("");
+
+    uniqueCourses.forEach((course, index) => {
+        const record = course.record;
+        lines.push(`【${index + 1}】${course.title || "未命名课程"}`);
+        lines.push(`    课程编号：${course.courseCode || "-"}`);
+        lines.push(`    课序号：${record["课序号"] || "-"}`);
+        lines.push(`    通知单号：${record["通知单号"] || "-"}`);
+        lines.push(`    授课教师：${course.teacher || "-"}`);
+        lines.push(`    上课班级：${course.classText || "-"}`);
+        lines.push(`    上课时间：${course.timeText || "-"}`);
+        lines.push(`    上课地点：${course.locationText || "-"}`);
+        lines.push(`    上课周次：${course.weekText || "-"}`);
+        lines.push(`    校区：${course.campus || "-"}`);
+        lines.push(`    课程性质：${record["课程性质"] || "-"}`);
+        lines.push(`    学分：${record["学分"] ?? "-"}`);
+        lines.push("");
+    });
+
+    lines.push(`总学分：${totalCredit.toFixed(1)}`);
+
+    const content = lines.join("\n");
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `课表清单_${formatNowForFilename()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`已导出 ${uniqueCourses.length} 门课程，总学分 ${totalCredit.toFixed(1)}`);
 }
 
 function stringifyCourse(course) {
@@ -596,6 +675,9 @@ function renderGridCourses() {
         slot.innerHTML = "";
     });
 
+    // 按 day-period 聚合同一格子内的课程
+    const slotCourses = new Map();
+
     const activeCourses = getActiveCoursesForDisplay();
 
     activeCourses.forEach((course) => {
@@ -605,28 +687,39 @@ function renderGridCourses() {
             }
 
             entry.periods.forEach((period) => {
-                const selector = `.grid-slot[data-day="${entry.dayColumn}"][data-period="${period}"]`;
-                const target = scheduleGrid.querySelector(selector);
-                if (!target) {
-                    return;
+                const slotKey = `${entry.dayColumn}-${period}`;
+                if (!slotCourses.has(slotKey)) {
+                    slotCourses.set(slotKey, []);
                 }
-
-                const chip = document.createElement("div");
-                chip.className = "slot-course";
-                chip.innerHTML = `
-                    <div class="slot-course-title">${course.title}</div>
-                    <div class="slot-course-detail">
-                        <div>${course.teacher || ""}</div>
-                        <div>${course.timeText || ""}</div>
-                        <div>${course.locationText || ""}</div>
-                    </div>
-                `;
-                chip.addEventListener("click", (event) => {
-                    event.stopPropagation();
-                    chip.classList.toggle("is-expanded");
-                });
-                target.appendChild(chip);
+                slotCourses.get(slotKey).push(course);
             });
+        });
+    });
+
+    slotCourses.forEach((courses, slotKey) => {
+        const [dayColumn, period] = slotKey.split("-");
+        const selector = `.grid-slot[data-day="${dayColumn}"][data-period="${period}"]`;
+        const target = scheduleGrid.querySelector(selector);
+        if (!target) {
+            return;
+        }
+
+        courses.forEach((course, index) => {
+            if (index > 0) {
+                const divider = document.createElement("hr");
+                divider.className = "slot-divider";
+                target.appendChild(divider);
+            }
+
+            const textBlock = document.createElement("div");
+            textBlock.className = "slot-course-text";
+            textBlock.innerHTML = `
+                <div class="slot-course-title">${course.title}${course.courseCode ? `（${course.courseCode}）` : ""}</div>
+                <div class="slot-course-meta">
+                    地点：${course.locationText || "-"} | 时间：${course.timeText || "-"} | 教师：${course.teacher || "-"}
+                </div>
+            `;
+            target.appendChild(textBlock);
         });
     });
 
@@ -1745,6 +1838,7 @@ if (
     clearPoolTopButton &&
     generatePlanTopButton &&
     copyClassToPlanButton &&
+    exportTimetableButton &&
     weekFilter &&
     poolToolbar &&
     scheduleGrid &&
@@ -1786,6 +1880,10 @@ if (
             return;
         }
         copyClassGroupsToPlan();
+    });
+
+    exportTimetableButton.addEventListener("click", () => {
+        exportTimetable();
     });
 
     clearPoolTopButton.addEventListener("click", () => {

@@ -26,6 +26,7 @@
             min-height: 100vh;
             background: radial-gradient(circle at 18% 20%, #f4fff6 0%, #e8f8ee 45%, #e4f1ec 100%);
             font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+            font-size: 14px;
             color: #183328;
         }
 
@@ -324,7 +325,7 @@
         #ScheduleGrid {
             display: grid;
             grid-template-columns: 66px repeat(7, minmax(108px, 1fr));
-            grid-template-rows: 40px repeat(12, 52px);
+            grid-template-rows: 40px repeat(12, minmax(52px, auto));
             min-width: 822px;
             border: 1px solid var(--line-soft);
             border-radius: 9px;
@@ -358,69 +359,43 @@
         .grid-slot {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
             background: #fcfefd;
             cursor: default;
             transition: background-color 0.18s ease;
-            overflow: visible;
+            overflow: hidden;
             position: relative;
+            min-height: 52px;
+            padding: 6px;
         }
 
         .grid-slot.is-pref-editable {
             cursor: pointer;
         }
 
-        .slot-course {
-            border-radius: 7px;
-            border: 1px solid rgba(17, 110, 65, 0.28);
-            background: rgba(14, 143, 85, 0.12);
-            padding: 4px 6px;
-            font-size: 11px;
-            line-height: 1.35;
-            cursor: pointer;
-            overflow: visible;
-            position: relative;
-            z-index: 3;
+        .slot-course-text {
+            font-size: 14px;
+            line-height: 1.45;
+            color: #114831;
+            text-align: left;
         }
 
         .slot-course-title {
             font-weight: 700;
             color: #114831;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
+            margin-bottom: 2px;
         }
 
-        .slot-course-detail {
-            margin-top: 0;
-            max-height: 0;
-            opacity: 0;
-            transform: translateY(-4px);
-            transform-origin: top;
-            transition: max-height 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
+        .slot-course-meta {
             color: #2c624a;
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: calc(100% + 2px);
-            background: #f9fffc;
-            border: 1px solid rgba(14, 90, 56, 0.2);
-            border-radius: 6px;
-            padding: 0 6px;
-            box-shadow: 0 8px 14px rgba(15, 65, 46, 0.12);
-            text-align: left;
-            pointer-events: none;
-            z-index: 6;
+            font-size: 13px;
         }
 
-        .slot-course.is-expanded .slot-course-detail {
-            margin-top: 4px;
-            max-height: 160px;
-            opacity: 1;
-            transform: translateY(0);
-            padding: 6px;
-            pointer-events: auto;
+        .slot-divider {
+            width: 100%;
+            border: 0;
+            border-top: 1px dashed rgba(14, 90, 56, 0.25);
+            margin: 4px 0;
         }
 
         #Sidebar {
@@ -893,6 +868,7 @@
                     <button id="ClassModeToggleButton" class="action-btn is-active" type="button">调用班级课表</button>
                     <button id="ScheduleModeToggleButton" class="action-btn" type="button">切换到班级课表调用</button>
                     <button id="CopyClassToPlanButton" class="action-btn" type="button">复制班级课表到方案</button>
+                    <button id="ExportTimetableButton" class="action-btn" type="button">导出当前课表</button>
                 </div>
             </div>
         </div>
