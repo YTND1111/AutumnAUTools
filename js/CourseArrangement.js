@@ -1,4 +1,4 @@
-const COURSE_DATA_PATH = "./src/py/中国农业大学2025-2026学年春季学期通知单课表.json";
+const COURSE_DATA_PATH = "./src/py/中国农业大学2026-2027学年秋季学期通知单课表.json";
 const WEEK_HEADERS = ["节次", "周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const DAY_TO_COLUMN = { "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "日": 7, "天": 7 };
 const COLUMN_TO_DAY = { 1: "周一", 2: "周二", 3: "周三", 4: "周四", 5: "周五", 6: "周六", 7: "周日" };
@@ -9,22 +9,14 @@ const modeTag = document.getElementById("ModeTag");
 const planCandidateArea = document.getElementById("PlanCandidateArea");
 
 const courseSearchBar = document.getElementById("CourseSearchBar");
-const teacherSearchBar = document.getElementById("TeacherSearchBar");
-const timeSearchBar = document.getElementById("TimeSearchBar");
 const classSearchBar = document.getElementById("ClassSearchBar");
 
 const courseSearchInput = document.getElementById("CourseSearchInput");
-const teacherSearchInput = document.getElementById("TeacherSearchInput");
-const timeSearchInput = document.getElementById("TimeSearchInput");
 const classSearchInput = document.getElementById("ClassSearchInput");
 const courseSearchClear = document.getElementById("CourseSearchClear");
-const teacherSearchClear = document.getElementById("TeacherSearchClear");
-const timeSearchClear = document.getElementById("TimeSearchClear");
 const classSearchClear = document.getElementById("ClassSearchClear");
 
 const courseSuggestionBox = document.getElementById("CourseSuggestionBox");
-const teacherSuggestionBox = document.getElementById("TeacherSuggestionBox");
-const timeSuggestionBox = document.getElementById("TimeSuggestionBox");
 const classSuggestionBox = document.getElementById("ClassSuggestionBox");
 
 const weekFilter = document.getElementById("WeekFilter");
@@ -35,24 +27,15 @@ const candidatePool = document.getElementById("CandidatePool");
 const softToast = document.getElementById("SoftToast");
 const clearPoolTopButton = document.getElementById("ClearPoolTopButton");
 const generatePlanTopButton = document.getElementById("GeneratePlanTopButton");
-
-const selectedDisplayLabel = {
-    course: "",
-    teacher: "",
-    time: "",
-    class: ""
-};
+const copyClassToPlanButton = document.getElementById("CopyClassToPlanButton");
 
 let courseList = [];
-let scheduleMode = "free";
-let classSearchMode = "course";
+let scheduleMode = "plan";
 let selectedWeek = "all";
 let maxWeek = 20;
 let planPrefEditMode = false;
 let toastTimer = 0;
 
-const selectedPool = new Map();
-const activePoolKeys = new Set();
 const classGroupPool = new Map();
 const activeClassGroupKeys = new Set();
 const classGroupExcludedCourseKeys = new Map();
@@ -346,6 +329,7 @@ function buildPlanCardForCourseCode(courseCode) {
     const teacherSet = new Set();
     const campusSet = new Set();
     const timeSet = new Set();
+    const classSet = new Set();
 
     options.forEach((item) => {
         splitTeachers(item.teacher).forEach((teacher) => {
@@ -356,6 +340,9 @@ function buildPlanCardForCourseCode(courseCode) {
         }
         if (item.timeText) {
             timeSet.add(item.timeText);
+        }
+        if (item.classText) {
+            classSet.add(item.classText);
         }
     });
 
@@ -369,6 +356,7 @@ function buildPlanCardForCourseCode(courseCode) {
         enabledTeachers: new Set(teacherSet),
         enabledCampuses: new Set(campusSet),
         enabledTimes: new Set(timeSet),
+        enabledClasses: new Set(classSet),
         expanded: false
     };
 }
@@ -376,41 +364,30 @@ function buildPlanCardForCourseCode(courseCode) {
 function syncModeUI() {
     const isPlanMode = scheduleMode === "plan";
 
-    modeTag.textContent = isPlanMode ? "当前模式：自助方案排课" : "当前模式：自由排课";
-    scheduleModeToggleButton.textContent = isPlanMode ? "切换到自由排课" : "切换到自助方案排课";
+    modeTag.textContent = isPlanMode ? "当前模式：自助方案排课" : "当前模式：班级课表调用";
+    scheduleModeToggleButton.textContent = isPlanMode ? "切换到班级课表调用" : "切换到自助方案排课";
 
-    teacherSearchBar.classList.toggle("is-hidden-preserve", isPlanMode);
-    timeSearchBar.classList.toggle("is-hidden-preserve", isPlanMode);
+    courseSearchBar.classList.toggle("is-hidden-preserve", !isPlanMode);
     classSearchBar.classList.toggle("is-hidden-preserve", isPlanMode);
-    classModeToggleButton.classList.toggle("is-hidden-preserve", isPlanMode);
     planCandidateArea.classList.toggle("hidden", !isPlanMode);
     generatePlanTopButton.classList.toggle("is-hidden-preserve", !isPlanMode);
+    copyClassToPlanButton.classList.toggle("hidden", isPlanMode);
+
+    classModeToggleButton.classList.toggle("is-active", !isPlanMode);
+    scheduleModeToggleButton.classList.toggle("is-active", isPlanMode);
 
     if (isPlanMode) {
         classSearchInput.value = "";
-        teacherSearchInput.value = "";
-        timeSearchInput.value = "";
         hideSuggestions(classSuggestionBox);
-        hideSuggestions(teacherSuggestionBox);
-        hideSuggestions(timeSuggestionBox);
+    } else {
+        courseSearchInput.value = "";
+        hideSuggestions(courseSuggestionBox);
     }
 
     renderPoolToolbar();
     renderPlanCandidates();
     renderCandidatePool();
     renderGridCourses();
-}
-
-function syncClassModeUI() {
-    if (classSearchMode === "timetable") {
-        classModeToggleButton.textContent = "检索班级课程";
-        classModeToggleButton.classList.add("is-active");
-        classSearchInput.placeholder = "班级课表模式：选择班级后直接调用整班课表";
-    } else {
-        classModeToggleButton.textContent = "调用班级课表";
-        classModeToggleButton.classList.remove("is-active");
-        classSearchInput.placeholder = "班级检索：可按班级或课程关键词";
-    }
 }
 
 function showEmpty(box, text) {
@@ -424,7 +401,7 @@ function hideSuggestions(box) {
 }
 
 function hideAllSuggestions() {
-    [courseSuggestionBox, teacherSuggestionBox, timeSuggestionBox, classSuggestionBox].forEach((box) => {
+    [courseSuggestionBox, classSuggestionBox].forEach((box) => {
         if (box) {
             hideSuggestions(box);
         }
@@ -456,133 +433,25 @@ function renderSuggestions(box, list, onPick, emptyText = "未找到匹配项") 
 function findCourseCandidates(rawQuery) {
     const query = normalize(rawQuery);
 
-    if (scheduleMode === "plan") {
-        const grouped = new Map();
-        courseList.forEach((course) => {
-            const code = String(course["课程编号"] ?? "").trim();
-            const name = String(course["课程名称"] ?? "").trim();
-            if (!code) {
-                return;
-            }
-            if (!normalize(`${code}|${name}`).includes(query)) {
-                return;
-            }
-            if (!grouped.has(code)) {
-                grouped.set(code, { code, name });
-            }
-        });
-
-        return Array.from(grouped.values()).map((item) => ({
-            code: item.code,
-            label: `${item.code}-${item.name}`
-        }));
-    }
-
-    const queryHasNumber = hasNumber(query);
-    const matched = courseList.filter((course) => stringifyCourse(course).includes(query));
-    const seen = new Set();
-    const result = [];
-
-    matched.forEach((course) => {
-        const key = getCourseKey(course);
-        if (seen.has(key)) {
-            return;
-        }
-        seen.add(key);
-
-        const courseCode = String(course["课程编号"] ?? "").trim();
-        const courseName = String(course["课程名称"] ?? "").trim();
-        const label = queryHasNumber ? `${courseCode}-${courseName}` : (courseName || courseCode);
-
-        result.push({
-            record: course,
-            label
-        });
-    });
-
-    return result;
-}
-
-function findTeacherCandidates(rawQuery) {
-    const query = normalize(rawQuery);
-    const seen = new Set();
-    const result = [];
-
+    const grouped = new Map();
     courseList.forEach((course) => {
-        const courseName = String(course["课程名称"] ?? "").trim();
-        splitTeachers(course["教师姓名"]).forEach((teacher) => {
-            if (!normalize(`${teacher}|${courseName}`).includes(query)) {
-                return;
-            }
-
-            const pairKey = `${getCourseKey(course)}|${teacher}`;
-            if (seen.has(pairKey)) {
-                return;
-            }
-            seen.add(pairKey);
-
-            result.push({
-                record: course,
-                label: `${teacher}-${courseName}`
-            });
-        });
+        const code = String(course["课程编号"] ?? "").trim();
+        const name = String(course["课程名称"] ?? "").trim();
+        if (!code) {
+            return;
+        }
+        if (!normalize(`${code}|${name}`).includes(query)) {
+            return;
+        }
+        if (!grouped.has(code)) {
+            grouped.set(code, { code, name });
+        }
     });
 
-    return result;
-}
-
-function findTimeCandidates(rawQuery) {
-    const query = normalize(rawQuery);
-    const seen = new Set();
-    const result = [];
-
-    courseList.forEach((course) => {
-        const timeText = String(course["上课时间"] ?? "").trim();
-        const courseName = String(course["课程名称"] ?? "").trim();
-        if (!normalize(`${timeText}|${courseName}`).includes(query)) {
-            return;
-        }
-
-        const key = getCourseKey(course);
-        if (seen.has(key)) {
-            return;
-        }
-        seen.add(key);
-
-        result.push({
-            record: course,
-            label: `${timeText}-${courseName}`
-        });
-    });
-
-    return result;
-}
-
-function findClassCourseCandidates(rawQuery) {
-    const query = normalize(rawQuery);
-    const seen = new Set();
-    const result = [];
-
-    courseList.forEach((course) => {
-        const classRaw = String(course["上课班级"] ?? "").trim();
-        const courseName = String(course["课程名称"] ?? "").trim();
-        if (!normalize(`${classRaw}|${courseName}`).includes(query)) {
-            return;
-        }
-
-        const key = getCourseKey(course);
-        if (seen.has(key)) {
-            return;
-        }
-        seen.add(key);
-
-        result.push({
-            record: course,
-            label: `${classRaw || "未标注班级"}-${courseName}`
-        });
-    });
-
-    return result;
+    return Array.from(grouped.values()).map((item) => ({
+        code: item.code,
+        label: `${item.code}-${item.name}`
+    }));
 }
 
 function findClassTimetableCandidates(rawQuery) {
@@ -660,13 +529,6 @@ function getActiveCoursesForDisplay() {
         return Array.from(map.values());
     }
 
-    activePoolKeys.forEach((poolKey) => {
-        const course = selectedPool.get(poolKey);
-        if (course) {
-            map.set(poolKey, course);
-        }
-    });
-
     activeClassGroupKeys.forEach((groupKey) => {
         const group = classGroupPool.get(groupKey);
         if (!group) {
@@ -743,7 +605,7 @@ function renderGridCourses() {
             }
 
             entry.periods.forEach((period) => {
-                const selector = `.grid-slot[data-day=\"${entry.dayColumn}\"][data-period=\"${period}\"]`;
+                const selector = `.grid-slot[data-day="${entry.dayColumn}"][data-period="${period}"]`;
                 const target = scheduleGrid.querySelector(selector);
                 if (!target) {
                     return;
@@ -887,14 +749,6 @@ function formatConflictMessage(conflicts) {
         .join("；");
 }
 
-function removeSingleCourse(poolKey) {
-    selectedPool.delete(poolKey);
-    activePoolKeys.delete(poolKey);
-    removePoolQueueItem("course", poolKey);
-    renderCandidatePool();
-    renderGridCourses();
-}
-
 function removeClassGroup(groupKey) {
     classGroupPool.delete(groupKey);
     activeClassGroupKeys.delete(groupKey);
@@ -913,16 +767,6 @@ function removePlanCard(cardKey) {
     }
     renderCandidatePool();
     renderPlanCandidates();
-    renderGridCourses();
-}
-
-function toggleCourseCard(poolKey) {
-    if (activePoolKeys.has(poolKey)) {
-        activePoolKeys.delete(poolKey);
-    } else {
-        activePoolKeys.add(poolKey);
-    }
-    renderCandidatePool();
     renderGridCourses();
 }
 
@@ -989,6 +833,8 @@ function togglePlanFilter(cardKey, filterType, option) {
         setRef = card.enabledCampuses;
     } else if (filterType === "time") {
         setRef = card.enabledTimes;
+    } else if (filterType === "class") {
+        setRef = card.enabledClasses;
     }
 
     if (setRef.has(option)) {
@@ -1050,8 +896,6 @@ function renderWeekFilter() {
 }
 
 function clearAllCards() {
-    selectedPool.clear();
-    activePoolKeys.clear();
     classGroupPool.clear();
     activeClassGroupKeys.clear();
     classGroupExcludedCourseKeys.clear();
@@ -1065,9 +909,7 @@ function clearAllCards() {
     renderGridCourses();
 }
 
-function clearFreeModePool() {
-    selectedPool.clear();
-    activePoolKeys.clear();
+function clearClassModePool() {
     classGroupPool.clear();
     activeClassGroupKeys.clear();
     classGroupExcludedCourseKeys.clear();
@@ -1076,10 +918,7 @@ function clearFreeModePool() {
     renderGridCourses();
 }
 
-function selectAllFreeMode() {
-    selectedPool.forEach((course) => {
-        activePoolKeys.add(course.poolKey);
-    });
+function selectAllClassGroups() {
     classGroupPool.forEach((group) => {
         activeClassGroupKeys.add(group.groupKey);
         classGroupExcludedCourseKeys.set(group.groupKey, new Set());
@@ -1155,9 +994,10 @@ function generatePlans() {
             const teacherMatch = !card.enabledTeachers.size || splitTeachers(course.teacher).some((teacher) => card.enabledTeachers.has(teacher));
             const campusMatch = !card.enabledCampuses.size || card.enabledCampuses.has(course.campus);
             const timeMatch = !card.enabledTimes.size || card.enabledTimes.has(course.timeText);
+            const classMatch = !card.enabledClasses.size || card.enabledClasses.has(course.classText);
             const campusPrefMatch = campusNoPreference || campusTargets.includes(course.campus);
 
-            if (!(teacherMatch && campusMatch && timeMatch && campusPrefMatch)) {
+            if (!(teacherMatch && campusMatch && timeMatch && classMatch && campusPrefMatch)) {
                 return false;
             }
 
@@ -1273,18 +1113,18 @@ function generatePlans() {
 function renderPoolToolbar() {
     poolToolbar.innerHTML = "";
 
-    if (scheduleMode === "free") {
+    if (scheduleMode === "class") {
         const clearBtn = document.createElement("button");
         clearBtn.type = "button";
         clearBtn.className = "pool-btn pool-btn-fixed";
         clearBtn.textContent = "一键清除";
-        clearBtn.addEventListener("click", clearFreeModePool);
+        clearBtn.addEventListener("click", clearClassModePool);
 
         const selectAllBtn = document.createElement("button");
         selectAllBtn.type = "button";
         selectAllBtn.className = "pool-btn pool-btn-fixed";
         selectAllBtn.textContent = "全选";
-        selectAllBtn.addEventListener("click", selectAllFreeMode);
+        selectAllBtn.addEventListener("click", selectAllClassGroups);
 
         poolToolbar.appendChild(clearBtn);
         poolToolbar.appendChild(selectAllBtn);
@@ -1398,16 +1238,11 @@ function renderPlanCandidates(errorText = "", isError = false) {
     });
 }
 
-function collectConflictTargetsForFreeMode() {
+function collectConflictTargetsForClassMode() {
     const activeCourses = getActiveCoursesForDisplay();
     const map = buildConflictMap(activeCourses);
-
-    const singleCardConflicts = new Map();
-    selectedPool.forEach((course, key) => {
-        singleCardConflicts.set(key, map.get(key) || []);
-    });
-
     const groupConflicts = new Map();
+
     classGroupPool.forEach((group, groupKey) => {
         const groupMessages = [];
         group.courses.forEach((course) => {
@@ -1419,7 +1254,7 @@ function collectConflictTargetsForFreeMode() {
         groupConflicts.set(groupKey, groupMessages);
     });
 
-    return { singleCardConflicts, groupConflicts };
+    return groupConflicts;
 }
 
 function collectConflictTargetsForPlanMode() {
@@ -1528,6 +1363,7 @@ function renderCandidatePool() {
                 const teacherOptions = new Set();
                 const campusOptions = new Set();
                 const timeOptions = new Set();
+                const classOptions = new Set();
 
                 card.options.forEach((course) => {
                     splitTeachers(course.teacher).forEach((teacher) => teacherOptions.add(teacher));
@@ -1536,6 +1372,9 @@ function renderCandidatePool() {
                     }
                     if (course.timeText) {
                         timeOptions.add(course.timeText);
+                    }
+                    if (course.classText) {
+                        classOptions.add(course.classText);
                     }
                 });
 
@@ -1574,6 +1413,7 @@ function renderCandidatePool() {
 
                 appendFilter("授课教师", teacherOptions, card.enabledTeachers, "teacher");
                 appendFilter("上课时间段", timeOptions, card.enabledTimes, "time");
+                appendFilter("上课班级", classOptions, card.enabledClasses, "class");
                 appendFilter("校区", campusOptions, card.enabledCampuses, "campus");
             }
 
@@ -1591,79 +1431,13 @@ function renderCandidatePool() {
     }
 
     if (!poolRenderQueue.length) {
-        candidatePool.innerHTML = "<p class=\"empty-pool\">从顶部搜索框选择课程后，将在此生成候选课程卡片。</p>";
+        candidatePool.innerHTML = "<p class=\"empty-pool\">从顶部搜索框选择班级后，将在此生成班级课表卡片。</p>";
         return;
     }
 
-    const { singleCardConflicts, groupConflicts } = collectConflictTargetsForFreeMode();
+    const groupConflicts = collectConflictTargetsForClassMode();
 
     poolRenderQueue.forEach((item) => {
-        if (item.type === "course") {
-            const course = selectedPool.get(item.key);
-            if (!course) {
-                return;
-            }
-
-            const card = document.createElement("article");
-            card.className = "course-card";
-            if (activePoolKeys.has(course.poolKey)) {
-                card.classList.add("is-active");
-            }
-
-            const conflicts = singleCardConflicts.get(course.poolKey) || [];
-            if (conflicts.length) {
-                card.classList.add("is-conflict");
-            }
-
-            const head = document.createElement("div");
-            head.className = "card-head";
-
-            const title = document.createElement("h3");
-            title.className = "card-title";
-            title.textContent = course.title;
-
-            const delBtn = document.createElement("button");
-            delBtn.type = "button";
-            delBtn.className = "danger-btn";
-            delBtn.textContent = "删除";
-            delBtn.addEventListener("click", (event) => {
-                event.stopPropagation();
-                removeSingleCourse(course.poolKey);
-            });
-
-            head.appendChild(title);
-            head.appendChild(delBtn);
-            card.appendChild(head);
-
-            const metas = [
-                `课程编号：${course.courseCode || "-"}`,
-                `教师：${course.teacher || "-"}`,
-                `班级：${course.classText || "-"}`,
-                `周次：${course.weekText || "-"}`,
-                `时间：${course.timeText || "-"}`,
-                `地点：${course.locationText || "-"}`
-            ];
-            metas.forEach((text) => {
-                const p = document.createElement("p");
-                p.className = "course-card-meta";
-                p.textContent = text;
-                card.appendChild(p);
-            });
-
-            if (conflicts.length) {
-                const conflict = document.createElement("p");
-                conflict.className = "conflict-message";
-                conflict.textContent = formatConflictMessage(conflicts);
-                card.appendChild(conflict);
-            }
-
-            card.addEventListener("click", () => {
-                toggleCourseCard(course.poolKey);
-            });
-            candidatePool.appendChild(card);
-            return;
-        }
-
         const group = classGroupPool.get(item.key);
         if (!group) {
             return;
@@ -1766,21 +1540,6 @@ function renderCandidatePool() {
     });
 }
 
-function ingestCandidateFromPick(course, previewLabel) {
-    const parsed = buildPoolCourse(course);
-    selectedPool.set(parsed.poolKey, parsed);
-    activePoolKeys.add(parsed.poolKey);
-    addPoolQueueItem("course", parsed.poolKey);
-
-    window.selectedCourseRecord = parsed.record;
-    window.selectedCourseKeyValuePairs = Object.entries(parsed.record);
-
-    renderCandidatePool();
-    renderGridCourses();
-
-    selectedDisplayLabel.course = previewLabel;
-}
-
 function ingestClassGroupFromPick(className) {
     const groupKey = getClassGroupKey(className);
     let group = classGroupPool.get(groupKey);
@@ -1807,12 +1566,59 @@ function ingestPlanCardFromCourseCode(courseCode, label) {
 
     card.active = true;
     activePlanCourseCardKeys.add(cardKey);
-    selectedDisplayLabel.course = label;
+
+    window.selectedCourseRecord = card.options[0] ? card.options[0].record : null;
+    window.selectedCourseKeyValuePairs = card.options[0] ? Object.entries(card.options[0].record) : [];
 
     renderCandidatePool();
 }
 
+function copyClassGroupsToPlan() {
+    const courseCodes = new Set();
+    let courseCount = 0;
+
+    activeClassGroupKeys.forEach((groupKey) => {
+        const group = classGroupPool.get(groupKey);
+        if (!group) {
+            return;
+        }
+
+        const excluded = classGroupExcludedCourseKeys.get(groupKey) || new Set();
+        group.courses.forEach((course) => {
+            if (excluded.has(course.poolKey)) {
+                return;
+            }
+            if (course.courseCode) {
+                courseCodes.add(course.courseCode);
+                courseCount += 1;
+            }
+        });
+    });
+
+    if (!courseCodes.size) {
+        showToast("班级课表中没有已启用的课程可复制");
+        return;
+    }
+
+    let addedCount = 0;
+    courseCodes.forEach((courseCode) => {
+        const cardKey = `plan-course|${courseCode}`;
+        if (!planCourseCards.has(cardKey)) {
+            const card = buildPlanCardForCourseCode(courseCode);
+            planCourseCards.set(cardKey, card);
+            activePlanCourseCardKeys.add(cardKey);
+            addedCount += 1;
+        }
+    });
+
+    showToast(`已复制 ${courseCount} 门班级课表课程到方案池（新增 ${addedCount} 个课程编号）`);
+}
+
 function filterCourseInput(rawQuery) {
+    if (scheduleMode !== "plan") {
+        return;
+    }
+
     const query = normalize(rawQuery);
     if (!query) {
         hideSuggestions(courseSuggestionBox);
@@ -1826,57 +1632,13 @@ function filterCourseInput(rawQuery) {
 
     const candidates = findCourseCandidates(query).slice(0, 50);
     renderSuggestions(courseSuggestionBox, candidates, (candidate) => {
-        if (scheduleMode === "plan") {
-            courseSearchInput.value = candidate.label;
-            ingestPlanCardFromCourseCode(candidate.code, candidate.label);
-            return;
-        }
-
         courseSearchInput.value = candidate.label;
-        ingestCandidateFromPick(candidate.record, candidate.label);
+        ingestPlanCardFromCourseCode(candidate.code, candidate.label);
     }, "未找到匹配课程");
 }
 
-function filterTeacherInput(rawQuery) {
-    if (scheduleMode !== "free") {
-        return;
-    }
-
-    const query = normalize(rawQuery);
-    if (!query) {
-        hideSuggestions(teacherSuggestionBox);
-        return;
-    }
-
-    const candidates = findTeacherCandidates(query).slice(0, 50);
-    renderSuggestions(teacherSuggestionBox, candidates, (candidate) => {
-        teacherSearchInput.value = candidate.label;
-        selectedDisplayLabel.teacher = candidate.label;
-        ingestCandidateFromPick(candidate.record, candidate.label);
-    }, "未找到匹配授课教师");
-}
-
-function filterTimeInput(rawQuery) {
-    if (scheduleMode !== "free") {
-        return;
-    }
-
-    const query = normalize(rawQuery);
-    if (!query) {
-        hideSuggestions(timeSuggestionBox);
-        return;
-    }
-
-    const candidates = findTimeCandidates(query).slice(0, 50);
-    renderSuggestions(timeSuggestionBox, candidates, (candidate) => {
-        timeSearchInput.value = candidate.label;
-        selectedDisplayLabel.time = candidate.label;
-        ingestCandidateFromPick(candidate.record, candidate.label);
-    }, "未找到匹配上课时间");
-}
-
 function filterClassInput(rawQuery) {
-    if (scheduleMode !== "free") {
+    if (scheduleMode !== "class") {
         return;
     }
 
@@ -1886,22 +1648,11 @@ function filterClassInput(rawQuery) {
         return;
     }
 
-    if (classSearchMode === "timetable") {
-        const candidates = findClassTimetableCandidates(query).slice(0, 50);
-        renderSuggestions(classSuggestionBox, candidates, (candidate) => {
-            classSearchInput.value = candidate.className;
-            selectedDisplayLabel.class = candidate.className;
-            ingestClassGroupFromPick(candidate.className);
-        }, "未找到匹配班级");
-        return;
-    }
-
-    const candidates = findClassCourseCandidates(query).slice(0, 50);
+    const candidates = findClassTimetableCandidates(query).slice(0, 50);
     renderSuggestions(classSuggestionBox, candidates, (candidate) => {
-        classSearchInput.value = candidate.label;
-        selectedDisplayLabel.class = candidate.label;
-        ingestCandidateFromPick(candidate.record, candidate.label);
-    }, "未找到匹配班级课程");
+        classSearchInput.value = candidate.className;
+        ingestClassGroupFromPick(candidate.className);
+    }, "未找到匹配班级");
 }
 
 function extractMaxWeekFromCourses(list) {
@@ -1986,19 +1737,14 @@ if (
     modeTag &&
     planCandidateArea &&
     courseSearchInput &&
-    teacherSearchInput &&
-    timeSearchInput &&
     classSearchInput &&
     courseSuggestionBox &&
-    teacherSuggestionBox &&
-    timeSuggestionBox &&
     classSuggestionBox &&
     courseSearchClear &&
-    teacherSearchClear &&
-    timeSearchClear &&
     classSearchClear &&
     clearPoolTopButton &&
     generatePlanTopButton &&
+    copyClassToPlanButton &&
     weekFilter &&
     poolToolbar &&
     scheduleGrid &&
@@ -2006,19 +1752,10 @@ if (
 ) {
     createScheduleGrid();
     renderWeekFilter();
-    syncClassModeUI();
     syncModeUI();
 
     courseSearchInput.addEventListener("input", (event) => {
         filterCourseInput(event.target.value);
-    });
-
-    teacherSearchInput.addEventListener("input", (event) => {
-        filterTeacherInput(event.target.value);
-    });
-
-    timeSearchInput.addEventListener("input", (event) => {
-        filterTimeInput(event.target.value);
     });
 
     classSearchInput.addEventListener("input", (event) => {
@@ -2026,17 +1763,29 @@ if (
     });
 
     classModeToggleButton.addEventListener("click", () => {
-        classSearchMode = classSearchMode === "course" ? "timetable" : "course";
-        classSearchInput.value = "";
-        hideSuggestions(classSuggestionBox);
-        syncClassModeUI();
+        if (scheduleMode !== "class") {
+            scheduleMode = "class";
+            planPrefEditMode = false;
+            hideAllSuggestions();
+            syncModeUI();
+        } else {
+            showToast("当前已是班级课表调用模式");
+        }
     });
 
     scheduleModeToggleButton.addEventListener("click", () => {
-        scheduleMode = scheduleMode === "free" ? "plan" : "free";
+        scheduleMode = scheduleMode === "plan" ? "class" : "plan";
         planPrefEditMode = false;
         hideAllSuggestions();
         syncModeUI();
+    });
+
+    copyClassToPlanButton.addEventListener("click", () => {
+        if (scheduleMode !== "class") {
+            showToast("请切换到班级课表调用模式后再执行复制");
+            return;
+        }
+        copyClassGroupsToPlan();
     });
 
     clearPoolTopButton.addEventListener("click", () => {
@@ -2050,8 +1799,6 @@ if (
     });
 
     bindInputClear(courseSearchClear, courseSearchInput, courseSuggestionBox);
-    bindInputClear(teacherSearchClear, teacherSearchInput, teacherSuggestionBox);
-    bindInputClear(timeSearchClear, timeSearchInput, timeSuggestionBox);
     bindInputClear(classSearchClear, classSearchInput, classSuggestionBox);
 
     scheduleGrid.addEventListener("click", (event) => {
@@ -2069,4 +1816,6 @@ if (
     });
 
     loadCourseData();
+} else {
+    console.warn("排课表工具初始化所需 DOM 元素不完整");
 }

@@ -34,7 +34,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            min-height: 182px;
+            min-height: 230px;
             overflow: visible;
             z-index: 30;
             padding-bottom: 8px;
@@ -50,9 +50,28 @@
 
         #SearchRow {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr)) 140px 140px;
+            grid-template-columns: 70% 30%;
             gap: var(--search-gap);
             align-items: start;
+        }
+
+        #SearchBoxes {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--search-gap);
+            align-items: start;
+        }
+
+        #ButtonArea {
+            display: flex;
+            flex-direction: column;
+            gap: var(--search-gap);
+        }
+
+        #ButtonArea .action-btn {
+            width: 100%;
+            flex: 1 1 auto;
+            min-height: 40px;
         }
 
         .search-bar {
@@ -183,7 +202,7 @@
         }
 
         #PlanCandidateArea {
-            margin: 76px var(--topbar-horizontal-padding) 0;
+            margin: 160px var(--topbar-horizontal-padding) 0;
             border: 1px solid rgba(255, 255, 255, 0.24);
             border-radius: 12px;
             padding: 8px;
@@ -226,7 +245,7 @@
             display: grid;
             grid-template-columns: minmax(0, 1fr) 380px;
             gap: 14px;
-            padding: 196px 14px 14px;
+            padding: 240px 14px 14px;
             min-height: 100vh;
         }
 
@@ -760,12 +779,33 @@
         }
 
         @media (max-width: 1120px) {
+            #Topbar {
+                min-height: 190px;
+            }
+
             #SearchRow {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: 1fr;
+            }
+
+            #SearchBoxes {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            #ButtonArea {
+                flex-direction: row;
+            }
+
+            #ButtonArea .action-btn {
+                flex: 1 1 0;
+            }
+
+            #PlanCandidateArea {
+                margin-top: 90px;
             }
 
             #Layout {
                 grid-template-columns: 1fr;
+                padding-top: 200px;
             }
 
             #Sidebar {
@@ -776,7 +816,7 @@
 
         @media (max-width: 760px) {
             #Topbar {
-                min-height: 260px;
+                min-height: 370px;
             }
 
             .search-layer {
@@ -788,12 +828,24 @@
                 grid-template-columns: 1fr;
             }
 
-            .action-btn {
-                width: 140px;
+            #SearchBoxes {
+                grid-template-columns: 1fr;
+            }
+
+            #ButtonArea {
+                flex-direction: column;
+            }
+
+            #ButtonArea .action-btn {
+                width: 100%;
+            }
+
+            #PlanCandidateArea {
+                margin-top: 300px;
             }
 
             #Layout {
-                padding-top: 280px;
+                padding-top: 390px;
             }
         }
     </style>
@@ -821,36 +873,27 @@
     <div id="Topbar" class="ca-gradient-surface">
         <div id="PrimarySearchLayer" class="search-layer">
             <div id="SearchRow">
-                <div id="CourseSearchBar" class="search-bar">
-                    <div class="search-field has-clear">
-                        <input id="CourseSearchInput" class="search-input" type="text" placeholder="课程检索：课程编号或课程名称" autocomplete="off">
-                        <button id="CourseSearchClear" class="input-clear-btn" type="button" aria-label="清空课程检索">x</button>
-                        <div id="CourseSuggestionBox" class="suggestion-box hidden"></div>
+                <div id="SearchBoxes">
+                    <div id="CourseSearchBar" class="search-bar">
+                        <div class="search-field has-clear">
+                            <input id="CourseSearchInput" class="search-input" type="text" placeholder="课程检索：课程编号或课程名称" autocomplete="off">
+                            <button id="CourseSearchClear" class="input-clear-btn" type="button" aria-label="清空课程检索">x</button>
+                            <div id="CourseSuggestionBox" class="suggestion-box hidden"></div>
+                        </div>
+                    </div>
+                    <div id="ClassSearchBar" class="search-bar">
+                        <div class="search-field has-clear">
+                            <input id="ClassSearchInput" class="search-input" type="text" placeholder="班级课表：输入班级名称后调用整班课表" autocomplete="off">
+                            <button id="ClassSearchClear" class="input-clear-btn" type="button" aria-label="清空班级检索">x</button>
+                            <div id="ClassSuggestionBox" class="suggestion-box hidden"></div>
+                        </div>
                     </div>
                 </div>
-                <div id="TeacherSearchBar" class="search-bar">
-                    <div class="search-field has-clear">
-                        <input id="TeacherSearchInput" class="search-input" type="text" placeholder="授课教师检索" autocomplete="off">
-                        <button id="TeacherSearchClear" class="input-clear-btn" type="button" aria-label="清空教师检索">x</button>
-                        <div id="TeacherSuggestionBox" class="suggestion-box hidden"></div>
-                    </div>
+                <div id="ButtonArea">
+                    <button id="ClassModeToggleButton" class="action-btn is-active" type="button">调用班级课表</button>
+                    <button id="ScheduleModeToggleButton" class="action-btn" type="button">切换到班级课表调用</button>
+                    <button id="CopyClassToPlanButton" class="action-btn" type="button">复制班级课表到方案</button>
                 </div>
-                <div id="TimeSearchBar" class="search-bar">
-                    <div class="search-field has-clear">
-                        <input id="TimeSearchInput" class="search-input" type="text" placeholder="上课时间检索" autocomplete="off">
-                        <button id="TimeSearchClear" class="input-clear-btn" type="button" aria-label="清空时间检索">x</button>
-                        <div id="TimeSuggestionBox" class="suggestion-box hidden"></div>
-                    </div>
-                </div>
-                <div id="ClassSearchBar" class="search-bar">
-                    <div class="search-field has-clear">
-                        <input id="ClassSearchInput" class="search-input" type="text" placeholder="班级检索：可按班级或课程关键词" autocomplete="off">
-                        <button id="ClassSearchClear" class="input-clear-btn" type="button" aria-label="清空班级检索">x</button>
-                        <div id="ClassSuggestionBox" class="suggestion-box hidden"></div>
-                    </div>
-                </div>
-                <button id="ClassModeToggleButton" class="action-btn" type="button">调用班级课表</button>
-                <button id="ScheduleModeToggleButton" class="action-btn" type="button">切换到自助方案排课</button>
             </div>
         </div>
         <div id="PlanCandidateArea" class="hidden"></div>
@@ -874,7 +917,7 @@
                     <button id="ClearPoolTopButton" class="pool-head-btn" type="button">清空卡池</button>
                 </div>
             </div>
-            <div id="ModeTag">当前模式：自由排课</div>
+            <div id="ModeTag">当前模式：自助方案排课</div>
             <div id="PoolToolbar"></div>
             <div id="CandidatePool">
                 <p class="empty-pool">从顶部搜索框选择课程后，将在此生成候选课程卡片。</p>
