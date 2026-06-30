@@ -2018,7 +2018,9 @@ function extractMaxWeekFromCourses(list) {
 
 async function loadCourseData() {
     try {
-        const response = await fetch(COURSE_DATA_PATH);
+        const versionStamp = typeof APP_VERSION !== "undefined" ? APP_VERSION : "";
+        const dataUrl = versionStamp ? `${COURSE_DATA_PATH}?v=${versionStamp}` : COURSE_DATA_PATH;
+        const response = await fetch(dataUrl);
         if (!response.ok) {
             throw new Error(`课程数据加载失败: ${response.status}`);
         }
