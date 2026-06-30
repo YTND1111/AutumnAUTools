@@ -2,6 +2,8 @@ const COURSE_DATA_PATH = "./src/py/中国农业大学2026-2027学年秋季学期
 const WEEK_HEADERS = ["节次", "周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 const DAY_TO_COLUMN = { "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "日": 7, "天": 7 };
 const COLUMN_TO_DAY = { 1: "周一", 2: "周二", 3: "周三", 4: "周四", 5: "周五", 6: "周六", 7: "周日" };
+const BIG_PERIOD_LABELS = ["第一大节", "第二大节", "第三大节", "第四大节", "第五大节", "第六大节"];
+const PERIOD_TO_BIG_PERIOD = { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 4, 11: 5, 12: 5 };
 
 const scheduleModeToggleButton = document.getElementById("ScheduleModeToggleButton");
 const classModeToggleButton = document.getElementById("ClassModeToggleButton");
@@ -45,7 +47,12 @@ const poolRenderQueue = [];
 const planCourseCards = new Map();
 const activePlanCourseCardKeys = new Set();
 const generatedPlans = [];
+const conflictingPlans = [];
 let activePlanId = "";
+
+const planClassGroups = new Map();
+const activePlanClassGroupKeys = new Set();
+const planClassGroupExcludedCourseKeys = new Map();
 
 const planPreferences = {
     campus: new Set(["无"]),
@@ -577,34 +584,50 @@ function createScheduleGrid() {
         scheduleGrid.appendChild(head);
     });
 
-    for (let period = 1; period <= 12; period += 1) {
+    BIG_PERIOD_LABELS.forEach((label, bigPeriod) => {
         const rowHead = document.createElement("div");
         rowHead.className = "grid-head";
-        rowHead.textContent = `第${period}节`;
+        rowHead.textContent = label;
         rowHead.dataset.axis = "row";
-        rowHead.dataset.period = String(period);
+        rowHead.dataset.period = String(bigPeriod);
         scheduleGrid.appendChild(rowHead);
 
         for (let day = 1; day <= 7; day += 1) {
             const slot = document.createElement("div");
             slot.className = "grid-slot";
             slot.dataset.day = String(day);
-            slot.dataset.period = String(period);
+            slot.dataset.period = String(bigPeriod);
             scheduleGrid.appendChild(slot);
         }
-    }
+    });
 }
 
 function getActiveCoursesForDisplay() {
     const map = new Map();
 
     if (scheduleMode === "plan") {
-        const activePlan = generatedPlans.find((item) => item.id === activePlanId);
+        const activePlan = generatedPlans.find((item) => item.id === activePlanId) ||
+            conflictingPlans.find((item) => item.id === activePlanId);
         if (activePlan) {
             activePlan.courses.forEach((course) => {
                 map.set(course.poolKey, course);
             });
         }
+
+        activePlanClassGroupKeys.forEach((groupKey) => {
+            const group = planClassGroups.get(groupKey);
+            if (!group) {
+                return;
+            }
+
+            const excluded = planClassGroupExcludedCourseKeys.get(groupKey) || new Set();
+            group.courses.forEach((course) => {
+                if (!excluded.has(course.poolKey)) {
+                    map.set(course.poolKey, course);
+                }
+            });
+        });
+
         return Array.from(map.values());
     }
 
@@ -638,11 +661,11 @@ function isEntryVisibleByWeek(entry) {
     return entry.weekRanges.some((range) => weekNumber >= range.start && weekNumber <= range.end);
 }
 
-function isCellBlocked(day, period) {
+function isCellBlocked(day, bigPeriod) {
     return (
-        planPreferences.blockedCells.has(`${day}-${period}`) ||
+        planPreferences.blockedCells.has(`${day}-${bigPeriod}`) ||
         planPreferences.blockedDays.has(day) ||
-        planPreferences.blockedPeriods.has(period)
+        planPreferences.blockedPeriods.has(bigPeriod)
     );
 }
 
@@ -675,7 +698,7 @@ function renderGridCourses() {
         slot.innerHTML = "";
     });
 
-    // 按 day-period 聚合同一格子内的课程
+    // 按 day-period 聚合同一格子内的课程，并记录每门课程在该格子中的最早上课周次
     const slotCourses = new Map();
 
     const activeCourses = getActiveCoursesForDisplay();
@@ -686,17 +709,27 @@ function renderGridCourses() {
                 return;
             }
 
+            const minWeek = entry.weekRanges.reduce((min, range) => Math.min(min, range.start), Infinity);
+
+            const bigPeriodSet = new Set();
             entry.periods.forEach((period) => {
-                const slotKey = `${entry.dayColumn}-${period}`;
+                const bigPeriod = PERIOD_TO_BIG_PERIOD[period];
+                if (bigPeriod !== undefined) {
+                    bigPeriodSet.add(bigPeriod);
+                }
+            });
+
+            bigPeriodSet.forEach((bigPeriod) => {
+                const slotKey = `${entry.dayColumn}-${bigPeriod}`;
                 if (!slotCourses.has(slotKey)) {
                     slotCourses.set(slotKey, []);
                 }
-                slotCourses.get(slotKey).push(course);
+                slotCourses.get(slotKey).push({ course, minWeek: Number.isFinite(minWeek) ? minWeek : 0 });
             });
         });
     });
 
-    slotCourses.forEach((courses, slotKey) => {
+    slotCourses.forEach((items, slotKey) => {
         const [dayColumn, period] = slotKey.split("-");
         const selector = `.grid-slot[data-day="${dayColumn}"][data-period="${period}"]`;
         const target = scheduleGrid.querySelector(selector);
@@ -704,7 +737,10 @@ function renderGridCourses() {
             return;
         }
 
-        courses.forEach((course, index) => {
+        items.sort((a, b) => a.minWeek - b.minWeek);
+
+        items.forEach((item, index) => {
+            const course = item.course;
             if (index > 0) {
                 const divider = document.createElement("hr");
                 divider.className = "slot-divider";
@@ -789,12 +825,6 @@ function buildConflictMap(activeCourses) {
                             const overlapWeek = intersectRanges(wA, wB);
                             if (!overlapWeek) {
                                 return;
-                            }
-                            if (selectedWeek !== "all") {
-                                const weekNumber = Number(selectedWeek);
-                                if (weekNumber < overlapWeek.start || weekNumber > overlapWeek.end) {
-                                    return;
-                                }
                             }
                             weekOverlaps.push(overlapWeek);
                         });
@@ -899,6 +929,50 @@ function toggleClassGroupCourse(groupKey, poolKey) {
     renderGridCourses();
 }
 
+function removePlanClassGroup(groupKey) {
+    planClassGroups.delete(groupKey);
+    activePlanClassGroupKeys.delete(groupKey);
+    planClassGroupExcludedCourseKeys.delete(groupKey);
+    renderCandidatePool();
+    renderGridCourses();
+}
+
+function togglePlanClassGroup(groupKey) {
+    if (activePlanClassGroupKeys.has(groupKey)) {
+        activePlanClassGroupKeys.delete(groupKey);
+    } else {
+        activePlanClassGroupKeys.add(groupKey);
+    }
+    renderCandidatePool();
+    renderGridCourses();
+}
+
+function togglePlanClassGroupExpand(groupKey) {
+    const group = planClassGroups.get(groupKey);
+    if (!group) {
+        return;
+    }
+    group.expanded = !group.expanded;
+    renderCandidatePool();
+}
+
+function togglePlanClassGroupCourse(groupKey, poolKey) {
+    if (!activePlanClassGroupKeys.has(groupKey)) {
+        activePlanClassGroupKeys.add(groupKey);
+    }
+
+    const excluded = planClassGroupExcludedCourseKeys.get(groupKey) || new Set();
+    if (excluded.has(poolKey)) {
+        excluded.delete(poolKey);
+    } else {
+        excluded.add(poolKey);
+    }
+    planClassGroupExcludedCourseKeys.set(groupKey, excluded);
+
+    renderCandidatePool();
+    renderGridCourses();
+}
+
 function togglePlanCard(cardKey) {
     const card = planCourseCards.get(cardKey);
     if (!card) {
@@ -996,7 +1070,11 @@ function clearAllCards() {
     planCourseCards.clear();
     activePlanCourseCardKeys.clear();
     generatedPlans.length = 0;
+    conflictingPlans.length = 0;
     activePlanId = "";
+    planClassGroups.clear();
+    activePlanClassGroupKeys.clear();
+    planClassGroupExcludedCourseKeys.clear();
     renderCandidatePool();
     renderPlanCandidates();
     renderGridCourses();
@@ -1071,6 +1149,7 @@ function generatePlans() {
 
     const activeCards = Array.from(planCourseCards.values()).filter((card) => card.active);
     generatedPlans.length = 0;
+    conflictingPlans.length = 0;
     activePlanId = "";
 
     if (!activeCards.length) {
@@ -1094,15 +1173,12 @@ function generatePlans() {
                 return false;
             }
 
+            // 检查阻塞时段时不再受当前周次筛选影响，确保整个学期内都不落在阻塞时段
             for (let i = 0; i < course.entries.length; i += 1) {
                 const entry = course.entries[i];
-                const visibleByWeek = isEntryVisibleByWeek(entry);
-                if (!visibleByWeek) {
-                    continue;
-                }
                 for (let p = 0; p < entry.periods.length; p += 1) {
-                    const period = entry.periods[p];
-                    if (isCellBlocked(entry.dayColumn, period)) {
+                    const bigPeriod = PERIOD_TO_BIG_PERIOD[entry.periods[p]];
+                    if (bigPeriod !== undefined && isCellBlocked(entry.dayColumn, bigPeriod)) {
                         return false;
                     }
                 }
@@ -1119,41 +1195,41 @@ function generatePlans() {
         return;
     }
 
-    const maxPlans = 20;
+    const maxPlansPerCategory = 20;
 
-    function hasConflictWithSelected(candidate, selected) {
-        for (let i = 0; i < selected.length; i += 1) {
-            const other = selected[i];
+    // 收集已激活的班级课程组课程，这些课程在方案模式下视为固定占用，生成方案时必须避开
+    const fixedCourses = [];
+    activePlanClassGroupKeys.forEach((groupKey) => {
+        const group = planClassGroups.get(groupKey);
+        if (!group) {
+            return;
+        }
+        const excluded = planClassGroupExcludedCourseKeys.get(groupKey) || new Set();
+        group.courses.forEach((course) => {
+            if (!excluded.has(course.poolKey)) {
+                fixedCourses.push(course);
+            }
+        });
+    });
 
-            for (let e1 = 0; e1 < candidate.entries.length; e1 += 1) {
-                for (let e2 = 0; e2 < other.entries.length; e2 += 1) {
-                    const a = candidate.entries[e1];
-                    const b = other.entries[e2];
-                    if (a.dayColumn !== b.dayColumn) {
-                        continue;
-                    }
+    function courseEntriesConflict(a, b) {
+        for (let e1 = 0; e1 < a.entries.length; e1 += 1) {
+            for (let e2 = 0; e2 < b.entries.length; e2 += 1) {
+                const entryA = a.entries[e1];
+                const entryB = b.entries[e2];
+                if (entryA.dayColumn !== entryB.dayColumn) {
+                    continue;
+                }
 
-                    const periodOverlap = a.periodRanges.some((pa) => b.periodRanges.some((pb) => rangesOverlap(pa, pb)));
-                    if (!periodOverlap) {
-                        continue;
-                    }
+                const periodOverlap = entryA.periodRanges.some((pa) => entryB.periodRanges.some((pb) => rangesOverlap(pa, pb)));
+                if (!periodOverlap) {
+                    continue;
+                }
 
-                    const weekOverlap = a.weekRanges.some((wa) => b.weekRanges.some((wb) => {
-                        const over = intersectRanges(wa, wb);
-                        if (!over) {
-                            return false;
-                        }
-                        if (selectedWeek === "all") {
-                            return true;
-                        }
-
-                        const weekNumber = Number(selectedWeek);
-                        return weekNumber >= over.start && weekNumber <= over.end;
-                    }));
-
-                    if (weekOverlap) {
-                        return true;
-                    }
+                // 检测全学期冲突，不再受当前周次筛选影响
+                const weekOverlap = entryA.weekRanges.some((wa) => entryB.weekRanges.some((wb) => intersectRanges(wa, wb) !== null));
+                if (weekOverlap) {
+                    return true;
                 }
             }
         }
@@ -1161,30 +1237,56 @@ function generatePlans() {
     }
 
     function backtrack(index, selected) {
-        if (generatedPlans.length >= maxPlans) {
+        if (generatedPlans.length >= maxPlansPerCategory && conflictingPlans.length >= maxPlansPerCategory) {
             return;
         }
 
         if (index >= candidatesPerCard.length) {
-            const id = `plan-${generatedPlans.length + 1}`;
-            generatedPlans.push({
-                id,
-                name: `方案${generatedPlans.length + 1}`,
-                courses: selected.map((item) => item)
-            });
+            let hasConflict = false;
+
+            // 检查已选课程之间是否存在冲突（支持跨多个大节的大课）
+            for (let i = 0; i < selected.length && !hasConflict; i += 1) {
+                for (let j = i + 1; j < selected.length && !hasConflict; j += 1) {
+                    if (courseEntriesConflict(selected[i], selected[j])) {
+                        hasConflict = true;
+                    }
+                }
+            }
+
+            // 检查已选课程与固定班级课程组课程是否冲突
+            for (let i = 0; i < selected.length && !hasConflict; i += 1) {
+                for (let f = 0; f < fixedCourses.length && !hasConflict; f += 1) {
+                    if (courseEntriesConflict(selected[i], fixedCourses[f])) {
+                        hasConflict = true;
+                    }
+                }
+            }
+
+            if (!hasConflict && generatedPlans.length < maxPlansPerCategory) {
+                const id = `plan-${generatedPlans.length + 1}`;
+                generatedPlans.push({
+                    id,
+                    name: `方案${generatedPlans.length + 1}`,
+                    courses: selected.map((item) => item)
+                });
+            } else if (hasConflict && conflictingPlans.length < maxPlansPerCategory) {
+                const id = `conflict-${conflictingPlans.length + 1}`;
+                conflictingPlans.push({
+                    id,
+                    name: `冲突方案${conflictingPlans.length + 1}`,
+                    courses: selected.map((item) => item)
+                });
+            }
             return;
         }
 
         const current = candidatesPerCard[index];
         for (let i = 0; i < current.options.length; i += 1) {
             const candidate = current.options[i];
-            if (hasConflictWithSelected(candidate, selected)) {
-                continue;
-            }
             selected.push(candidate);
             backtrack(index + 1, selected);
             selected.pop();
-            if (generatedPlans.length >= maxPlans) {
+            if (generatedPlans.length >= maxPlansPerCategory && conflictingPlans.length >= maxPlansPerCategory) {
                 return;
             }
         }
@@ -1192,13 +1294,13 @@ function generatePlans() {
 
     backtrack(0, []);
 
-    if (!generatedPlans.length) {
+    if (!generatedPlans.length && !conflictingPlans.length) {
         renderPlanCandidates("不存在满足要求的课程方案", true);
         renderGridCourses();
         return;
     }
 
-    activePlanId = generatedPlans[0].id;
+    activePlanId = generatedPlans.length ? generatedPlans[0].id : conflictingPlans[0].id;
     renderPlanCandidates();
     renderGridCourses();
 }
@@ -1308,7 +1410,7 @@ function renderPlanCandidates(errorText = "", isError = false) {
         return;
     }
 
-    if (!generatedPlans.length) {
+    if (!generatedPlans.length && !conflictingPlans.length) {
         const empty = document.createElement("p");
         empty.className = "plan-empty";
         empty.textContent = "方案候选区：点击“生成方案”后显示可用排课方案";
@@ -1316,10 +1418,15 @@ function renderPlanCandidates(errorText = "", isError = false) {
         return;
     }
 
-    generatedPlans.forEach((plan) => {
+    function createPill(plan, isConflict) {
         const pill = document.createElement("button");
         pill.type = "button";
         pill.className = "plan-pill";
+        if (isConflict) {
+            pill.style.borderColor = "rgba(204, 47, 47, 0.6)";
+            pill.style.background = "rgba(255, 242, 242, 0.95)";
+            pill.style.color = "#9e1e1e";
+        }
         pill.textContent = `${plan.name}（${plan.courses.length}门）`;
         pill.classList.toggle("is-active", activePlanId === plan.id);
         pill.addEventListener("click", () => {
@@ -1327,8 +1434,44 @@ function renderPlanCandidates(errorText = "", isError = false) {
             renderPlanCandidates();
             renderGridCourses();
         });
-        planCandidateArea.appendChild(pill);
-    });
+        return pill;
+    }
+
+    if (generatedPlans.length) {
+        const freeLabel = document.createElement("p");
+        freeLabel.className = "plan-empty";
+        freeLabel.textContent = "无冲突方案：";
+        freeLabel.style.fontWeight = "700";
+        freeLabel.style.marginRight = "8px";
+        planCandidateArea.appendChild(freeLabel);
+
+        generatedPlans.forEach((plan) => {
+            planCandidateArea.appendChild(createPill(plan, false));
+        });
+    }
+
+    if (conflictingPlans.length) {
+        if (generatedPlans.length) {
+            const divider = document.createElement("span");
+            divider.className = "plan-empty";
+            divider.textContent = "|";
+            divider.style.margin = "0 8px";
+            divider.style.opacity = "0.5";
+            planCandidateArea.appendChild(divider);
+        }
+
+        const conflictLabel = document.createElement("p");
+        conflictLabel.className = "plan-empty";
+        conflictLabel.textContent = "冲突方案：";
+        conflictLabel.style.fontWeight = "700";
+        conflictLabel.style.marginRight = "8px";
+        conflictLabel.style.color = "#9e1e1e";
+        planCandidateArea.appendChild(conflictLabel);
+
+        conflictingPlans.forEach((plan) => {
+            planCandidateArea.appendChild(createPill(plan, true));
+        });
+    }
 }
 
 function collectConflictTargetsForClassMode() {
@@ -1355,12 +1498,7 @@ function collectConflictTargetsForPlanMode() {
     const map = buildConflictMap(activeCourses);
     const planConflictMap = new Map();
 
-    const activePlan = generatedPlans.find((item) => item.id === activePlanId);
-    if (!activePlan) {
-        return planConflictMap;
-    }
-
-    activePlan.courses.forEach((course) => {
+    activeCourses.forEach((course) => {
         planConflictMap.set(course.poolKey, map.get(course.poolKey) || []);
     });
 
@@ -1375,12 +1513,12 @@ function renderCandidatePool() {
     candidatePool.innerHTML = "";
 
     if (scheduleMode === "plan") {
-        if (!planCourseCards.size) {
-            candidatePool.innerHTML = "<p class=\"empty-pool\">课程检索后将按课程编号整合成卡片，并在此设置偏好。</p>";
+        const planConflicts = collectConflictTargetsForPlanMode();
+
+        if (!planCourseCards.size && !planClassGroups.size) {
+            candidatePool.innerHTML = "<p class=\"empty-pool\">课程检索后将按课程编号整合成卡片，并在此设置偏好；也可从班级课表调用模式复制班级课程组到此处。</p>";
             return;
         }
-
-        const planConflicts = collectConflictTargetsForPlanMode();
 
         Array.from(planCourseCards.values()).forEach((card) => {
             const wrapper = document.createElement("article");
@@ -1390,7 +1528,8 @@ function renderCandidatePool() {
             }
 
             const perCardConflicts = [];
-            const activePlan = generatedPlans.find((item) => item.id === activePlanId);
+            const activePlan = generatedPlans.find((item) => item.id === activePlanId) ||
+                conflictingPlans.find((item) => item.id === activePlanId);
             if (activePlan) {
                 activePlan.courses.forEach((course) => {
                     if (course.courseCode === card.courseCode) {
@@ -1519,6 +1658,119 @@ function renderCandidatePool() {
 
             candidatePool.appendChild(wrapper);
         });
+
+        if (planClassGroups.size) {
+            const groupConflicts = collectConflictTargetsForPlanMode();
+
+            const sectionTitle = document.createElement("h3");
+            sectionTitle.className = "sidebar-title";
+            sectionTitle.style.marginTop = "10px";
+            sectionTitle.textContent = "来自班级课表的课程组";
+            candidatePool.appendChild(sectionTitle);
+
+            planClassGroups.forEach((group) => {
+                const wrapper = document.createElement("article");
+                wrapper.className = "class-group-card";
+                const isActive = activePlanClassGroupKeys.has(group.groupKey);
+                if (isActive) {
+                    wrapper.classList.add("is-active");
+                }
+
+                const conflicts = [];
+                const excluded = planClassGroupExcludedCourseKeys.get(group.groupKey) || new Set();
+                group.courses.forEach((course) => {
+                    if (!excluded.has(course.poolKey)) {
+                        const courseConflicts = groupConflicts.get(course.poolKey) || [];
+                        courseConflicts.forEach((item) => conflicts.push(item));
+                    }
+                });
+                if (conflicts.length) {
+                    wrapper.classList.add("is-conflict");
+                }
+
+                const head = document.createElement("div");
+                head.className = "class-group-head";
+
+                const title = document.createElement("h3");
+                title.className = "card-title";
+                title.textContent = `班级课表：${group.className}`;
+
+                const actions = document.createElement("div");
+                actions.className = "class-group-actions";
+
+                const selectBtn = document.createElement("button");
+                selectBtn.type = "button";
+                selectBtn.className = "group-action-btn";
+                selectBtn.textContent = isActive ? "取消整班" : "选中整班";
+                selectBtn.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    togglePlanClassGroup(group.groupKey);
+                });
+
+                const expandBtn = document.createElement("button");
+                expandBtn.type = "button";
+                expandBtn.className = "group-action-btn";
+                expandBtn.textContent = group.expanded ? "收起" : "展开";
+                expandBtn.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    togglePlanClassGroupExpand(group.groupKey);
+                });
+
+                const delBtn = document.createElement("button");
+                delBtn.type = "button";
+                delBtn.className = "danger-btn";
+                delBtn.textContent = "删除";
+                delBtn.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    removePlanClassGroup(group.groupKey);
+                });
+
+                actions.appendChild(selectBtn);
+                actions.appendChild(expandBtn);
+                actions.appendChild(delBtn);
+
+                head.appendChild(title);
+                head.appendChild(actions);
+                wrapper.appendChild(head);
+
+                const info = document.createElement("p");
+                info.className = "class-group-meta";
+                info.textContent = `课程数：${group.courses.length}，当前启用：${Math.max(group.courses.length - excluded.size, 0)}`;
+                wrapper.appendChild(info);
+
+                if (group.expanded) {
+                    const list = document.createElement("div");
+                    list.className = "class-group-list";
+                    group.courses.forEach((course) => {
+                        const isOff = excluded.has(course.poolKey) || !isActive;
+                        const itemBtn = document.createElement("button");
+                        itemBtn.type = "button";
+                        itemBtn.className = "class-group-course-item";
+                        if (isOff) {
+                            itemBtn.classList.add("is-off");
+                        }
+                        itemBtn.innerHTML = `
+                            <div class="class-group-course-title">${course.title}</div>
+                            <div class="class-group-course-meta">${course.timeText || ""}</div>
+                        `;
+                        itemBtn.addEventListener("click", () => {
+                            togglePlanClassGroupCourse(group.groupKey, course.poolKey);
+                        });
+                        list.appendChild(itemBtn);
+                    });
+                    wrapper.appendChild(list);
+                }
+
+                if (conflicts.length) {
+                    const conflict = document.createElement("p");
+                    conflict.className = "conflict-message";
+                    conflict.textContent = formatConflictMessage(conflicts);
+                    wrapper.appendChild(conflict);
+                }
+
+                candidatePool.appendChild(wrapper);
+            });
+        }
 
         return;
     }
@@ -1667,8 +1919,8 @@ function ingestPlanCardFromCourseCode(courseCode, label) {
 }
 
 function copyClassGroupsToPlan() {
-    const courseCodes = new Set();
-    let courseCount = 0;
+    let copiedGroupCount = 0;
+    let copiedCourseCount = 0;
 
     activeClassGroupKeys.forEach((groupKey) => {
         const group = classGroupPool.get(groupKey);
@@ -1677,34 +1929,34 @@ function copyClassGroupsToPlan() {
         }
 
         const excluded = classGroupExcludedCourseKeys.get(groupKey) || new Set();
-        group.courses.forEach((course) => {
-            if (excluded.has(course.poolKey)) {
-                return;
-            }
-            if (course.courseCode) {
-                courseCodes.add(course.courseCode);
-                courseCount += 1;
-            }
+        const planGroupKey = getClassGroupKey(group.className);
+
+        // 深复制课程列表与排除状态到 plan 模式班级组
+        planClassGroups.set(planGroupKey, {
+            type: "classGroup",
+            groupKey: planGroupKey,
+            className: group.className,
+            courses: group.courses.map((course) => ({ ...course })),
+            expanded: false
         });
+        planClassGroupExcludedCourseKeys.set(planGroupKey, new Set(excluded));
+        activePlanClassGroupKeys.add(planGroupKey);
+
+        copiedGroupCount += 1;
+        copiedCourseCount += group.courses.length - excluded.size;
     });
 
-    if (!courseCodes.size) {
+    if (!copiedGroupCount) {
         showToast("班级课表中没有已启用的课程可复制");
         return;
     }
 
-    let addedCount = 0;
-    courseCodes.forEach((courseCode) => {
-        const cardKey = `plan-course|${courseCode}`;
-        if (!planCourseCards.has(cardKey)) {
-            const card = buildPlanCardForCourseCode(courseCode);
-            planCourseCards.set(cardKey, card);
-            activePlanCourseCardKeys.add(cardKey);
-            addedCount += 1;
-        }
-    });
+    showToast(`已复制 ${copiedGroupCount} 个班级课表组（${copiedCourseCount} 门课程）到方案池`);
 
-    showToast(`已复制 ${courseCount} 门班级课表课程到方案池（新增 ${addedCount} 个课程编号）`);
+    scheduleMode = "plan";
+    planPrefEditMode = false;
+    hideAllSuggestions();
+    syncModeUI();
 }
 
 function filterCourseInput(rawQuery) {
@@ -1875,10 +2127,6 @@ if (
     });
 
     copyClassToPlanButton.addEventListener("click", () => {
-        if (scheduleMode !== "class") {
-            showToast("请切换到班级课表调用模式后再执行复制");
-            return;
-        }
         copyClassGroupsToPlan();
     });
 
