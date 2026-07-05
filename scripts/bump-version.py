@@ -2,12 +2,12 @@
 """秋功版本号管理脚本。
 
 用法：
-    python scripts/bump-version.py 1.1.2
+    python scripts/bump-version.py 1.2.0
 
 脚本会把新版本号同步到：
 - version.json（单一事实来源）
 - js/version.js（全局 APP_VERSION）
-- index.html / ca.html 中的 CSS/JS 资源链接 ?v= 参数
+- index.html / ca.html / cn.html 中的 CSS/JS 资源链接 ?v= 参数
 - ca.html 页面右上角的版本标签
 """
 
@@ -45,7 +45,7 @@ def main() -> int:
 
     # 3. 更新 HTML 资源链接的 ?v= 参数
     version_query_re = re.compile(r"\?v=\d+\.\d+\.\d+")
-    for html_name in ("index.html", "ca.html"):
+    for html_name in ("index.html", "ca.html", "cn.html"):
         html_path = root / html_name
         if not html_path.exists():
             print(f"跳过不存在的文件：{html_name}", file=sys.stderr)

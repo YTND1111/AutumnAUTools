@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知单课表</title>
+    <link rel="stylesheet" href="./css/GlobalStyle.css?v=1.2.0">
+    <script src="./js/version.js?v=1.2.0"></script>
+
+    <!-- React 运行时（Univer UI 依赖） -->
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script>
+        // 为 UMD 版 React 补齐 jsx/jsxs 自动运行时，避免 Univer UMD 报 jsxRuntime.jsx is not a function
+        (function (global) {
+            "use strict";
+            if (!global.React) return;
+            const React = global.React;
+            if (React.jsx && React.jsxs) return;
+            const REACT_ELEMENT_TYPE = Symbol.for("react.element");
+            const hasOwnProperty = Object.prototype.hasOwnProperty;
+            const RESERVED_PROPS = { key: true, ref: true, __self: true, __source: true };
+            const ReactCurrentOwner = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner;
+            function createReactElement(type, config, maybeKey) {
+                const props = {};
+                let key = null;
+                let ref = null;
+                if (maybeKey !== undefined) key = "" + maybeKey;
+                if (config && config.key !== undefined) key = "" + config.key;
+                if (config && config.ref !== undefined) ref = config.ref;
+                for (var propName in config) {
+                    if (hasOwnProperty.call(config, propName) && !RESERVED_PROPS.hasOwnProperty(propName)) {
+                        props[propName] = config[propName];
+                    }
+                }
+                if (type && type.defaultProps) {
+                    const defaultProps = type.defaultProps;
+                    for (var propName in defaultProps) {
+                        if (props[propName] === undefined) props[propName] = defaultProps[propName];
+                    }
+                }
+                return { $$typeof: REACT_ELEMENT_TYPE, type, key, ref, props, _owner: ReactCurrentOwner.current };
+            }
+            React.jsx = createReactElement;
+            React.jsxs = createReactElement;
+        })(this);
+    </script>
+
+    <!-- Univer 基础依赖 -->
+    <script src="https://unpkg.com/rxjs@7.8.1/dist/bundles/rxjs.umd.min.js"></script>
+    <script src="https://unpkg.com/echarts@5.6.0/dist/echarts.min.js"></script>
+
+    <!-- Univer Sheets 核心预设 -->
+    <script src="https://unpkg.com/@univerjs/presets@0.25.1/lib/umd/index.js"></script>
+    <script src="https://unpkg.com/@univerjs/preset-sheets-core@0.25.1/lib/umd/index.js"></script>
+    <script src="https://unpkg.com/@univerjs/preset-sheets-core@0.25.1/lib/umd/locales/zh-CN.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@univerjs/preset-sheets-core@0.25.1/lib/index.css" />
+
+    <!-- Univer 筛选插件 -->
+    <script src="https://unpkg.com/@univerjs/preset-sheets-filter@0.25.1/lib/umd/index.js"></script>
+    <script src="https://unpkg.com/@univerjs/preset-sheets-filter@0.25.1/lib/umd/locales/zh-CN.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@univerjs/preset-sheets-filter@0.25.1/lib/index.css" />
+
+    <!-- SheetJS：负责解析 .xls/.xlsx，再转换为 Univer 数据结构 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --notice-primary: #0f7a47;
+            --notice-primary-light: #63bb86;
+            --notice-bg: #f4fff6;
+            --notice-line: rgba(28, 74, 55, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+            font-size: 13px;
+            color: #183328;
+            background: var(--notice-bg);
+        }
+
+        #NoticeToolbar {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: linear-gradient(180deg, var(--notice-primary-light) 0%, var(--notice-primary) 100%);
+            color: #f1fff8;
+            box-shadow: 0 2px 8px rgba(8, 40, 26, 0.15);
+        }
+
+        #NoticeFileName {
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 280px;
+        }
+
+        #NoticeStatus {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-size: 12px;
+            opacity: 0.95;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #NoticeStatus.is-error {
+            color: #ffe6e6;
+            font-weight: 700;
+        }
+
+        #univerWrap {
+            flex: 1 1 auto;
+            min-height: 0;
+            position: relative;
+            background: #ffffff;
+        }
+
+        #univerContainer {
+            width: 100%;
+            height: 100%;
+        }
+
+        #NoticeOverlay {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(244, 255, 246, 0.92);
+            color: #335b4c;
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #NoticeOverlay.is-error {
+            color: #9e1e1e;
+            font-weight: 700;
+        }
+
+        #NoticeOverlay.is-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="NoticeToolbar">
+        <span id="NoticeFileName">通知单课表</span>
+        <span id="NoticeStatus">正在初始化表格引擎...</span>
+    </div>
+    <div id="univerWrap">
+        <div id="univerContainer"></div>
+        <div id="NoticeOverlay">正在加载数据...</div>
+    </div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            const DEFAULT_FILE = "src/py/附件2：2026-2027学年秋学期通知单课表.xls";
+            const HEADER_KEYWORDS = ["通知单号", "课程编号", "课程名称", "上课时间", "上课地点", "上课周次", "校区", "教师姓名", "上课班级", "序号"];
+            const DEFAULT_COLUMN_WIDTH = 125; // 约 12 个汉字宽度
+            const DEFAULT_ROW_HEIGHT = 23;
+
+            const params = new URLSearchParams(window.location.search);
+            const filePath = params.get("file") || DEFAULT_FILE;
+            const versionStamp = typeof APP_VERSION !== "undefined" ? APP_VERSION : "";
+
+            const statusEl = document.getElementById("NoticeStatus");
+            const overlayEl = document.getElementById("NoticeOverlay");
+            const fileNameEl = document.getElementById("NoticeFileName");
+
+            function setStatus(text, isError) {
+                statusEl.textContent = text;
+                statusEl.classList.toggle("is-error", !!isError);
+                if (isError) {
+                    overlayEl.textContent = text;
+                    overlayEl.classList.add("is-error");
+                    overlayEl.classList.remove("is-hidden");
+                }
+            }
+
+            function setOverlay(text, hide) {
+                if (hide) {
+                    overlayEl.classList.add("is-hidden");
+                } else {
+                    overlayEl.textContent = text;
+                    overlayEl.classList.remove("is-hidden", "is-error");
+                }
+            }
+
+            function numberToColumnName(n) {
+                let name = "";
+                n += 1;
+                while (n > 0) {
+                    const mod = (n - 1) % 26;
+                    name = String.fromCharCode(65 + mod) + name;
+                    n = Math.floor((n - 1) / 26);
+                }
+                return name;
+            }
+
+            function findHeaderRowIndex(aoa) {
+                for (let r = 0; r < aoa.length; r += 1) {
+                    const row = aoa[r];
+                    if (!Array.isArray(row) || !row.length) continue;
+                    for (let c = 0; c < row.length; c += 1) {
+                        const value = String(row[c] || "").trim();
+                        if (HEADER_KEYWORDS.includes(value)) {
+                            return r;
+                        }
+                    }
+                }
+                return 0;
+            }
+
+            function colWidthFromSheetJS(colInfo) {
+                if (!colInfo) return null;
+                if (typeof colInfo.wpx === "number") return Math.round(colInfo.wpx);
+                if (typeof colInfo.wch === "number") return Math.round(colInfo.wch * 7.5 + 6);
+                return null;
+            }
+
+            function rowHeightFromSheetJS(rowInfo) {
+                if (!rowInfo) return null;
+                if (typeof rowInfo.hpx === "number") return Math.round(rowInfo.hpx);
+                if (typeof rowInfo.hpt === "number") return Math.round(rowInfo.hpt * 1.3333);
+                return null;
+            }
+
+            function buildColumnData(worksheet, columnCount) {
+                const columnData = {};
+                const cols = worksheet["!cols"] || [];
+                for (let c = 0; c < columnCount; c += 1) {
+                    const w = colWidthFromSheetJS(cols[c]);
+                    if (w) {
+                        columnData[c] = { w, hd: 0 };
+                    }
+                }
+                return columnData;
+            }
+
+            function buildRowData(worksheet, rowCount) {
+                const rowData = {};
+                const rows = worksheet["!rows"] || [];
+                for (let r = 0; r < rowCount; r += 1) {
+                    const h = rowHeightFromSheetJS(rows[r]);
+                    if (h) {
+                        rowData[r] = { h, hd: 0 };
+                    }
+                }
+                return rowData;
+            }
+
+            function convertWorksheet(worksheet, sheetId, sheetName) {
+                const aoa = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+
+                let rowCount = aoa.length;
+                let columnCount = 0;
+                aoa.forEach((row) => {
+                    if (Array.isArray(row)) {
+                        columnCount = Math.max(columnCount, row.length);
+                    }
+                });
+                if (columnCount === 0) columnCount = 1;
+
+                // 预留少量空白行列，保证可以滚动到底
+                rowCount += 5;
+                columnCount += 2;
+
+                const headerRowIndex = findHeaderRowIndex(aoa);
+
+                const cellData = {};
+                aoa.forEach((row, r) => {
+                    if (!Array.isArray(row)) return;
+                    row.forEach((rawValue, c) => {
+                        if (rawValue === "" || rawValue === null || rawValue === undefined) return;
+                        if (!cellData[r]) cellData[r] = {};
+                        const cell = { v: rawValue };
+                        // 表头加粗加背景，方便识别
+                        if (r === headerRowIndex) {
+                            cell.s = "header";
+                        }
+                        cellData[r][c] = cell;
+                    });
+                });
+
+                const mergeData = (worksheet["!merges"] || []).map((merge) => ({
+                    startRow: merge.s.r,
+                    endRow: merge.e.r,
+                    startColumn: merge.s.c,
+                    endColumn: merge.e.c,
+                }));
+
+                return {
+                    id: sheetId,
+                    name: sheetName,
+                    tabColor: "",
+                    hidden: 0,
+                    rowCount,
+                    columnCount,
+                    defaultColumnWidth: DEFAULT_COLUMN_WIDTH,
+                    defaultRowHeight: DEFAULT_ROW_HEIGHT,
+                    columnData: buildColumnData(worksheet, columnCount),
+                    rowData: buildRowData(worksheet, rowCount),
+                    mergeData,
+                    cellData,
+                    showGridlines: 1,
+                    rightToLeft: 0,
+                    freeze: {
+                        xSplit: 0,
+                        ySplit: headerRowIndex + 1,
+                        startRow: headerRowIndex + 1,
+                        startColumn: 0,
+                    },
+                    rowHeader: { width: 46, hidden: 0 },
+                    columnHeader: { height: 20, hidden: 0 },
+                };
+            }
+
+            function xlsToUniverWorkbook(workbook) {
+                const sheets = {};
+                const sheetOrder = [];
+                workbook.SheetNames.forEach((sheetName, index) => {
+                    const sheetId = `sheet-${index}`;
+                    sheetOrder.push(sheetId);
+                    sheets[sheetId] = convertWorksheet(workbook.Sheets[sheetName], sheetId, sheetName);
+                });
+
+                return {
+                    id: "notice-workbook",
+                    name: "通知单课表",
+                    appVersion: "0.25.1",
+                    locale: "zhCN",
+                    styles: {
+                        header: {
+                            bl: 1,
+                            ht: 2, // 水平居中
+                            vt: 2, // 垂直居中
+                            bg: { rgb: "#d8f0e1" },
+                            cl: { rgb: "#114831" },
+                        },
+                    },
+                    sheetOrder,
+                    sheets,
+                    resources: [{ name: "SHEET_DEFINED_NAME_PLUGIN", data: "" }],
+                };
+            }
+
+            function createFilterForSheet(fWorksheet) {
+                const sheet = fWorksheet.getSheet();
+                const snapshot = sheet.getSnapshot();
+                const aoa = [];
+                const cellData = snapshot.cellData || {};
+                Object.keys(cellData).forEach((r) => {
+                    const rowIdx = Number(r);
+                    const row = cellData[rowIdx];
+                    if (!row) return;
+                    Object.keys(row).forEach((c) => {
+                        const colIdx = Number(c);
+                        if (!aoa[rowIdx]) aoa[rowIdx] = [];
+                        aoa[rowIdx][colIdx] = row[colIdx]?.v;
+                    });
+                });
+
+                const headerRowIndex = findHeaderRowIndex(aoa);
+                let lastCol = 0;
+                let lastRow = 0;
+                aoa.forEach((row, r) => {
+                    if (Array.isArray(row)) {
+                        lastRow = Math.max(lastRow, r);
+                        row.forEach((_, c) => {
+                            lastCol = Math.max(lastCol, c);
+                        });
+                    }
+                });
+
+                if (headerRowIndex < 0 || lastCol < 0 || lastRow <= headerRowIndex) {
+                    return false;
+                }
+
+                const startCol = numberToColumnName(0);
+                const endCol = numberToColumnName(lastCol);
+                const startRow = headerRowIndex + 1;
+                const endRow = lastRow + 1;
+                const rangeA1 = `${startCol}${startRow}:${endCol}${endRow}`;
+
+                const fRange = fWorksheet.getRange(rangeA1);
+                if (!fRange) return false;
+
+                let fFilter = fRange.createFilter();
+                if (!fFilter && fRange.getFilter) {
+                    const existing = fRange.getFilter();
+                    if (existing) {
+                        existing.remove();
+                        fFilter = fRange.createFilter();
+                    }
+                }
+                return !!fFilter;
+            }
+
+            function initUniver(workbookData) {
+                if (typeof UniverPresets === "undefined" || typeof UniverCore === "undefined") {
+                    throw new Error("Univer 表格引擎未加载，请检查网络连接");
+                }
+
+                const { createUniver } = UniverPresets;
+                const { LocaleType, mergeLocales } = UniverCore;
+                const { UniverSheetsCorePreset } = UniverPresetSheetsCore;
+                const { UniverSheetsFilterPreset } = UniverPresetSheetsFilter;
+
+                const { univer, univerAPI } = createUniver({
+                    locale: LocaleType.ZH_CN,
+                    locales: {
+                        [LocaleType.ZH_CN]: mergeLocales(UniverPresetSheetsCoreZhCN, UniverPresetSheetsFilterZhCN),
+                    },
+                    presets: [
+                        UniverSheetsCorePreset({ container: "univerContainer" }),
+                        UniverSheetsFilterPreset(),
+                    ],
+                });
+
+                window.__univerInstance = univer;
+                window.__univerAPI = univerAPI;
+
+                univerAPI.createWorkbook(workbookData);
+
+                const fWorkbook = univerAPI.getActiveWorkbook();
+                const sheets = fWorkbook.getSheets ? fWorkbook.getSheets() : [fWorkbook.getActiveSheet()];
+                let filterCount = 0;
+                sheets.forEach((fWorksheet) => {
+                    if (createFilterForSheet(fWorksheet)) {
+                        filterCount += 1;
+                    }
+                });
+
+                const firstSheet = workbookData.sheets[workbookData.sheetOrder[0]];
+                const rowCount = Math.max(0, (firstSheet.rowCount || 0) - 5);
+                const colCount = Math.max(0, (firstSheet.columnCount || 0) - 2);
+                setStatus(`已加载 ${fileNameEl.textContent}　${rowCount} 行 × ${colCount} 列　筛选器：${filterCount} 个工作表`, false);
+                setOverlay("", true);
+            }
+
+            async function init() {
+                if (typeof XLSX === "undefined") {
+                    setStatus("表格解析库 SheetJS 加载失败，请检查网络连接", true);
+                    return;
+                }
+
+                fileNameEl.textContent = decodeURIComponent(filePath.split("/").pop() || "通知单课表");
+                setStatus("正在加载 Excel 文件...");
+
+                try {
+                    const dataUrl = versionStamp ? `${filePath}?v=${versionStamp}` : filePath;
+                    const response = await fetch(dataUrl);
+                    if (!response.ok) {
+                        throw new Error(`文件加载失败：${response.status}`);
+                    }
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    const workbook = XLSX.read(new Uint8Array(arrayBuffer), {
+                        type: "array",
+                        cellText: true,
+                        cellDates: false,
+                    });
+
+                    if (!workbook.SheetNames.length) {
+                        throw new Error("Excel 文件中未找到工作表");
+                    }
+
+                    setStatus("正在转换为 Univer 表格数据...");
+                    const workbookData = xlsToUniverWorkbook(workbook);
+                    initUniver(workbookData);
+                } catch (error) {
+                    console.error(error);
+                    setStatus(`加载失败：${error.message}`, true);
+                }
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</body>
+</html>

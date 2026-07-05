@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>排课表工具</title>
-    <link rel="stylesheet" href="./css/GlobalStyle.css?v=1.1.2">
+    <link rel="stylesheet" href="./css/GlobalStyle.css?v=1.2.0">
     <style>
         :root {
             --joint-color: #0f7a47;
@@ -381,6 +381,25 @@
         }
 
         .grid-slot.is-pref-editable {
+            cursor: pointer;
+        }
+
+        @keyframes pref-cell-flash {
+            0%, 100% {
+                border-color: var(--line-soft);
+            }
+            50% {
+                border-color: rgba(15, 122, 71, 0.65);
+            }
+        }
+
+        #ScheduleGrid.is-pref-editing {
+            box-shadow: 0 0 0 3px rgba(15, 122, 71, 0.18);
+        }
+
+        #ScheduleGrid.is-pref-editing .grid-slot,
+        #ScheduleGrid.is-pref-editing .grid-head {
+            animation: pref-cell-flash 1.2s ease-in-out infinite;
             cursor: pointer;
         }
 
@@ -884,7 +903,7 @@
             </div>
         </div>
         <div id="PlanCandidateArea" class="hidden"></div>
-        <div id="VersionLabel">秋功 v1.1.2</div>
+        <div id="VersionLabel">秋功 v1.2.0</div>
     </div>
 
     <main id="Layout">
@@ -907,6 +926,9 @@
             </div>
             <div id="ModeTag">当前模式：自助方案排课</div>
             <div id="PoolToolbar"></div>
+            <div id="SidebarButtonArea">
+                <button id="OpenNoticeButton" class="pool-btn pool-btn-wide" type="button">通知单课表</button>
+            </div>
             <div id="CandidatePool">
                 <p class="empty-pool">从顶部搜索框选择课程后，将在此生成候选课程卡片。</p>
             </div>
@@ -915,8 +937,23 @@
 
     <div id="SoftToast" role="status" aria-live="polite"></div>
 
-    <script src="./js/version.js?v=1.1.2"></script>
-    <script src="./js/CourseArrangement.js?v=1.1.2"></script>
-    <script src="./js/index.js?v=1.1.2"></script>
+    <script src="./js/version.js?v=1.2.0"></script>
+    <script src="./js/FloatingWindow.js?v=1.2.0"></script>
+    <script src="./js/CourseArrangement.js?v=1.2.0"></script>
+    <script src="./js/index.js?v=1.2.0"></script>
+    <script>
+        (function () {
+            const openNoticeButton = document.getElementById("OpenNoticeButton");
+            if (openNoticeButton && typeof createFloatingWindow === "function") {
+                openNoticeButton.addEventListener("click", () => {
+                    createFloatingWindow("./cn.html?file=src/py/附件2：2026-2027学年秋学期通知单课表.xls", {
+                        title: "通知单课表",
+                        width: Math.min(1100, window.innerWidth * 0.85),
+                        height: Math.min(720, window.innerHeight * 0.78)
+                    });
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

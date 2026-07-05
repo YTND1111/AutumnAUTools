@@ -124,3 +124,152 @@
 	background-color: rgba(255, 255, 255, 0.1);
 	border-radius: 12px;
 }
+
+/* ========================
+   可拖拽悬浮窗组件（全局复用）
+   ======================== */
+
+.floating-window {
+	position: fixed;
+	left: 10vw;
+	top: 12vh;
+	width: 80vw;
+	height: 70vh;
+	min-width: 320px;
+	min-height: 220px;
+	display: flex;
+	flex-direction: column;
+	border-radius: 12px;
+	border: 1px solid rgba(15, 122, 71, 0.35);
+	background: rgba(255, 255, 255, 0.98);
+	box-shadow: 0 20px 50px rgba(8, 40, 26, 0.28);
+	overflow: hidden;
+	z-index: 300;
+	touch-action: none;
+	user-select: none;
+}
+
+.floating-window.is-resizing .floating-window-body iframe,
+.floating-window.is-dragging .floating-window-body iframe {
+	/* 拖拽/缩放期间让 iframe 不拦截指针事件，确保操作连贯 */
+	pointer-events: none;
+}
+
+.floating-window-header {
+	flex: 0 0 auto;
+	height: 38px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 0 10px;
+	background: linear-gradient(120deg, #165d3f 0%, #2f8a62 100%);
+	color: #f1fff8;
+	cursor: grab;
+	border-bottom: 1px solid rgba(15, 122, 71, 0.35);
+}
+
+.floating-window-header:active {
+	cursor: grabbing;
+}
+
+.floating-window-title {
+	font-size: 13px;
+	font-weight: 700;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+}
+
+.floating-window-close {
+	flex: 0 0 auto;
+	width: 24px;
+	height: 24px;
+	border: 0;
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.18);
+	color: #f1fff8;
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.floating-window-close:hover {
+	background: rgba(204, 47, 47, 0.85);
+}
+
+.floating-window-body {
+	flex: 1 1 auto;
+	position: relative;
+	overflow: hidden;
+	background: #f7fdfa;
+}
+
+.floating-window-body iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	background: #ffffff;
+}
+
+/* 拖拽缩放把手：8 个方向 */
+.resize-handle {
+	position: absolute;
+	z-index: 10;
+}
+
+.resize-handle.n,
+.resize-handle.s {
+	left: 8px;
+	right: 8px;
+	height: 8px;
+	cursor: ns-resize;
+}
+
+.resize-handle.e,
+.resize-handle.w {
+	top: 8px;
+	bottom: 8px;
+	width: 8px;
+	cursor: ew-resize;
+}
+
+.resize-handle.n { top: 0; }
+.resize-handle.s { bottom: 0; }
+.resize-handle.e { right: 0; }
+.resize-handle.w { left: 0; }
+
+.resize-handle.nw,
+.resize-handle.ne,
+.resize-handle.sw,
+.resize-handle.se {
+	width: 12px;
+	height: 12px;
+	z-index: 11;
+}
+
+.resize-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
+.resize-handle.ne { top: 0; right: 0; cursor: nesw-resize; }
+.resize-handle.sw { bottom: 0; left: 0; cursor: nesw-resize; }
+.resize-handle.se { bottom: 0; right: 0; cursor: nwse-resize; }
+
+/* 侧边栏按钮区：位于 CandidatePool 上方，用于放置扩展按钮 */
+#SidebarButtonArea {
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	background: rgba(249, 255, 251, 0.26);
+	padding: 6px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	align-items: center;
+	min-height: 40px;
+	overflow: hidden;
+	flex-shrink: 0;
+}

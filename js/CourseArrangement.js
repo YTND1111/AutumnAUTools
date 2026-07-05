@@ -61,6 +61,156 @@ const planPreferences = {
     blockedPeriods: new Set()
 };
 
+// ---------- 状态持久化 ----------
+const STORAGE_KEY = "ca-state";
+const STORAGE_VERSION = 1;
+
+function setToArray(set) {
+    return Array.from(set);
+}
+
+function arrayToSet(arr) {
+    return new Set(arr || []);
+}
+
+function serializePlanState() {
+    return {
+        version: STORAGE_VERSION,
+        dataPath: COURSE_DATA_PATH,
+        appVersion: typeof APP_VERSION !== "undefined" ? APP_VERSION : "",
+        scheduleMode,
+        selectedWeek,
+        plan: {
+            cards: Array.from(planCourseCards.values()).map((card) => ({
+                courseCode: card.courseCode,
+                active: card.active,
+                enabledTeachers: setToArray(card.enabledTeachers),
+                enabledCampuses: setToArray(card.enabledCampuses),
+                enabledTimes: setToArray(card.enabledTimes),
+                enabledClasses: setToArray(card.enabledClasses)
+            })),
+            classGroups: Array.from(planClassGroups.values()).map((group) => ({
+                className: group.className,
+                active: activePlanClassGroupKeys.has(group.groupKey),
+                excludedPoolKeys: setToArray(planClassGroupExcludedCourseKeys.get(group.groupKey) || new Set())
+            })),
+            activePlanId,
+            preferences: {
+                campus: setToArray(planPreferences.campus),
+                blockedCells: setToArray(planPreferences.blockedCells),
+                blockedDays: setToArray(planPreferences.blockedDays),
+                blockedPeriods: setToArray(planPreferences.blockedPeriods)
+            }
+        },
+        classMode: {
+            groups: Array.from(classGroupPool.values()).map((group) => ({
+                className: group.className,
+                active: activeClassGroupKeys.has(group.groupKey),
+                excludedPoolKeys: setToArray(classGroupExcludedCourseKeys.get(group.groupKey) || new Set())
+            }))
+        }
+    };
+}
+
+function restorePlanState(data) {
+    if (!data || data.version !== STORAGE_VERSION) {
+        return false;
+    }
+    if (data.dataPath !== COURSE_DATA_PATH) {
+        return false;
+    }
+    const currentAppVersion = typeof APP_VERSION !== "undefined" ? APP_VERSION : "";
+    if (data.appVersion && data.appVersion !== currentAppVersion) {
+        return false;
+    }
+
+    if (data.scheduleMode === "plan" || data.scheduleMode === "class") {
+        scheduleMode = data.scheduleMode;
+    }
+    if (data.selectedWeek) {
+        selectedWeek = data.selectedWeek;
+    }
+
+    (data.plan?.cards || []).forEach((saved) => {
+        const card = buildPlanCardForCourseCode(saved.courseCode);
+        if (!card || !card.options.length) {
+            return;
+        }
+        card.active = saved.active !== false;
+        card.enabledTeachers = arrayToSet(saved.enabledTeachers);
+        card.enabledCampuses = arrayToSet(saved.enabledCampuses);
+        card.enabledTimes = arrayToSet(saved.enabledTimes);
+        card.enabledClasses = arrayToSet(saved.enabledClasses);
+        planCourseCards.set(card.cardKey, card);
+        if (card.active) {
+            activePlanCourseCardKeys.add(card.cardKey);
+        }
+    });
+
+    (data.plan?.classGroups || []).forEach((saved) => {
+        const group = buildClassGroup(saved.className);
+        if (!group || !group.courses.length) {
+            return;
+        }
+        planClassGroups.set(group.groupKey, group);
+        if (saved.active !== false) {
+            activePlanClassGroupKeys.add(group.groupKey);
+        }
+        planClassGroupExcludedCourseKeys.set(group.groupKey, arrayToSet(saved.excludedPoolKeys));
+    });
+
+    const prefs = data.plan?.preferences;
+    if (prefs) {
+        planPreferences.campus = arrayToSet(prefs.campus);
+        if (!planPreferences.campus.size) {
+            planPreferences.campus.add("无");
+        }
+        planPreferences.blockedCells = arrayToSet(prefs.blockedCells);
+        planPreferences.blockedDays = arrayToSet(prefs.blockedDays);
+        planPreferences.blockedPeriods = arrayToSet(prefs.blockedPeriods);
+    }
+
+    (data.classMode?.groups || []).forEach((saved) => {
+        const group = buildClassGroup(saved.className);
+        if (!group || !group.courses.length) {
+            return;
+        }
+        classGroupPool.set(group.groupKey, group);
+        if (saved.active !== false) {
+            activeClassGroupKeys.add(group.groupKey);
+        }
+        classGroupExcludedCourseKeys.set(group.groupKey, arrayToSet(saved.excludedPoolKeys));
+        if (!poolRenderQueue.some((item) => item.type === "classGroup" && item.key === group.groupKey)) {
+            poolRenderQueue.push({ type: "classGroup", key: group.groupKey });
+        }
+    });
+
+    return true;
+}
+
+function loadPlanState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            return false;
+        }
+        const data = JSON.parse(raw);
+        return restorePlanState(data);
+    } catch (error) {
+        console.warn("恢复排课状态失败", error);
+        localStorage.removeItem(STORAGE_KEY);
+        return false;
+    }
+}
+
+function savePlanState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serializePlanState()));
+    } catch (error) {
+        console.warn("保存排课状态失败", error);
+    }
+}
+
 window.selectedCourseRecord = null;
 window.selectedCourseKeyValuePairs = [];
 
@@ -879,6 +1029,7 @@ function removeClassGroup(groupKey) {
     removePoolQueueItem("classGroup", groupKey);
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function removePlanCard(cardKey) {
@@ -891,6 +1042,7 @@ function removePlanCard(cardKey) {
     renderCandidatePool();
     renderPlanCandidates();
     renderGridCourses();
+    savePlanState();
 }
 
 function toggleClassGroup(groupKey) {
@@ -901,6 +1053,7 @@ function toggleClassGroup(groupKey) {
     }
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function toggleClassGroupExpand(groupKey) {
@@ -927,6 +1080,7 @@ function toggleClassGroupCourse(groupKey, poolKey) {
 
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function removePlanClassGroup(groupKey) {
@@ -935,6 +1089,7 @@ function removePlanClassGroup(groupKey) {
     planClassGroupExcludedCourseKeys.delete(groupKey);
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function togglePlanClassGroup(groupKey) {
@@ -945,6 +1100,7 @@ function togglePlanClassGroup(groupKey) {
     }
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function togglePlanClassGroupExpand(groupKey) {
@@ -971,6 +1127,7 @@ function togglePlanClassGroupCourse(groupKey, poolKey) {
 
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function togglePlanCard(cardKey) {
@@ -987,6 +1144,7 @@ function togglePlanCard(cardKey) {
     }
 
     renderCandidatePool();
+    savePlanState();
 }
 
 function togglePlanFilter(cardKey, filterType, option) {
@@ -1011,6 +1169,7 @@ function togglePlanFilter(cardKey, filterType, option) {
     }
 
     renderCandidatePool();
+    savePlanState();
 }
 
 function expandPlanCard(cardKey) {
@@ -1043,6 +1202,7 @@ function renderWeekFilter() {
             selectedWeek = option.value;
             renderGridCourses();
             renderCandidatePool();
+            savePlanState();
         });
 
         const span = document.createElement("span");
@@ -1078,6 +1238,7 @@ function clearAllCards() {
     renderCandidatePool();
     renderPlanCandidates();
     renderGridCourses();
+    savePlanState();
 }
 
 function clearClassModePool() {
@@ -1087,6 +1248,7 @@ function clearClassModePool() {
     poolRenderQueue.length = 0;
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function selectAllClassGroups() {
@@ -1096,35 +1258,32 @@ function selectAllClassGroups() {
     });
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
-function toggleCampusPreference(value) {
-    if (value === "无") {
-        planPreferences.campus.clear();
-        planPreferences.campus.add("无");
-        renderPoolToolbar();
-        return;
-    }
+function cycleCampusPreference() {
+    const campusValues = Array.from(planPreferences.campus);
+    const current = campusValues.includes("无") ? "无" : (campusValues[0] || "无");
+    const order = ["无", "东校区", "西校区"];
+    const next = order[(order.indexOf(current) + 1) % order.length];
 
-    if (planPreferences.campus.has("无")) {
-        planPreferences.campus.delete("无");
-    }
-
-    if (planPreferences.campus.has(value)) {
-        planPreferences.campus.delete(value);
-    } else {
-        planPreferences.campus.add(value);
-    }
-
-    if (!planPreferences.campus.size) {
-        planPreferences.campus.add("无");
-    }
+    planPreferences.campus.clear();
+    planPreferences.campus.add(next);
 
     renderPoolToolbar();
+    savePlanState();
+
+    // 若处于方案模式且已有激活卡片，立即按新偏好重新生成方案
+    if (scheduleMode === "plan" && activePlanCourseCardKeys.size) {
+        generatePlans();
+    }
 }
 
 function togglePreferenceEditMode() {
     planPrefEditMode = !planPrefEditMode;
+    if (scheduleGrid) {
+        scheduleGrid.classList.toggle("is-pref-editing", planPrefEditMode);
+    }
     renderPoolToolbar();
     refreshBlockedVisuals();
 }
@@ -1136,8 +1295,12 @@ function resetPlanPreferences() {
     planPreferences.blockedDays.clear();
     planPreferences.blockedPeriods.clear();
     planPrefEditMode = false;
+    if (scheduleGrid) {
+        scheduleGrid.classList.remove("is-pref-editing");
+    }
     renderPoolToolbar();
     refreshBlockedVisuals();
+    savePlanState();
     showToast("已重置为默认偏好（无偏好）");
 }
 
@@ -1303,6 +1466,7 @@ function generatePlans() {
     activePlanId = generatedPlans.length ? generatedPlans[0].id : conflictingPlans[0].id;
     renderPlanCandidates();
     renderGridCourses();
+    savePlanState();
 }
 
 function renderPoolToolbar() {
@@ -1326,39 +1490,16 @@ function renderPoolToolbar() {
         return;
     }
 
-    const campusDropdown = document.createElement("details");
-    campusDropdown.className = "dropdown-multi is-toolbar";
-
-    const campusSummary = document.createElement("summary");
     const campusValues = Array.from(planPreferences.campus);
-    const campusLabel = campusValues.includes("无")
-        ? "校区偏好：无"
-        : `校区偏好：${campusValues.join("/") || "无"}`;
-    campusSummary.textContent = campusLabel;
-    campusDropdown.appendChild(campusSummary);
+    const currentCampus = campusValues.includes("无") ? "无" : (campusValues[0] || "无");
 
-    const campusPanel = document.createElement("div");
-    campusPanel.className = "dropdown-panel";
-    ["无", "东校区", "西校区"].forEach((campus) => {
-        const label = document.createElement("label");
-        label.className = "pool-check";
-
-        const check = document.createElement("input");
-        check.type = "checkbox";
-        check.checked = planPreferences.campus.has(campus);
-        check.addEventListener("change", () => {
-            toggleCampusPreference(campus);
-        });
-
-        const text = document.createElement("span");
-        text.textContent = campus;
-
-        label.appendChild(check);
-        label.appendChild(text);
-        campusPanel.appendChild(label);
+    const campusBtn = document.createElement("button");
+    campusBtn.type = "button";
+    campusBtn.className = "pool-btn";
+    campusBtn.textContent = `校区偏好：${currentCampus}`;
+    campusBtn.addEventListener("click", () => {
+        cycleCampusPreference();
     });
-
-    campusDropdown.appendChild(campusPanel);
 
     const prefBtn = document.createElement("button");
     prefBtn.type = "button";
@@ -1375,7 +1516,7 @@ function renderPoolToolbar() {
     resetBtn.textContent = "重置偏好";
     resetBtn.addEventListener("click", resetPlanPreferences);
 
-    poolToolbar.appendChild(campusDropdown);
+    poolToolbar.appendChild(campusBtn);
     poolToolbar.appendChild(prefBtn);
     poolToolbar.appendChild(resetBtn);
 }
@@ -1433,6 +1574,7 @@ function renderPlanCandidates(errorText = "", isError = false) {
             activePlanId = plan.id;
             renderPlanCandidates();
             renderGridCourses();
+            savePlanState();
         });
         return pill;
     }
@@ -1899,6 +2041,7 @@ function ingestClassGroupFromPick(className) {
     activeClassGroupKeys.add(groupKey);
     renderCandidatePool();
     renderGridCourses();
+    savePlanState();
 }
 
 function ingestPlanCardFromCourseCode(courseCode, label) {
@@ -1916,6 +2059,7 @@ function ingestPlanCardFromCourseCode(courseCode, label) {
     window.selectedCourseKeyValuePairs = card.options[0] ? Object.entries(card.options[0].record) : [];
 
     renderCandidatePool();
+    savePlanState();
 }
 
 function copyClassGroupsToPlan() {
@@ -1955,8 +2099,12 @@ function copyClassGroupsToPlan() {
 
     scheduleMode = "plan";
     planPrefEditMode = false;
+    if (scheduleGrid) {
+        scheduleGrid.classList.remove("is-pref-editing");
+    }
     hideAllSuggestions();
     syncModeUI();
+    savePlanState();
 }
 
 function filterCourseInput(rawQuery) {
@@ -2028,7 +2176,20 @@ async function loadCourseData() {
         const data = await response.json();
         courseList = Array.isArray(data) ? data : [];
         maxWeek = extractMaxWeekFromCourses(courseList);
+
+        loadPlanState();
         renderWeekFilter();
+        syncModeUI();
+
+        if (scheduleMode === "plan" && activePlanCourseCardKeys.size) {
+            const desiredPlanId = activePlanId;
+            generatePlans();
+            if (desiredPlanId && (generatedPlans.some((plan) => plan.id === desiredPlanId) || conflictingPlans.some((plan) => plan.id === desiredPlanId))) {
+                activePlanId = desiredPlanId;
+                renderPlanCandidates();
+                renderGridCourses();
+            }
+        }
     } catch (error) {
         console.error(error);
         showEmpty(courseSuggestionBox, "课程数据加载失败，请检查文件路径或本地服务");
@@ -2040,6 +2201,8 @@ function handleGridPreferenceInteraction(target) {
         return;
     }
 
+    let changed = false;
+
     if (target.classList.contains("grid-slot")) {
         const day = Number(target.dataset.day);
         const period = Number(target.dataset.period);
@@ -2049,11 +2212,8 @@ function handleGridPreferenceInteraction(target) {
         } else {
             planPreferences.blockedCells.add(key);
         }
-        refreshBlockedVisuals();
-        return;
-    }
-
-    if (target.classList.contains("grid-head")) {
+        changed = true;
+    } else if (target.classList.contains("grid-head")) {
         const axis = target.dataset.axis;
         if (axis === "row") {
             const period = Number(target.dataset.period);
@@ -2062,19 +2222,21 @@ function handleGridPreferenceInteraction(target) {
             } else {
                 planPreferences.blockedPeriods.add(period);
             }
-            refreshBlockedVisuals();
-            return;
-        }
-
-        if (axis === "col") {
+            changed = true;
+        } else if (axis === "col") {
             const day = Number(target.dataset.day);
             if (planPreferences.blockedDays.has(day)) {
                 planPreferences.blockedDays.delete(day);
             } else {
                 planPreferences.blockedDays.add(day);
             }
-            refreshBlockedVisuals();
+            changed = true;
         }
+    }
+
+    if (changed) {
+        refreshBlockedVisuals();
+        savePlanState();
     }
 }
 
@@ -2114,8 +2276,12 @@ if (
         if (scheduleMode !== "class") {
             scheduleMode = "class";
             planPrefEditMode = false;
+            if (scheduleGrid) {
+                scheduleGrid.classList.remove("is-pref-editing");
+            }
             hideAllSuggestions();
             syncModeUI();
+            savePlanState();
         } else {
             showToast("当前已是班级课表调用模式");
         }
@@ -2124,8 +2290,12 @@ if (
     scheduleModeToggleButton.addEventListener("click", () => {
         scheduleMode = scheduleMode === "plan" ? "class" : "plan";
         planPrefEditMode = false;
+        if (scheduleGrid) {
+            scheduleGrid.classList.remove("is-pref-editing");
+        }
         hideAllSuggestions();
         syncModeUI();
+        savePlanState();
     });
 
     copyClassToPlanButton.addEventListener("click", () => {
