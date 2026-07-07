@@ -1,0 +1,2 @@
+/* 秋功模块版本号：APP_VERSION_GLOBAL */
+const APP_VERSION_GLOBAL = "1.2.2";

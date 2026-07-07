@@ -5,6 +5,10 @@ const COLUMN_TO_DAY = { 1: "周一", 2: "周二", 3: "周三", 4: "周四", 5: "
 const BIG_PERIOD_LABELS = ["第一大节", "第二大节", "第三大节", "第四大节", "第五大节", "第六大节"];
 const PERIOD_TO_BIG_PERIOD = { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 2, 7: 3, 8: 3, 9: 4, 10: 4, 11: 5, 12: 5 };
 
+const CA_VERSION_STAMP = typeof APP_VERSION_CA !== "undefined"
+    ? APP_VERSION_CA
+    : (typeof APP_VERSION !== "undefined" ? APP_VERSION : "");
+
 const scheduleModeToggleButton = document.getElementById("ScheduleModeToggleButton");
 const classModeToggleButton = document.getElementById("ClassModeToggleButton");
 const modeTag = document.getElementById("ModeTag");
@@ -77,12 +81,13 @@ function serializePlanState() {
     return {
         version: STORAGE_VERSION,
         dataPath: COURSE_DATA_PATH,
-        appVersion: typeof APP_VERSION !== "undefined" ? APP_VERSION : "",
+        appVersion: CA_VERSION_STAMP,
         scheduleMode,
         selectedWeek,
         plan: {
             cards: Array.from(planCourseCards.values()).map((card) => ({
                 courseCode: card.courseCode,
+                courseName: card.courseName || card.title,
                 active: card.active,
                 enabledTeachers: setToArray(card.enabledTeachers),
                 enabledCampuses: setToArray(card.enabledCampuses),
@@ -119,7 +124,7 @@ function restorePlanState(data) {
     if (data.dataPath !== COURSE_DATA_PATH) {
         return false;
     }
-    const currentAppVersion = typeof APP_VERSION !== "undefined" ? APP_VERSION : "";
+    const currentAppVersion = CA_VERSION_STAMP;
     if (data.appVersion && data.appVersion !== currentAppVersion) {
         return false;
     }
@@ -132,7 +137,10 @@ function restorePlanState(data) {
     }
 
     (data.plan?.cards || []).forEach((saved) => {
-        const card = buildPlanCardForCourseCode(saved.courseCode);
+        const courseName = saved.courseName ? String(saved.courseName).trim() : "";
+        const card = courseName
+            ? buildPlanCardForCourse(saved.courseCode, courseName)
+            : buildPlanCardForCourseCode(saved.courseCode);
         if (!card || !card.options.length) {
             return;
         }
@@ -557,6 +565,52 @@ function buildClassGroup(className) {
     };
 }
 
+function buildPlanCardForCourse(courseCode, courseName) {
+    const matched = courseList.filter((course) => {
+        const code = String(course["课程编号"] ?? "").trim();
+        const name = String(course["课程名称"] ?? "").trim();
+        return code === courseCode && name === courseName;
+    });
+    const options = matched.map((course) => buildPoolCourse(course));
+    const first = options[0];
+
+    const teacherSet = new Set();
+    const campusSet = new Set();
+    const timeSet = new Set();
+    const classSet = new Set();
+
+    options.forEach((item) => {
+        splitTeachers(item.teacher).forEach((teacher) => {
+            teacherSet.add(teacher);
+        });
+        if (item.campus) {
+            campusSet.add(item.campus);
+        }
+        if (item.timeText) {
+            timeSet.add(item.timeText);
+        }
+        if (item.classText) {
+            classSet.add(item.classText);
+        }
+    });
+
+    return {
+        type: "planCourse",
+        cardKey: `plan-course|${courseCode}|${courseName}`,
+        courseCode,
+        courseName,
+        title: first ? first.title : courseName,
+        options,
+        active: true,
+        enabledTeachers: new Set(teacherSet),
+        enabledCampuses: new Set(campusSet),
+        enabledTimes: new Set(timeSet),
+        enabledClasses: new Set(classSet),
+        expanded: false
+    };
+}
+
+// 兼容旧状态恢复：未提供课程名称时按课程编号聚合
 function buildPlanCardForCourseCode(courseCode) {
     const matched = courseList.filter((course) => String(course["课程编号"] ?? "").trim() === courseCode);
     const options = matched.map((course) => buildPoolCourse(course));
@@ -679,15 +733,13 @@ function findCourseCandidates(rawQuery) {
         if (!normalize(`${code}|${name}`).includes(query)) {
             return;
         }
-        if (!grouped.has(code)) {
-            grouped.set(code, { code, name });
+        const key = `${code}|${name}`;
+        if (!grouped.has(key)) {
+            grouped.set(key, { code, name, label: `${code}-${name}` });
         }
     });
 
-    return Array.from(grouped.values()).map((item) => ({
-        code: item.code,
-        label: `${item.code}-${item.name}`
-    }));
+    return Array.from(grouped.values());
 }
 
 function findClassTimetableCandidates(rawQuery) {
@@ -1674,7 +1726,7 @@ function renderCandidatePool() {
                 conflictingPlans.find((item) => item.id === activePlanId);
             if (activePlan) {
                 activePlan.courses.forEach((course) => {
-                    if (course.courseCode === card.courseCode) {
+                    if (course.courseCode === card.courseCode && course.title === card.title) {
                         const one = planConflicts.get(course.poolKey) || [];
                         one.forEach((entry) => perCardConflicts.push(entry));
                     }
@@ -2044,11 +2096,11 @@ function ingestClassGroupFromPick(className) {
     savePlanState();
 }
 
-function ingestPlanCardFromCourseCode(courseCode, label) {
-    const cardKey = `plan-course|${courseCode}`;
+function ingestPlanCardFromCourseCode(courseCode, courseName, label) {
+    const cardKey = `plan-course|${courseCode}|${courseName}`;
     let card = planCourseCards.get(cardKey);
     if (!card) {
-        card = buildPlanCardForCourseCode(courseCode);
+        card = buildPlanCardForCourse(courseCode, courseName);
         planCourseCards.set(cardKey, card);
     }
 
@@ -2126,7 +2178,7 @@ function filterCourseInput(rawQuery) {
     const candidates = findCourseCandidates(query).slice(0, 50);
     renderSuggestions(courseSuggestionBox, candidates, (candidate) => {
         courseSearchInput.value = candidate.label;
-        ingestPlanCardFromCourseCode(candidate.code, candidate.label);
+        ingestPlanCardFromCourseCode(candidate.code, candidate.name, candidate.label);
     }, "未找到匹配课程");
 }
 
@@ -2166,7 +2218,7 @@ function extractMaxWeekFromCourses(list) {
 
 async function loadCourseData() {
     try {
-        const versionStamp = typeof APP_VERSION !== "undefined" ? APP_VERSION : "";
+        const versionStamp = CA_VERSION_STAMP;
         const dataUrl = versionStamp ? `${COURSE_DATA_PATH}?v=${versionStamp}` : COURSE_DATA_PATH;
         const response = await fetch(dataUrl);
         if (!response.ok) {

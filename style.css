@@ -1,0 +1,159 @@
+/* 全局基础重置 */
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Microsoft Yahei", SimSun, sans-serif;
+}
+.container{
+    width: 1200px;
+    margin: 0 auto;
+}
+
+/* 头部导航 */
+.header{
+    background-color: #165DFF;
+    color: #ffffff;
+    height: 60px;
+    line-height: 60px;
+}
+.header .container{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.logo{
+    font-size: 20px;
+    font-weight: bold;
+}
+.nav-list{
+    display: flex;
+    gap: 35px;
+}
+.nav-item{
+    cursor: pointer;
+    font-size: 15px;
+}
+.nav-item:hover{
+    text-decoration: underline;
+}
+
+/* 顶部公告横幅 */
+.banner{
+    background: #E8F3FF;
+    height: 42px;
+    line-height: 42px;
+    color: #165DFF;
+    font-size: 14px;
+}
+
+/* 主体内容布局 */
+.main{
+    display: flex;
+    gap: 30px;
+    margin: 30px auto;
+}
+.left-box{
+    width: 840px;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 4px;
+    padding: 20px;
+}
+.right-box{
+    width: 330px;
+}
+
+/* 标题栏 */
+.title-bar{
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #165DFF;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+.title{
+    font-size: 17px;
+    font-weight: 600;
+    color: #222;
+}
+.more{
+    font-size: 14px;
+    color: #165DFF;
+    cursor: pointer;
+}
+
+/* 通知列表 */
+.news-list{
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.news-item{
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+}
+.dot{
+    width: 6px;
+    height: 6px;
+    background: #165DFF;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+.news-title{
+    flex: 1;
+    color: #333;
+    cursor: pointer;
+}
+.news-title:hover{
+    color: #165DFF;
+}
+.news-date{
+    color: #888;
+    font-size: 13px;
+}
+
+/* 右侧边栏 */
+.side-title{
+    background: #165DFF;
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 15px;
+    border-radius: 4px 4px 0 0;
+}
+.entry-box, .top-file{
+    border:1px solid #E5E7EB;
+    border-top: none;
+    padding: 15px;
+    background: #fff;
+}
+.entry-item{
+    padding: 8px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+.entry-item:last-child{
+    border-bottom: none;
+}
+.file-item{
+    padding:7px 0;
+    font-size:14px;
+    color:#165DFF;
+    cursor:pointer;
+}
+.top-gap{
+    margin-top: 25px;
+}
+
+/* 页脚 */
+.footer{
+    background: #f5f7fa;
+    text-align: center;
+    padding: 25px 0;
+    font-size: 13px;
+    color: #666;
+    margin-top: 50px;
+}

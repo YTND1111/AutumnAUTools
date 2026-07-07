@@ -1,3 +1,14 @@
+:root {
+	--joint-color: #0f7a47;
+	--topbar-seam-light: #63bb86;
+	--sidebar-bottom-light: #4db37b;
+	--surface-bg: #ffffff;
+	--surface-border: #E5E7EB;
+	--text-primary: #222222;
+	--text-secondary: #666666;
+	--text-muted: #888888;
+}
+
 .ca-gradient-surface {
 	/* 复用 ca 顶栏渐变：后续统一使用该全局类 */
 	background: linear-gradient(180deg, var(--topbar-seam-light, #63bb86) 0%, var(--joint-color, #0f7a47) 58%, var(--sidebar-bottom-light, #4db37b) 100%);
@@ -272,4 +283,95 @@
 	min-height: 40px;
 	overflow: hidden;
 	flex-shrink: 0;
+}
+
+/* ========================
+   全局工具类
+   ======================== */
+
+.primary-bg {
+	background-color: var(--joint-color);
+}
+
+.primary-text {
+	color: var(--joint-color);
+}
+
+.primary-border {
+	border-color: var(--joint-color);
+}
+
+.primary-fill {
+	background-color: var(--joint-color);
+}
+
+.surface-card {
+	background: var(--surface-bg);
+	border: 1px solid var(--surface-border);
+	border-radius: 4px;
+	padding: 20px;
+}
+
+.text-white {
+	color: #ffffff;
+}
+
+.text-center {
+	text-align: center;
+}
+
+.hover-primary:hover {
+	color: var(--joint-color);
+}
+
+/* ========================
+   圆角大按钮快捷入口（可堆叠单元块）
+   ======================== */
+
+.dial-group {
+	margin-bottom: 16px;
+}
+
+.dial-group:last-child {
+	margin-bottom: 0;
+}
+
+.dial-title {
+	font-size: 17px;
+	font-weight: 600;
+	color: var(--text-primary, #222);
+	padding-bottom: 10px;
+	margin-bottom: 12px;
+	border-bottom: 2px solid var(--joint-color);
+}
+
+.dial-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dial-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 88px;
+	padding: 12px;
+	border-radius: 12px;
+	background: #ffffff;
+	border: 1px solid var(--surface-border, #E5E7EB);
+	color: var(--joint-color);
+	font-size: 15px;
+	font-weight: bold;
+	text-decoration: none;
+	text-align: center;
+	transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.dial-btn:hover {
+	background: #e8f8ef;
+}
+
+.dial-btn:active {
+	transform: scale(0.98);
 }

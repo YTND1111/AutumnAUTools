@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>通知单课表</title>
-    <link rel="stylesheet" href="./css/GlobalStyle.css?v=1.2.0">
-    <script src="./js/version.js?v=1.2.0"></script>
+    <title>秋功-通知单课表</title>
+    <link rel="stylesheet" href="./css/GlobalStyle.css?v=1.2.2">
+    <script src="./js/version-ca.js?v=1.2.2"></script>
 
     <!-- React 运行时（Univer UI 依赖） -->
     <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
@@ -186,7 +186,7 @@
 
             const params = new URLSearchParams(window.location.search);
             const filePath = params.get("file") || DEFAULT_FILE;
-            const versionStamp = typeof APP_VERSION !== "undefined" ? APP_VERSION : "";
+            const versionStamp = typeof APP_VERSION_CA !== "undefined" ? APP_VERSION_CA : (typeof APP_VERSION !== "undefined" ? APP_VERSION : "");
 
             const statusEl = document.getElementById("NoticeStatus");
             const overlayEl = document.getElementById("NoticeOverlay");
