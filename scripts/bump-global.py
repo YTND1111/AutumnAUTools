@@ -2,7 +2,7 @@
 """全局框架版本号管理脚本。
 
 用法：
-    python scripts/bump-global.py 1.2.3
+    python scripts/bump-global.py 1.0.2
 
 脚本会把新版本号同步到：
 - version-global.json

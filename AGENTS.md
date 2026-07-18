@@ -56,6 +56,7 @@ AutumnAUTools/
 ├── version-ca.json         # 排课表工具版本号
 ├── version-qbn.json        # 题库版本号
 ├── version-global.json     # 全局框架版本号
+├── LICENSE                 # Apache-2.0 许可证全文
 ├── README.md               # 项目简介（内容极简）
 └── prd.md                  # 产品需求草稿（仅三段标题）
 ```
@@ -140,7 +141,7 @@ pip install xlrd
 
 ### 前端
 
-- **`index.html` / `ca.html` / `qbn.html`**：页面结构与页面级样式。`ca.html` 的搜索栏展开/收起、响应式布局等样式均内联在 `<style>` 中；`index.html` 与 `qbn.html` 使用 flex 纵向布局将页脚推至底部，右侧设有“快捷入口”圆角大白按钮区（`.dial-group` / `.dial-title` / `.dial-grid` / `.dial-btn`），并通过 `GlobalStyle.css` 提供的工具类统一配色。
+- **`index.html` / `ca.html` / `qbn.html`**：页面结构与页面级样式。`ca.html` 的搜索栏展开/收起、响应式布局等样式均内联在 `<style>` 中；`index.html` 与 `qbn.html` 使用 flex 纵向布局将页脚推至底部，右侧设有“快捷入口”圆角大白按钮区（`.dial-group` / `.dial-title` / `.dial-grid` / `.dial-btn`），并通过 `GlobalStyle.css` 提供的工具类统一配色。`index.html` 快捷入口下方另设有“趣味功能”选项卡区（`.fun-section` / `.fun-tabs` / `.fun-tab` / `.fun-panel`，含“今天吃什么”“窝囊费打表”“农大tips”三个选项卡，切换逻辑内联在页面 `<script>` 中，选中项带绿色发光阴影、切换时内容区上边缘有绿色光影滑动）。其中“窝囊费打表”面板内置日历组件（`.fee-cal-*`），读取 `data/fee-days.json`（`YYYY-MM-DD` 字符串数组）高亮指定日期，支持上/下月切换，JSON 读取失败时按无高亮渲染。
 - **`cn.html`**：通知单课表预览页，使用 SheetJS 解析 `src/py/` 下的 `.xls/.xlsx` 通知单，再转换为 Univer Sheets 的 `IWorkbookData` 数据结构，通过 Univer 引擎渲染；支持 Excel 原生筛选（AutoFilter、按条件筛选、多列 AND 组合）、冻结表头、状态栏统计、列宽拖拽、工作表切换等。
 - **`css/GlobalStyle.css`**：提取了公共渐变类 `.ca-gradient-surface`、悬浮球组件、可拖拽悬浮窗组件、`#SidebarButtonArea`、可堆叠圆角大按钮组件（`.dial-group`、`.dial-title`、`.dial-grid`、`.dial-btn`）以及通用工具类（`.primary-bg`、`.primary-text`、`.primary-border`、`.surface-card`、`.text-white`、`.text-center`、`.hover-primary` 等）跨页面复用样式。
 - **`js/index.js`**：

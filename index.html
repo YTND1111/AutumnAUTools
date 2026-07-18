@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>秋功-首页</title>
-    <link rel="stylesheet" href="./css/GlobalStyle.css?v=1.2.2">
+    <link rel="stylesheet" href="./css/GlobalStyle.css?v=1.0.2">
     <style>
         :root {
             --joint-color: #0f7a47;
@@ -27,8 +27,10 @@
         }
 
         .container {
-            width: 1200px;
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 0 16px;
         }
 
         /* 头部导航 */
@@ -74,14 +76,30 @@
             display: flex;
             gap: 30px;
             margin: 30px auto;
+            width: 100%;
         }
 
         .left-box {
-            width: 840px;
+            flex: 840 0 0;
+            min-width: 0;
         }
 
         .right-box {
-            width: 330px;
+            flex: 330 0 0;
+            min-width: 0;
+        }
+
+        /* 页面宽度短于 850px 时改为上下排列 */
+        @media (max-width: 849px) {
+            .main {
+                flex-direction: column;
+            }
+
+            .left-box,
+            .right-box {
+                flex: 0 0 auto;
+                width: 100%;
+            }
         }
 
         /* 标题栏 */
@@ -148,6 +166,172 @@
         .footer {
             margin-top: auto;
             padding: 16px 0;
+        }
+
+        /* 趣味功能区（选项卡） */
+        .fun-section {
+            margin-top: 24px;
+        }
+
+        .fun-tabs {
+            display: flex;
+            gap: 8px;
+            position: relative;
+        }
+
+        .fun-tab {
+            flex: 1;
+            position: relative;
+            padding: 10px 4px;
+            border: 1px solid var(--surface-border, #E5E7EB);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            background: #f5f6f7;
+            color: var(--text-secondary, #666);
+            font-size: 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .fun-tab:hover {
+            background: #e8f8ef;
+        }
+
+        .fun-tab.active {
+            background: #ffffff;
+            color: var(--joint-color);
+            font-weight: bold;
+        }
+
+        /* 选中按钮的绿色发光阴影层（从下往上生长） */
+        .fun-tab::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 0;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 0 10px 2px rgba(15, 122, 71, 0.45);
+            pointer-events: none;
+            transition: height 0.28s ease;
+        }
+
+        .fun-tab.shadow-on::after {
+            height: 100%;
+        }
+
+        /* 沿内容区上边缘滑动的绿色光影 */
+        .fun-shadow-runner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--joint-color);
+            box-shadow: 0 0 8px 2px rgba(15, 122, 71, 0.6);
+            border-radius: 2px;
+            opacity: 0;
+            pointer-events: none;
+            transition: left 0.28s ease, width 0.28s ease, opacity 0.15s ease;
+        }
+
+        .fun-panel {
+            display: none;
+            background: #ffffff;
+            border: 1px solid var(--surface-border, #E5E7EB);
+            border-radius: 0 0 8px 8px;
+            padding: 20px 16px;
+            min-height: 160px;
+            font-size: 14px;
+            color: var(--text-secondary, #666);
+            line-height: 1.8;
+        }
+
+        .fun-panel.active {
+            display: block;
+            animation: fun-panel-in 0.3s ease;
+        }
+
+        /* 内容区切换时的淡入 + 轻微上浮过渡 */
+        @keyframes fun-panel-in {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 窝囊费打表日历 */
+        .fee-cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .fee-cal-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--text-primary, #222);
+        }
+
+        .fee-cal-nav {
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--surface-border, #E5E7EB);
+            border-radius: 6px;
+            background: #ffffff;
+            color: var(--joint-color);
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .fee-cal-nav:hover {
+            background: #e8f8ef;
+        }
+
+        .fee-cal-week,
+        .fee-cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .fee-cal-week {
+            margin-bottom: 4px;
+        }
+
+        .fee-cal-week span {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted, #888);
+            line-height: 24px;
+        }
+
+        .fee-cal-grid span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-primary, #222);
+        }
+
+        /* JSON 中指定日期的高亮样式 */
+        .fee-day-highlight {
+            background: var(--joint-color);
+            color: #ffffff !important;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -220,17 +404,156 @@
                 <a href="/ca.html" class="dial-btn">排课表工具</a>
                 <a href="/qbn.html" class="dial-btn">题库</a>
             </div>
+
+            <!-- 趣味功能区（选项卡） -->
+            <div class="fun-section">
+                <div class="dial-title">趣味功能</div>
+                <div class="fun-tabs" id="FunTabs">
+                    <div class="fun-tab active shadow-on" data-panel="FunPanelEat">今天吃什么</div>
+                    <div class="fun-tab" data-panel="FunPanelFee">窝囊费打表</div>
+                    <div class="fun-tab" data-panel="FunPanelTips">农大tips</div>
+                </div>
+                <div class="fun-panel active" id="FunPanelEat"><p>暑假期间只能吃公三、研一、研二、民族风味食堂<br><br>无推荐</p></div>
+                <div class="fun-panel" id="FunPanelFee">
+                    <div class="fee-cal">
+                        <div class="fee-cal-header">
+                            <button type="button" class="fee-cal-nav" id="FeeCalPrev">‹</button>
+                            <span class="fee-cal-title" id="FeeCalTitle"></span>
+                            <button type="button" class="fee-cal-nav" id="FeeCalNext">›</button>
+                        </div>
+                        <div class="fee-cal-week">
+                            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+                        </div>
+                        <div class="fee-cal-grid" id="FeeCalGrid"></div>
+                    </div>
+                </div>
+                <div class="fun-panel" id="FunPanelTips">内容建设中，敬请期待……</div>
+            </div>
         </div>
     </div>
 
     <!-- 页脚 -->
     <div class="footer primary-bg text-white text-center">
         <div class="container">
-            <p>秋功</p>
+            <p><a href="https://github.com/YTND1111/AutumnAUTools">秋功</a>-本项目采用 <a href="http://www.apache.org/licenses/LICENSE-2.0">[Apache License 2.0](LICENSE) 开源许可证</a></p>
         </div>
     </div>
 
-    <script src="./js/version-global.js?v=1.2.2"></script>
-    <script src="./js/index.js?v=1.2.2"></script>
+    <script src="./js/version-global.js?v=1.0.2"></script>
+    <script src="./js/index.js?v=1.0.2"></script>
+    <script>
+        // 趣味功能区选项卡切换（带绿色光影滑动 + 阴影生长动画）
+        (function () {
+            const tabsContainer = document.getElementById('FunTabs');
+            const tabs = tabsContainer.querySelectorAll('.fun-tab');
+            const SLIDE_MS = 300; // 与 CSS 中 runner 滑动时长（0.28s）匹配，略留余量
+
+            // 沿内容区上边缘滑动的绿色光影元素
+            const runner = document.createElement('div');
+            runner.className = 'fun-shadow-runner';
+            tabsContainer.appendChild(runner);
+
+            let settleTimer = null;
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    const oldTab = tabsContainer.querySelector('.fun-tab.active');
+                    if (oldTab === tab) return; // 点击当前激活项不播动画
+
+                    // 快速连点时先结算上一次动画
+                    if (settleTimer) {
+                        clearTimeout(settleTimer);
+                        settleTimer = null;
+                    }
+
+                    // 旧按钮阴影消失，切换激活态与内容面板
+                    tabs.forEach(function (t) { t.classList.remove('active', 'shadow-on'); });
+                    tab.classList.add('active');
+                    document.querySelectorAll('.fun-panel').forEach(function (panel) {
+                        panel.classList.toggle('active', panel.id === tab.dataset.panel);
+                    });
+
+                    // 光影瞬移到旧按钮位置并显示
+                    runner.style.transition = 'none';
+                    runner.style.left = oldTab.offsetLeft + 'px';
+                    runner.style.width = oldTab.offsetWidth + 'px';
+                    runner.style.opacity = '1';
+                    void runner.offsetWidth; // 强制 reflow，确保瞬移先生效
+                    runner.style.transition = '';
+
+                    // 滑动到新按钮位置
+                    runner.style.left = tab.offsetLeft + 'px';
+                    runner.style.width = tab.offsetWidth + 'px';
+
+                    // 滑动到位后：新按钮阴影从下往上生长，光影淡出
+                    settleTimer = setTimeout(function () {
+                        settleTimer = null;
+                        tab.classList.add('shadow-on');
+                        runner.style.opacity = '0';
+                    }, SLIDE_MS);
+                });
+            });
+
+            // ===== 窝囊费打表日历：读取 data/fee-days.json 并高亮指定日期 =====
+            const feeCalTitle = document.getElementById('FeeCalTitle');
+            const feeCalGrid = document.getElementById('FeeCalGrid');
+            const now = new Date();
+            const feeCalState = { year: now.getFullYear(), month: now.getMonth() }; // month 从 0 起
+            let feeHighlightDays = new Set(); // 存放 'YYYY-MM-DD' 字符串
+
+            // 把日期拼成与 JSON 一致的 'YYYY-MM-DD' 格式
+            function feeFormatDate(y, m, d) {
+                return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+            }
+
+            function feeCalRender() {
+                const y = feeCalState.year;
+                const m = feeCalState.month;
+                feeCalTitle.textContent = y + '年' + (m + 1) + '月';
+                feeCalGrid.innerHTML = '';
+
+                // 周一起始的偏移量与当月天数
+                const offset = (new Date(y, m, 1).getDay() + 6) % 7;
+                const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+                for (let i = 0; i < offset; i++) {
+                    feeCalGrid.appendChild(document.createElement('span'));
+                }
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const cell = document.createElement('span');
+                    cell.textContent = d;
+                    if (feeHighlightDays.has(feeFormatDate(y, m, d))) {
+                        cell.classList.add('fee-day-highlight');
+                    }
+                    feeCalGrid.appendChild(cell);
+                }
+            }
+
+            document.getElementById('FeeCalPrev').addEventListener('click', function () {
+                feeCalState.month--;
+                if (feeCalState.month < 0) { feeCalState.month = 11; feeCalState.year--; }
+                feeCalRender();
+            });
+            document.getElementById('FeeCalNext').addEventListener('click', function () {
+                feeCalState.month++;
+                if (feeCalState.month > 11) { feeCalState.month = 0; feeCalState.year++; }
+                feeCalRender();
+            });
+
+            // 读取高亮日期；失败时日历照常渲染，仅无高亮
+            fetch('./data/fee-days.json')
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function (days) {
+                    if (Array.isArray(days)) feeHighlightDays = new Set(days);
+                })
+                .catch(function (err) {
+                    console.warn('窝囊费打表：读取 data/fee-days.json 失败，按无高亮渲染。', err);
+                })
+                .finally(feeCalRender);
+        })();
+    </script>
 </body>
 </html>
