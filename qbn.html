@@ -20,8 +20,10 @@
         }
 
         .container {
-            width: 1200px;
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 0 16px;
         }
 
         /* 头部导航 */
@@ -67,14 +69,30 @@
             display: flex;
             gap: 30px;
             margin: 30px auto;
+            width: 100%;
         }
 
         .left-box {
-            width: 840px;
+            flex: 840 0 0;
+            min-width: 0;
         }
 
         .right-box {
-            width: 330px;
+            flex: 330 0 0;
+            min-width: 0;
+        }
+
+        /* 页面宽度短于 850px 时改为上下排列 */
+        @media (max-width: 849px) {
+            .main {
+                flex-direction: column;
+            }
+
+            .left-box,
+            .right-box {
+                flex: 0 0 auto;
+                width: 100%;
+            }
         }
 
         .title-bar {
