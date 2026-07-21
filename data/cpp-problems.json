@@ -1,0 +1,35 @@
+[
+  {
+    "id": "aplusb",
+    "title": "A+B 问题",
+    "description": "输入两个整数 a 和 b，输出它们的和。\n\n【输入格式】一行，两个整数 a b，空格分隔。\n【输出格式】一行，一个整数，即 a + b。\n【数据范围】-1000 ≤ a, b ≤ 1000",
+    "starterCode": "aplusb",
+    "cases": [
+      { "input": "1 2", "expected": "3" },
+      { "input": "10 20", "expected": "30" },
+      { "input": "-5 5", "expected": "0" }
+    ]
+  },
+  {
+    "id": "array-sum",
+    "title": "数组求和",
+    "description": "输入 n 个整数，输出它们的总和。\n\n【输入格式】第一行一个整数 n；第二行 n 个整数，空格分隔。\n【输出格式】一行，一个整数，即所有数之和。\n【数据范围】1 ≤ n ≤ 100，每个整数绝对值不超过 1000",
+    "starterCode": "array",
+    "cases": [
+      { "input": "3\n1 2 3", "expected": "6" },
+      { "input": "5\n1 2 3 4 5", "expected": "15" },
+      { "input": "1\n-100", "expected": "-100" }
+    ]
+  },
+  {
+    "id": "string-reverse",
+    "title": "字符串反转",
+    "description": "输入一个不含空格的字符串，先输出其长度，再输出反转后的字符串。\n\n【输入格式】一行，一个字符串 s。\n【输出格式】两行：第一行为 \"length: 长度\"；第二行为反转后的字符串。\n【数据范围】1 ≤ |s| ≤ 100",
+    "starterCode": "string",
+    "cases": [
+      { "input": "hello", "expected": "length: 5\nolleh" },
+      { "input": "abc", "expected": "length: 3\ncba" },
+      { "input": "a", "expected": "length: 1\na" }
+    ]
+  }
+]

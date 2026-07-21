@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信电机考模拟在线编译器 - 秋功</title>
+
+    <!-- CodeMirror 5（cdnjs 直引脚本，全局变量 CodeMirror，无模块解析问题） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+
+    <style>
+        /* ========================
+           主题变量（默认深色，仿 VS Code 暗色）
+           ======================== */
+        :root {
+            --bg: #1e1e1e;
+            --bg-panel: #252526;
+            --bg-input: #1b1b1c;
+            --border: #3c3c3c;
+            --text: #d4d4d4;
+            --text-muted: #8b8b8b;
+            --accent: #0f7a47;
+            --accent-hover: #12a05c;
+            --btn-bg: #333338;
+            --btn-hover: #44444a;
+            --error-bg: rgba(220, 60, 60, 0.12);
+            --error-text: #f48771;
+            --status-ok: #4ec9b0;
+            --term-bg: #0c0c0c;
+            --term-text: #e6e6e6;
+            --term-prompt: #4ec9b0;
+            --term-muted: #6a9955;
+        }
+        [data-theme="light"] {
+            --bg: #f5f5f5;
+            --bg-panel: #ffffff;
+            --bg-input: #fafafa;
+            --border: #d0d0d0;
+            --text: #1f1f1f;
+            --text-muted: #777777;
+            --accent: #0f7a47;
+            --accent-hover: #0c6a3d;
+            --btn-bg: #e8e8e8;
+            --btn-hover: #dcdcdc;
+            --error-bg: rgba(220, 60, 60, 0.08);
+            --error-text: #c72e2e;
+            --status-ok: #0f7a47;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ========================
+           顶部工具栏
+           ======================== */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 8px 14px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+        .toolbar .title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+        .toolbar select,
+        .toolbar button {
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .toolbar select:hover,
+        .toolbar button:hover { background: var(--btn-hover); }
+        .toolbar .btn-run {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 600;
+        }
+        .toolbar .btn-run:hover { background: var(--accent-hover); }
+        .toolbar .btn-submit {
+            background: #2b6cff;
+            border-color: #2b6cff;
+            color: #fff;
+            font-weight: 600;
+        }
+        .toolbar .btn-submit:hover { background: #4a84ff; }
+        .toolbar .btn-run:disabled,
+        .toolbar .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .toolbar .spacer { flex: 1; }
+        #VersionLabel {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        /* ========================
+           主区域：桌面端左右分栏
+           ======================== */
+        .main {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+        .pane-editor {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            border-right: 1px solid var(--border);
+        }
+        .pane-side {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+        }
+        .pane-header {
+            padding: 6px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            letter-spacing: 1px;
+        }
+
+        /* 题目描述区（只读展示） */
+        .desc-block {
+            display: flex;
+            flex-direction: column;
+            flex: 0 0 30%;
+            min-height: 80px;
+            border-bottom: 1px solid var(--border);
+        }
+        #problemDesc {
+            flex: 1;
+            overflow: auto;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* 代码编辑器容器 */
+        .editor-block {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        #editor {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #editor .CodeMirror {
+            height: 100%;
+            font-size: 14px;
+            font-family: Consolas, "Courier New", monospace;
+            line-height: 1.5;
+        }
+
+        /* ========================
+           右侧选项卡（本地运行 / 提交判题）
+           ======================== */
+        .side-tabs {
+            display: flex;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+        .side-tab {
+            padding: 7px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            user-select: none;
+        }
+        .side-tab.active {
+            color: var(--text);
+            border-bottom-color: var(--accent);
+            font-weight: 600;
+        }
+        .side-panel {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .side-panel.active { display: flex; }
+
+        /* stdin 输入区（独立窗口） */
+        .stdin-block {
+            display: flex;
+            flex-direction: column;
+            flex: 2;
+            min-height: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        #stdin {
+            flex: 1;
+            resize: none;
+            border: none;
+            outline: none;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* 终端式输出区 */
+        .output-block {
+            display: flex;
+            flex-direction: column;
+            flex: 3;
+            min-height: 0;
+        }
+        .terminal {
+            flex: 1;
+            overflow: auto;
+            padding: 10px 12px;
+            background: var(--term-bg);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--term-text);
+        }
+        .terminal .t-line {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .terminal .t-prompt { color: var(--term-prompt); font-weight: 600; }
+        .terminal .t-cmd { color: #dcdcaa; }
+        .terminal .t-out { color: var(--term-text); }
+        .terminal .t-err { color: #f48771; }
+        .terminal .t-meta { color: var(--term-muted); }
+        .terminal .t-placeholder { color: #5a5a5a; }
+        .status-bar {
+            padding: 5px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+        }
+        .status-bar.ok { color: var(--status-ok); }
+        .status-bar.err { color: var(--error-text); }
+
+        /* ========================
+           判题面板（只读样例 + 判题结果）
+           ======================== */
+        .judge-panel {
+            flex: 1;
+            overflow: auto;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .judge-summary {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .judge-summary.visible { display: block; }
+        .judge-summary.ac {
+            background: rgba(78, 201, 176, 0.12);
+            color: var(--status-ok);
+        }
+        .judge-summary.wa {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+        .case-card {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--bg-panel);
+        }
+        .case-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .case-head .case-title { font-weight: 600; }
+        .case-head .case-result { font-weight: 600; }
+        .case-head .case-result.ac { color: var(--status-ok); }
+        .case-head .case-result.wa { color: var(--error-text); }
+        .case-head .case-result.re { color: #e5c07b; }
+        .case-body {
+            display: flex;
+        }
+        .case-body .case-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .case-body .case-col + .case-col { border-left: 1px solid var(--border); }
+        .case-col .case-col-title {
+            padding: 3px 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-input);
+        }
+        .case-col pre {
+            margin: 0;
+            padding: 6px 10px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .case-actual {
+            display: none;
+            border-top: 1px solid var(--border);
+            padding: 6px 10px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: var(--bg-input);
+        }
+        .case-actual.visible { display: block; }
+        .case-actual .actual-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+        .case-actual.wa { color: var(--error-text); }
+
+        /* ========================
+           移动端：上下堆叠
+           ======================== */
+        @media (max-width: 900px) {
+            body { overflow: auto; }
+            .main { flex-direction: column; overflow: visible; }
+            .pane-editor {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                flex: none;
+            }
+            .desc-block { height: 20vh; flex: none; }
+            .editor-block { height: 45vh; flex: none; }
+            .pane-side { flex: none; }
+            .side-panel.active { height: 60vh; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部工具栏 -->
+    <div class="toolbar">
+        <span class="title">C/C++ 在线编译器</span>
+        <select id="problemSelect" title="选择题目"></select>
+        <button id="btnRun" class="btn-run" title="Ctrl+Enter">▶ 运行</button>
+        <button id="btnSubmit" class="btn-submit" title="按预设用例判题">⬆ 提交</button>
+        <button id="btnClear">清空输出</button>
+        <button id="btnReset">重置代码</button>
+        <span class="spacer"></span>
+        <div id="VersionLabel">C/C++ 在线编译器 v1.0.0</div>
+        <button id="btnTheme" title="切换主题">☀️ 浅色</button>
+    </div>
+
+    <!-- 主区域 -->
+    <div class="main">
+        <div class="pane-editor">
+            <div class="desc-block">
+                <div class="pane-header">题目描述</div>
+                <div id="problemDesc">题目加载中…</div>
+            </div>
+            <div class="editor-block">
+                <div class="pane-header">代码（Ctrl+Enter 运行）</div>
+                <div id="editor"></div>
+            </div>
+        </div>
+        <div class="pane-side">
+            <div class="side-tabs">
+                <div class="side-tab active" data-tab="run">本地运行</div>
+                <div class="side-tab" data-tab="judge">提交判题</div>
+            </div>
+
+            <!-- 本地运行面板 -->
+            <div class="side-panel active" id="panelRun">
+                <div class="stdin-block">
+                    <div class="pane-header">标准输入 (stdin)</div>
+                    <textarea id="stdin" spellcheck="false" placeholder="在此输入程序运行时需要读取的内容…"></textarea>
+                </div>
+                <div class="output-block">
+                    <div class="pane-header">终端</div>
+                    <div class="terminal" id="terminal">
+                        <div class="t-line t-placeholder">$ 等待运行…（输出将显示在这里）</div>
+                    </div>
+                    <div class="status-bar" id="statusBar">就绪</div>
+                </div>
+            </div>
+
+            <!-- 提交判题面板 -->
+            <div class="side-panel" id="panelJudge">
+                <div class="judge-panel" id="judgePanel">
+                    <div class="judge-summary" id="judgeSummary"></div>
+                    <div id="caseList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSCPP 解释器（本地文件，全局变量 JSCPP） -->
+    <script src="./js/lib/JSCPP.es5.min.js?v=1.0.0"></script>
+    <!-- 模块版本号（APP_VERSION_CPP） -->
+    <script src="./js/version-cpp.js?v=1.0.0"></script>
+
+    <script>
+        /* ========================
+           初始代码模板（key 对应题库 JSON 中的 starterCode 字段）
+           ======================== */
+        const TEMPLATES = {
+            aplusb: `#include <iostream>
+using namespace std;
+
+int main() {
+    int a, b;
+    cin >> a >> b;
+    cout << a + b << endl;
+    return 0;
+}
+`,
+            array: `#include <iostream>
+using namespace std;
+
+int main() {
+    int n;
+    cin >> n;
+    int sum = 0, x;
+    for (int i = 0; i < n; i++) {
+        cin >> x;
+        sum += x;
+    }
+    cout << sum << endl;
+    return 0;
+}
+`,
+            string: `#include <iostream>
+#include <string>
+using namespace std;
+
+int main() {
+    string s;
+    cin >> s;
+    cout << "length: " << s.length() << endl;
+    for (int i = (int)s.length() - 1; i >= 0; i--) {
+        cout << s[i];
+    }
+    cout << endl;
+    return 0;
+}
+`
+        };
+
+        // 题库加载失败时的兜底题目（保证页面可用）
+        const FALLBACK_PROBLEMS = [
+            {
+                id: "aplusb",
+                title: "A+B 问题",
+                description: "输入两个整数 a 和 b，输出它们的和。",
+                starterCode: "aplusb",
+                cases: [{ input: "1 2", expected: "3" }]
+            }
+        ];
+
+        /* ========================
+           localStorage 键
+           ======================== */
+        const LS = {
+            code: "cpp-code",
+            stdin: "cpp-stdin",
+            theme: "cpp-theme",
+            problemId: "cpp-problem-id"
+        };
+
+        /* ========================
+           DOM 引用
+           ======================== */
+        const problemSelect = document.getElementById("problemSelect");
+        const btnRun = document.getElementById("btnRun");
+        const btnSubmit = document.getElementById("btnSubmit");
+        const btnClear = document.getElementById("btnClear");
+        const btnReset = document.getElementById("btnReset");
+        const btnTheme = document.getElementById("btnTheme");
+        const problemDescEl = document.getElementById("problemDesc");
+        const stdinEl = document.getElementById("stdin");
+        const terminalEl = document.getElementById("terminal");
+        const statusBar = document.getElementById("statusBar");
+        const judgeSummary = document.getElementById("judgeSummary");
+        const caseList = document.getElementById("caseList");
+
+        /* ========================
+           主题切换
+           ======================== */
+        function applyTheme(theme) {
+            document.documentElement.dataset.theme = theme;
+            btnTheme.textContent = theme === "dark" ? "☀️ 浅色" : "🌙 深色";
+            editor.setOption("theme", theme === "dark" ? "monokai" : "default");
+            localStorage.setItem(LS.theme, theme);
+        }
+
+        btnTheme.addEventListener("click", () => {
+            applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+        });
+
+        /* ========================
+           初始化编辑器（CodeMirror 5）
+           ======================== */
+        const savedTheme = localStorage.getItem(LS.theme) || "dark";
+        const savedCode = localStorage.getItem(LS.code);
+
+        const editor = CodeMirror(document.getElementById("editor"), {
+            value: savedCode !== null ? savedCode : TEMPLATES.aplusb,
+            mode: "text/x-c++src",
+            theme: savedTheme === "dark" ? "monokai" : "default",
+            lineNumbers: true,
+            indentUnit: 4,
+            tabSize: 4,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            extraKeys: {
+                "Ctrl-Enter": () => runCode(),
+                // Tab：有选区则整体缩进，否则插入 4 个空格
+                "Tab": (cm) => {
+                    if (cm.somethingSelected()) cm.indentSelection("add");
+                    else cm.replaceSelection("    ", "end");
+                }
+            }
+        });
+
+        // 代码变更防抖 300ms 自动保存
+        let saveTimer = null;
+        editor.on("change", () => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                localStorage.setItem(LS.code, editor.getValue());
+            }, 300);
+        });
+
+        /* ========================
+           状态恢复
+           ======================== */
+        stdinEl.value = localStorage.getItem(LS.stdin) || "";
+        document.documentElement.dataset.theme = savedTheme;
+        btnTheme.textContent = savedTheme === "dark" ? "☀️ 浅色" : "🌙 深色";
+
+        stdinEl.addEventListener("input", () => {
+            localStorage.setItem(LS.stdin, stdinEl.value);
+        });
+
+        /* ========================
+           右侧选项卡切换
+           ======================== */
+        document.querySelectorAll(".side-tab").forEach((tab) => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".side-tab").forEach((t) => t.classList.remove("active"));
+                document.querySelectorAll(".side-panel").forEach((p) => p.classList.remove("active"));
+                tab.classList.add("active");
+                document.getElementById(tab.dataset.tab === "run" ? "panelRun" : "panelJudge")
+                    .classList.add("active");
+            });
+        });
+
+        function switchTab(name) {
+            document.querySelector(`.side-tab[data-tab="${name}"]`).click();
+        }
+
+        /* ========================
+           题库加载与题目切换
+           ======================== */
+        let problems = [];
+        let currentProblem = null;
+
+        async function loadProblems() {
+            try {
+                // 附带模块版本号破坏题库缓存（与 CourseArrangement.js 同款做法）
+                const res = await fetch("data/cpp-problems.json?v=" + APP_VERSION_CPP);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                problems = await res.json();
+                if (!Array.isArray(problems) || problems.length === 0) {
+                    throw new Error("题库为空");
+                }
+            } catch (e) {
+                problems = FALLBACK_PROBLEMS;
+                setStatus("题库加载失败，已使用内置默认题目", "err");
+            }
+
+            // 填充题目下拉框
+            problemSelect.innerHTML = "";
+            problems.forEach((p) => {
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                opt.textContent = p.title;
+                problemSelect.appendChild(opt);
+            });
+
+            // 恢复上次选中的题目
+            const savedId = localStorage.getItem(LS.problemId);
+            const target = problems.find((p) => p.id === savedId) || problems[0];
+            selectProblem(target.id, { keepCode: true });
+        }
+
+        function selectProblem(id, opts = {}) {
+            const p = problems.find((item) => item.id === id);
+            if (!p) return;
+            currentProblem = p;
+            problemSelect.value = p.id;
+            localStorage.setItem(LS.problemId, p.id);
+
+            // 题目描述与判题样例为只读展示
+            problemDescEl.textContent = p.description || "（暂无题目描述）";
+            renderCases(p.cases || []);
+            judgeSummary.className = "judge-summary";
+
+            // 切换题目时载入该题初始代码（用户确认后覆盖）
+            if (!opts.keepCode) {
+                const starter = TEMPLATES[p.starterCode] || TEMPLATES.aplusb;
+                const current = editor.getValue();
+                if (current.trim() === "" || current === starter ||
+                    confirm("切换题目将覆盖当前代码为该题初始模板，是否继续？")) {
+                    setEditorCode(starter);
+                }
+            }
+        }
+
+        problemSelect.addEventListener("change", () => selectProblem(problemSelect.value));
+
+        btnReset.addEventListener("click", () => {
+            if (!currentProblem) return;
+            if (!confirm("将当前代码重置为该题初始模板，是否继续？")) return;
+            setEditorCode(TEMPLATES[currentProblem.starterCode] || TEMPLATES.aplusb);
+        });
+
+        function setEditorCode(code) {
+            editor.setValue(code);
+            localStorage.setItem(LS.code, code);
+        }
+
+        /* ========================
+           终端渲染辅助
+           ======================== */
+        function termLine(text, cls) {
+            const div = document.createElement("div");
+            div.className = "t-line" + (cls ? " " + cls : "");
+            div.textContent = text;
+            return div;
+        }
+
+        function clearTerminal() {
+            terminalEl.innerHTML = "";
+        }
+
+        btnClear.addEventListener("click", () => {
+            clearTerminal();
+            terminalEl.appendChild(termLine("$ 等待运行…（输出将显示在这里）", "t-placeholder"));
+            setStatus("就绪");
+        });
+
+        function setStatus(text, kind) {
+            statusBar.textContent = text;
+            statusBar.className = "status-bar" + (kind ? " " + kind : "");
+        }
+
+        /* ========================
+           运行（JSCPP 同步解释执行；
+           注意：解释器为同步执行，死循环代码会卡住页面）
+           ======================== */
+        // 统一执行入口（本地运行与提交判题共用），返回 { out, error, exitCode }
+        // 说明：JSCPP 的 stdin 为一次性模型——stdio.drain 只在 cin/scanf 初始化时
+        // 被调用一次，返回值即程序全部输入缓冲；默认 drain 一次性返回 input，
+        // 正好符合该模型，因此这里只重写 write。input 必须为字符串（不能为 null，
+        // JSCPP.run 入口会对它立即调用 toString()）。
+        function execCode(code, input) {
+            // 解释器脚本加载失败时给出友好提示，而不是裸报 JSCPP is not defined
+            if (typeof JSCPP === "undefined") {
+                return {
+                    out: "",
+                    error: "C++ 解释器未加载：请确认 js/lib/JSCPP.es5.min.js 文件存在且可访问",
+                    exitCode: null
+                };
+            }
+            let out = "";
+            const config = {
+                stdio: {
+                    write(s) { out += s; }
+                }
+            };
+            try {
+                const exitCode = JSCPP.run(code, String(input == null ? "" : input), config);
+                return { out, error: null, exitCode };
+            } catch (e) {
+                return { out, error: String((e && e.message) || e), exitCode: null };
+            }
+        }
+
+        async function runCode() {
+            switchTab("run");
+            btnRun.disabled = true;
+            btnRun.textContent = "运行中…";
+            setStatus("运行中…");
+            clearTerminal();
+
+            // 起始行：绿色 "$" + 黄色 "./main"
+            const promptLine = termLine("", "");
+            const promptSpan = document.createElement("span");
+            promptSpan.className = "t-prompt";
+            promptSpan.textContent = "$ ";
+            const cmdSpan = document.createElement("span");
+            cmdSpan.className = "t-cmd";
+            cmdSpan.textContent = "./main";
+            promptLine.append(promptSpan, cmdSpan);
+            terminalEl.appendChild(promptLine);
+
+            // 让界面有机会先渲染，再进入同步执行
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            const { out, error, exitCode } = execCode(editor.getValue(), stdinEl.value);
+
+            if (out) terminalEl.appendChild(termLine(out.replace(/\n$/, ""), "t-out"));
+            if (error) {
+                terminalEl.appendChild(termLine(error, "t-err"));
+                setStatus("运行出错", "err");
+            } else {
+                setStatus(`运行完成，退出码 ${exitCode}`, "ok");
+            }
+            terminalEl.appendChild(termLine(
+                error ? "── 程序异常终止 ──" : `── 退出码 ${exitCode} ──`, "t-meta"
+            ));
+            terminalEl.scrollTop = terminalEl.scrollHeight;
+
+            btnRun.disabled = false;
+            btnRun.textContent = "▶ 运行";
+        }
+
+        btnRun.addEventListener("click", runCode);
+
+        /* ========================
+           判题样例渲染（只读）
+           ======================== */
+        function renderCases(cases) {
+            caseList.innerHTML = "";
+            cases.forEach((c, i) => {
+                const card = document.createElement("div");
+                card.className = "case-card";
+
+                const head = document.createElement("div");
+                head.className = "case-head";
+
+                const title = document.createElement("span");
+                title.className = "case-title";
+                title.textContent = `用例 ${i + 1}`;
+
+                const result = document.createElement("span");
+                result.className = "case-result";
+                result.id = `caseResult${i}`;
+
+                head.append(title, result);
+
+                const body = document.createElement("div");
+                body.className = "case-body";
+
+                const inputCol = document.createElement("div");
+                inputCol.className = "case-col";
+                const inputTitle = document.createElement("div");
+                inputTitle.className = "case-col-title";
+                inputTitle.textContent = "输入";
+                const inputPre = document.createElement("pre");
+                inputPre.textContent = c.input || "（空）";
+                inputCol.append(inputTitle, inputPre);
+
+                const expectedCol = document.createElement("div");
+                expectedCol.className = "case-col";
+                const expectedTitle = document.createElement("div");
+                expectedTitle.className = "case-col-title";
+                expectedTitle.textContent = "期望输出";
+                const expectedPre = document.createElement("pre");
+                expectedPre.textContent = c.expected || "（空）";
+                expectedCol.append(expectedTitle, expectedPre);
+
+                body.append(inputCol, expectedCol);
+
+                const actual = document.createElement("div");
+                actual.className = "case-actual";
+                actual.id = `caseActual${i}`;
+
+                card.append(head, body, actual);
+                caseList.appendChild(card);
+            });
+        }
+
+        /* ========================
+           提交判题：逐用例运行并校核输出
+           ======================== */
+        // 校核规范化：统一换行、去除每行尾空白与末尾空行
+        function normalizeOutput(s) {
+            return String(s)
+                .replace(/\r\n/g, "\n")
+                .split("\n")
+                .map((line) => line.replace(/\s+$/, ""))
+                .join("\n")
+                .replace(/\n+$/, "");
+        }
+
+        async function submitCode() {
+            if (!currentProblem) return;
+            switchTab("judge");
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = "判题中…";
+            judgeSummary.className = "judge-summary";
+
+            const code = editor.getValue();
+            const cases = currentProblem.cases || [];
+            let passCount = 0;
+
+            for (let i = 0; i < cases.length; i++) {
+                const resultEl = document.getElementById(`caseResult${i}`);
+                const actualEl = document.getElementById(`caseActual${i}`);
+                resultEl.className = "case-result";
+                resultEl.textContent = "运行中…";
+                actualEl.className = "case-actual";
+                actualEl.textContent = "";
+                // 每个用例之间让出一帧，避免长时间无反馈
+                await new Promise((resolve) => setTimeout(resolve, 30));
+
+                const { out, error } = execCode(code, cases[i].input);
+
+                const label = document.createElement("span");
+                label.className = "actual-label";
+
+                if (error) {
+                    resultEl.textContent = "✗ 运行错误";
+                    resultEl.classList.add("re");
+                    label.textContent = "错误信息：";
+                    actualEl.append(label, document.createTextNode(error));
+                    actualEl.classList.add("visible", "wa");
+                } else if (normalizeOutput(out) === normalizeOutput(cases[i].expected)) {
+                    resultEl.textContent = "✓ 通过";
+                    resultEl.classList.add("ac");
+                    passCount++;
+                } else {
+                    resultEl.textContent = "✗ 答案错误";
+                    resultEl.classList.add("wa");
+                    label.textContent = "实际输出：";
+                    actualEl.append(label, document.createTextNode(out || "（无输出）"));
+                    actualEl.classList.add("visible", "wa");
+                }
+            }
+
+            if (passCount === cases.length) {
+                judgeSummary.textContent = `✓ Accepted（${passCount}/${cases.length} 通过）`;
+                judgeSummary.classList.add("visible", "ac");
+            } else {
+                judgeSummary.textContent = `✗ Wrong Answer（${passCount}/${cases.length} 通过）`;
+                judgeSummary.classList.add("visible", "wa");
+            }
+
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = "⬆ 提交";
+        }
+
+        btnSubmit.addEventListener("click", submitCode);
+
+        /* ========================
+           启动
+           ======================== */
+        loadProblems();
+    </script>
+</body>
+</html>
