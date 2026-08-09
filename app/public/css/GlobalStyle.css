@@ -1,0 +1,456 @@
+:root {
+	--joint-color: #0f7a47;
+	--topbar-seam-light: #63bb86;
+	--sidebar-bottom-light: #4db37b;
+	--surface-bg: #ffffff;
+	--surface-border: #E5E7EB;
+	--text-primary: #222222;
+	--text-secondary: #666666;
+	--text-muted: #888888;
+}
+
+.ca-gradient-surface {
+	/* 复用 ca 顶栏渐变：后续统一使用该全局类 */
+	background: linear-gradient(180deg, var(--topbar-seam-light, #63bb86) 0%, var(--joint-color, #0f7a47) 58%, var(--sidebar-bottom-light, #4db37b) 100%);
+}
+
+/* ========================
+   悬浮球导航组件（全局复用）
+   ======================== */
+
+#floatingBall {
+	position: fixed;
+	top: 0;
+	left: 0;
+	transform: translate3d(0, 0, 0);
+	width: 100px;
+	height: 100px;
+	background-color: #0f7a47;
+	border-radius: 50%;
+	animation: float 3s ease-in-out infinite;
+	touch-action: none;
+	opacity: 0;
+	visibility: hidden;
+	transition: background-color 0.26s ease, filter 0.2s ease;
+	will-change: transform, background-color, filter;
+	z-index: 200;
+}
+
+#floatingBall.is-ready {
+	/* 初始化完成后再显示，避免首屏偶发位移可见 */
+	opacity: 1;
+	visibility: visible;
+}
+
+#floatingBall.is-motion-ready {
+	/* 初始化完成后才启用 transform 过渡 */
+	transition: background-color 0.26s ease, filter 0.2s ease, transform 0.32s cubic-bezier(0.25, 0.10, 0.25, 1.00);
+}
+
+#floatingBall:focus {
+	/* 焦点仅用于触发失焦吸附，不改变外观 */
+	outline: none;
+}
+
+#floatingBall:hover {
+	/* hover 反馈：使用相近色阴影提升悬停辨识度 */
+	filter: drop-shadow(0 0 14px rgba(15, 122, 71, 0.6));
+}
+
+#floatingBall.is-expanded {
+	/* 展开态：悬浮球变为蓝色，并使用颜色过渡动画 */
+	background-color: #2b6cff;
+}
+
+/* 悬浮球图标：三横线 → X（纯 CSS transition，正反向自动播放）
+   上/下横条用 ::before/::after，中横条用内部 span.fb-bar */
+:root {
+	--fb-dur: 0.13s;          /* 单阶段时长 */
+	--fb-gap: 15px;           /* 三条横条的间距 */
+	--fb-bar-w: 45px;         /* 横条长度 */
+	--fb-bar-h: 5px;          /* 横条粗细 */
+	--fb-bar-color: #c9cdd3;  /* 未触发时的灰色 */
+	--fb-bar-x-color: #ffffff;/* X 形态时的颜色 */
+}
+
+#floatingBall::before,
+#floatingBall::after,
+#floatingBall .fb-bar {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: var(--fb-bar-w);
+	height: var(--fb-bar-h);
+	margin-left: calc(var(--fb-bar-w) / -2);
+	margin-top: calc(var(--fb-bar-h) / -2);
+	background: var(--fb-bar-color);
+	border-radius: calc(var(--fb-bar-h) / 2);
+	will-change: translate, rotate, scale;
+}
+
+/* 未触发态：三条等长等宽等间距灰条
+   反向动画（X → 三横线）：先回旋，再归位，中条最后重新撑开 */
+#floatingBall::before {
+	translate: 0 calc(-1 * var(--fb-gap));
+	rotate: 0deg;
+	transition: translate var(--fb-dur) ease var(--fb-dur),
+				rotate var(--fb-dur) ease 0s,
+				background-color 0.26s ease;
+}
+
+#floatingBall::after {
+	translate: 0 var(--fb-gap);
+	rotate: 0deg;
+	transition: translate var(--fb-dur) ease var(--fb-dur),
+				rotate var(--fb-dur) ease 0s,
+				background-color 0.26s ease;
+}
+
+#floatingBall .fb-bar {
+	scale: 1 1;
+	transition: scale var(--fb-dur) ease calc(var(--fb-dur) * 2),
+				background-color 0.26s ease;
+}
+
+/* 触发态：上条先下压再旋 45°（向下凹折），
+   下条先上抬再旋 -45°（向上凸起），中条先从两端向内收缩消失 */
+#floatingBall.is-expanded::before {
+	translate: 0 0;
+	rotate: 45deg;
+	background: var(--fb-bar-x-color);
+	transition: translate var(--fb-dur) ease 0s,
+				rotate var(--fb-dur) ease var(--fb-dur),
+				background-color 0.26s ease;
+}
+
+#floatingBall.is-expanded::after {
+	translate: 0 0;
+	rotate: -45deg;
+	background: var(--fb-bar-x-color);
+	transition: translate var(--fb-dur) ease 0s,
+				rotate var(--fb-dur) ease var(--fb-dur),
+				background-color 0.26s ease;
+}
+
+#floatingBall.is-expanded .fb-bar {
+	scale: 0 1;
+	background: var(--fb-bar-x-color);
+	transition: scale var(--fb-dur) ease 0s,
+				background-color 0.26s ease;
+}
+
+#floatingBall.is-dragging {
+	/* 拖动期关闭 transform 过渡，避免跟手延迟 */
+	transition: background-color 0.26s ease, filter 0.2s ease;
+}
+
+#PageBackdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(10, 20, 14, 0.32);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.24s ease;
+	will-change: opacity;
+	z-index: 190;
+}
+
+#PageBackdrop.is-active {
+	opacity: 1;
+	pointer-events: auto;
+	backdrop-filter: blur(4px);
+}
+
+#NavSidebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 88px;
+	transform: translate3d(-100%, 0, 0);
+	transition: transform 0.32s cubic-bezier(0.25, 0.10, 0.25, 1.00);
+	will-change: transform;
+	z-index: 195;
+}
+
+#NavSidebar.is-open {
+	transform: translate3d(0, 0, 0);
+}
+
+/* .nav-cell：原生 React 页面（FloatingChrome）使用的侧边栏链接块，与原 ID 选择器等效 */
+#Navigater, #Tool, #News, #NavSidebar .nav-cell {
+	width: 100%;
+	height: 88px;
+	background-color: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+}
+
+.href {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	color: #fff;
+	text-decoration: none;
+	font-weight: bold;
+	border-radius: 12px;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.href:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+	color: #fff;
+	filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+}
+
+#OtherLink {
+	margin-top: 12px;
+	width: 100%;
+	height: 88px;
+	position: relative;
+	top: 100%;
+	background-color: rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+}
+
+/* ========================
+   可拖拽悬浮窗组件（全局复用）
+   ======================== */
+
+.floating-window {
+	position: fixed;
+	left: 10vw;
+	top: 12vh;
+	width: 80vw;
+	height: 70vh;
+	min-width: 320px;
+	min-height: 220px;
+	display: flex;
+	flex-direction: column;
+	border-radius: 12px;
+	border: 1px solid rgba(15, 122, 71, 0.35);
+	background: rgba(255, 255, 255, 0.98);
+	box-shadow: 0 20px 50px rgba(8, 40, 26, 0.28);
+	overflow: hidden;
+	z-index: 300;
+	touch-action: none;
+	user-select: none;
+}
+
+.floating-window.is-resizing .floating-window-body iframe,
+.floating-window.is-dragging .floating-window-body iframe {
+	/* 拖拽/缩放期间让 iframe 不拦截指针事件，确保操作连贯 */
+	pointer-events: none;
+}
+
+.floating-window-header {
+	flex: 0 0 auto;
+	height: 38px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 0 10px;
+	background: linear-gradient(120deg, #165d3f 0%, #2f8a62 100%);
+	color: #f1fff8;
+	cursor: grab;
+	border-bottom: 1px solid rgba(15, 122, 71, 0.35);
+}
+
+.floating-window-header:active {
+	cursor: grabbing;
+}
+
+.floating-window-title {
+	font-size: 13px;
+	font-weight: 700;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+}
+
+.floating-window-close {
+	flex: 0 0 auto;
+	width: 24px;
+	height: 24px;
+	border: 0;
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.18);
+	color: #f1fff8;
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.floating-window-close:hover {
+	background: rgba(204, 47, 47, 0.85);
+}
+
+.floating-window-body {
+	flex: 1 1 auto;
+	position: relative;
+	overflow: hidden;
+	background: #f7fdfa;
+}
+
+.floating-window-body iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+	background: #ffffff;
+}
+
+/* 拖拽缩放把手：8 个方向 */
+.resize-handle {
+	position: absolute;
+	z-index: 10;
+}
+
+.resize-handle.n,
+.resize-handle.s {
+	left: 8px;
+	right: 8px;
+	height: 8px;
+	cursor: ns-resize;
+}
+
+.resize-handle.e,
+.resize-handle.w {
+	top: 8px;
+	bottom: 8px;
+	width: 8px;
+	cursor: ew-resize;
+}
+
+.resize-handle.n { top: 0; }
+.resize-handle.s { bottom: 0; }
+.resize-handle.e { right: 0; }
+.resize-handle.w { left: 0; }
+
+.resize-handle.nw,
+.resize-handle.ne,
+.resize-handle.sw,
+.resize-handle.se {
+	width: 12px;
+	height: 12px;
+	z-index: 11;
+}
+
+.resize-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
+.resize-handle.ne { top: 0; right: 0; cursor: nesw-resize; }
+.resize-handle.sw { bottom: 0; left: 0; cursor: nesw-resize; }
+.resize-handle.se { bottom: 0; right: 0; cursor: nwse-resize; }
+
+/* 侧边栏按钮区：位于 CandidatePool 上方，用于放置扩展按钮 */
+#SidebarButtonArea {
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	background: rgba(249, 255, 251, 0.26);
+	padding: 6px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	align-items: center;
+	min-height: 40px;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+/* ========================
+   全局工具类
+   ======================== */
+
+.primary-bg {
+	background-color: var(--joint-color);
+}
+
+.primary-text {
+	color: var(--joint-color);
+}
+
+.primary-border {
+	border-color: var(--joint-color);
+}
+
+.primary-fill {
+	background-color: var(--joint-color);
+}
+
+.surface-card {
+	background: var(--surface-bg);
+	border: 1px solid var(--surface-border);
+	border-radius: 4px;
+	padding: 20px;
+}
+
+.text-white {
+	color: #ffffff;
+}
+
+.text-center {
+	text-align: center;
+}
+
+.hover-primary:hover {
+	color: var(--joint-color);
+}
+
+/* ========================
+   圆角大按钮快捷入口（可堆叠单元块）
+   ======================== */
+
+.dial-group {
+	margin-bottom: 16px;
+}
+
+.dial-group:last-child {
+	margin-bottom: 0;
+}
+
+.dial-title {
+	font-size: 17px;
+	font-weight: 600;
+	color: var(--text-primary, #222);
+	padding-bottom: 10px;
+	margin-bottom: 12px;
+	border-bottom: 2px solid var(--joint-color);
+}
+
+.dial-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dial-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 88px;
+	padding: 12px;
+	border-radius: 12px;
+	background: #ffffff;
+	border: 1px solid var(--surface-border, #E5E7EB);
+	color: var(--joint-color);
+	font-size: 15px;
+	font-weight: bold;
+	text-decoration: none;
+	text-align: center;
+	transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.dial-btn:hover {
+	background: #e8f8ef;
+}
+
+.dial-btn:active {
+	transform: scale(0.98);
+}

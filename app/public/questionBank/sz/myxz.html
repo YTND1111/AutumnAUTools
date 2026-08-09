@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CAU马原单选题库练习器</title>
+<style>
+
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --primary:#4F46E5; --primary-light:#EEF2FF; --primary-dark:#3730A3;
+  --success:#059669; --success-light:#D1FAE5;
+  --danger:#DC2626; --danger-light:#FEE2E2;
+  --warning:#D97706; --warning-light:#FEF3C7;
+  --bg:#F1F5F9; --card:#FFFFFF; --text:#1E293B; --text2:#64748B; --border:#E2E8F0;
+  --radius:14px; --shadow:0 1px 3px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.1);
+}
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-tap-highlight-color:transparent; }
+#app { max-width:720px; margin:0 auto; padding:16px 16px 40px; min-height:100vh; }
+
+/* ===== HOME ===== */
+.home-header { text-align:center; padding:36px 0 24px; }
+.home-header h1 { font-size:26px; font-weight:800; color:var(--primary); }
+.home-header p { color:var(--text2); margin-top:4px; font-size:14px; }
+.section-title { font-size:13px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; padding-left:4px; }
+
+.notebook-bar { background:var(--card); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow); cursor:pointer; display:flex; align-items:center; justify-content:space-between; border:2px solid transparent; transition:all .2s; margin-bottom:20px; }
+.notebook-bar:hover { border-color:var(--warning); box-shadow:var(--shadow-lg); }
+.notebook-bar .nb-left { display:flex; align-items:center; gap:14px; }
+.notebook-bar .nb-icon { width:44px; height:44px; border-radius:12px; background:var(--warning-light); display:flex; align-items:center; justify-content:center; font-size:22px; }
+.notebook-bar .nb-info .nb-title { font-weight:700; font-size:15px; }
+.notebook-bar .nb-info .nb-sub { font-size:13px; color:var(--text2); }
+.notebook-bar .nb-arrow { font-size:18px; color:var(--text2); }
+.notebook-bar .nb-count { background:var(--danger); color:#fff; font-size:12px; font-weight:700; min-width:24px; height:24px; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:0 8px; }
+
+.chapter-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.chapter-card { background:var(--card); border-radius:var(--radius); padding:18px 12px; box-shadow:var(--shadow); cursor:pointer; text-align:center; border:2px solid transparent; transition:all .2s; }
+.chapter-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); border-color:var(--primary); }
+.chapter-card .ch-name { font-weight:700; font-size:14px; }
+.chapter-card .ch-count { font-size:12px; color:var(--text2); margin-top:2px; }
+.chapter-card.all-card { background:linear-gradient(135deg,var(--primary),#7C3AED); color:#fff; grid-column:span 2; }
+.chapter-card.all-card .ch-count,.chapter-card.all-card .ch-name { color:rgba(255,255,255,.85); }
+
+@media (max-width:500px) { .chapter-grid { grid-template-columns:repeat(3,1fr); gap:8px; } .chapter-card { padding:14px 6px; } }
+
+/* ===== MODAL ===== */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:200; display:flex; align-items:center; justify-content:center; animation:fadeIn .2s; padding:20px; }
+.modal { background:var(--card); border-radius:var(--radius); padding:28px 24px; box-shadow:var(--shadow-lg); max-width:340px; width:100%; animation:slideUp .25s; }
+.modal h3 { margin-bottom:6px; font-size:18px; }
+.modal .modal-sub { color:var(--text2); font-size:13px; margin-bottom:20px; }
+.modal .btn-group { display:flex; flex-direction:column; gap:8px; }
+.modal .btn-row { display:flex; gap:8px; }
+
+/* ===== QUIZ ===== */
+.quiz-top { display:flex; align-items:center; gap:10px; padding:8px 0 6px; position:sticky; top:0; background:var(--bg); z-index:10; }
+.quiz-back-btn { width:36px; height:36px; border-radius:50%; border:none; background:var(--card); cursor:pointer; font-size:18px; color:var(--text2); box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.quiz-back-btn:hover { background:var(--danger-light); color:var(--danger); }
+.quiz-prev-btn { width:36px; height:36px; border-radius:50%; border:none; background:var(--card); cursor:pointer; font-size:18px; color:var(--text2); box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.quiz-prev-btn:hover { background:var(--primary-light); color:var(--primary); }
+.quiz-prev-btn:disabled { opacity:.3; cursor:not-allowed; }
+.quiz-prev-btn:disabled:hover { background:var(--card); color:var(--text2); }
+.quiz-progress { flex:1; }
+.quiz-progress-outer { height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+.quiz-progress-inner { height:100%; background:var(--primary); border-radius:3px; transition:width .4s ease; }
+.quiz-progress-info { display:flex; justify-content:space-between; margin-top:4px; font-size:12px; color:var(--text2); }
+.quiz-badge { font-size:11px; background:var(--primary-light); color:var(--primary); padding:3px 10px; border-radius:12px; font-weight:600; white-space:nowrap; flex-shrink:0; }
+
+.quiz-question-card { background:var(--card); border-radius:var(--radius); padding:24px 20px; box-shadow:var(--shadow); margin:12px 0 14px; min-height:80px; max-height:280px; overflow-y:auto; transition:all .3s; }
+.quiz-question-card .qq-num { font-size:12px; color:var(--text2); margin-bottom:10px; }
+.quiz-question-card .qq-text { font-size:16px; line-height:1.75; font-weight:500; }
+
+.quiz-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.quiz-option { background:var(--card); border:2px solid var(--border); border-radius:var(--radius); padding:14px 16px; cursor:pointer; transition:all .15s; font-size:14px; line-height:1.5; display:flex; align-items:flex-start; gap:10px; user-select:none; }
+.quiz-option:active { transform:scale(.98); }
+.quiz-option .opt-letter { width:26px; height:26px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:var(--primary); flex-shrink:0; transition:all .15s; }
+.quiz-option:hover:not(.opt-done) { border-color:var(--primary); background:var(--primary-light); }
+.quiz-option.opt-done { pointer-events:none; }
+.quiz-option.opt-correct { border-color:var(--success); background:var(--success-light); }
+.quiz-option.opt-correct .opt-letter { background:var(--success); color:#fff; }
+.quiz-option.opt-wrong { border-color:var(--danger); background:var(--danger-light); }
+.quiz-option.opt-wrong .opt-letter { background:var(--danger); color:#fff; }
+.quiz-option.opt-dim { opacity:.5; }
+
+.quiz-bottom { margin-top:14px; min-height:50px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; }
+.quiz-feedback { font-weight:700; font-size:17px; animation:fadeIn .3s; }
+.quiz-feedback.fb-correct { color:var(--success); }
+.quiz-feedback.fb-wrong { color:var(--danger); }
+.quiz-action-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+
+/* Buttons */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 22px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; border:none; transition:all .15s; white-space:nowrap; text-decoration:none; }
+.btn:active { transform:scale(.97); }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-dark); }
+.btn-success { background:var(--success); color:#fff; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-outline { background:transparent; border:2px solid var(--border); color:var(--text); }
+.btn-outline:hover { border-color:var(--primary); color:var(--primary); }
+.btn-warning { background:var(--warning); color:#fff; }
+.btn-ghost { background:transparent; color:var(--text2); padding:6px 14px; font-size:13px; }
+.btn-ghost:hover { color:var(--text); background:var(--bg); }
+.btn-sm { padding:6px 14px; font-size:13px; border-radius:8px; }
+.btn-lg { padding:14px 32px; font-size:16px; border-radius:12px; }
+
+/* ===== RESULTS ===== */
+.results-wrap { text-align:center; padding:20px 0; }
+.results-wrap h2 { font-size:24px; margin-bottom:24px; }
+.score-ring { width:150px; height:150px; border-radius:50%; margin:0 auto 24px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:6px solid; animation:pop .5s ease; }
+.score-ring.excellent { border-color:var(--success); }
+.score-ring.excellent .sr-num { color:var(--success); }
+.score-ring.good { border-color:var(--primary); }
+.score-ring.good .sr-num { color:var(--primary); }
+.score-ring.ok { border-color:var(--warning); }
+.score-ring.ok .sr-num { color:var(--warning); }
+.score-ring.poor { border-color:var(--danger); }
+.score-ring.poor .sr-num { color:var(--danger); }
+.sr-num { font-size:46px; font-weight:800; }
+.sr-pct { font-size:14px; color:var(--text2); }
+
+.results-stats { display:flex; justify-content:center; gap:36px; margin:16px 0 28px; }
+.rstat { text-align:center; }
+.rstat-val { font-size:26px; font-weight:700; }
+.rstat-label { font-size:13px; color:var(--text2); }
+.rstat-val.c-green { color:var(--success); }
+.rstat-val.c-red { color:var(--danger); }
+
+/* ===== NOTEBOOK ===== */
+.nb-header { display:flex; align-items:center; gap:12px; padding:8px 0 12px; }
+.nb-header h2 { font-size:18px; }
+.nb-header .nb-total { font-size:13px; color:var(--text2); }
+
+.nb-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.nb-tab { padding:8px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; border:none; background:var(--card); color:var(--text); box-shadow:var(--shadow); transition:all .15s; }
+.nb-tab:hover { background:var(--primary-light); }
+.nb-tab.active { background:var(--primary); color:#fff; }
+
+.nb-add { display:flex; gap:8px; margin-bottom:16px; }
+.nb-add input { flex:1; padding:10px 14px; border:2px solid var(--border); border-radius:10px; font-size:14px; outline:none; min-width:0; }
+.nb-add input:focus { border-color:var(--primary); }
+
+.nb-list { list-style:none; }
+.nb-item { background:var(--card); border-radius:10px; padding:14px 16px; margin-bottom:8px; box-shadow:var(--shadow); display:flex; align-items:flex-start; gap:12px; }
+.nb-item .nbi-info { flex:1; min-width:0; }
+.nb-item .nbi-num { font-weight:700; color:var(--primary); font-size:13px; }
+.nb-item .nbi-q { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:2px 0; }
+.nb-item .nbi-a { font-size:12px; color:var(--text2); }
+.nb-item .nbi-btn { flex-shrink:0; width:28px; height:28px; border-radius:50%; border:none; background:var(--danger-light); color:var(--danger); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; }
+.nb-item .nbi-btn:hover { background:var(--danger); color:#fff; }
+
+.nb-empty { text-align:center; padding:48px 20px; color:var(--text2); }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+@keyframes pop { 0%{transform:scale(.8);opacity:0} 60%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+
+/* Toast */
+.toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); background:#1E293B; color:#fff; padding:10px 22px; border-radius:20px; font-size:14px; z-index:300; animation:slideDown .3s; pointer-events:none; box-shadow:var(--shadow-lg); }
+
+@media (max-width:500px) {
+  .quiz-options { grid-template-columns:1fr; }
+  .quiz-question-card { padding:18px 14px; }
+  .quiz-question-card .qq-text { font-size:15px; }
+  .results-stats { gap:24px; }
+}
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-zone"></div>
+<script>
+
+// ===== EMBEDDED DATA =====
+const QUESTIONS = [{"chapter": "导论", "number": 1, "question": "作为中国共产党和社会主义事业指导思想的马克思主义是指", "A": "关于自然、社会和人类思维发展一般规律的学说", "B": "由马克思和恩格斯创立并为后继者所不断发展的科学理论体系", "C": "列宁创立的基本理论、基本观点和基本方法构成的科学体系", "D": "毛泽东思想和中国特色社会主义理论体系", "answer": "B"}, {"chapter": "导论", "number": 2, "question": "下列哪项不是马克思主义理论体系不可分割的组成部分", "A": "马克思主义哲学", "B": "马克思主义政治经济学", "C": "科学社会主义", "D": "马克思主义文化历史", "answer": "D"}, {"chapter": "导论", "number": 3, "question": "马克思主义的产生具有深刻的社会根源、阶级基础和思想渊源。其创始人马克思1818年5月5日出生在德国特利尔城的一个律师家庭，恩格斯1820年11月28日出生在德国巴门市的一个工厂主家庭，他们放弃了舒适安逸的生活，毅然选择了充满荆棘坎坷的革命道路，创立了科学社会主义。马克思、恩格斯之所以能够创立科学社会主义，主要是因为", "A": "他们拥有优良的家庭背景和教育经历", "B": "他们对时代有着超越常人的认知能力", "C": "社会历史条件和个人努力的相互作用", "D": "德国是当时最为发达的资本主义国家", "answer": "C"}, {"chapter": "导论", "number": 4, "question": "马克思主义产生的社会根源是", "A": "阶级矛盾和阶级斗争加剧", "B": "资本主义经济危机频繁爆发", "C": "资本主义生产方式的发展", "D": "工业革命改善了工人劳动条件", "answer": "C"}, {"chapter": "导论", "number": 5, "question": "马克思主义产生的阶级基础是", "A": "资本主义处于上升时期", "B": "无产阶级作为独立的政治力量登上了历史舞台", "C": "资本主义生产方式在西欧已经确立", "D": "工人运动得到了“农民的合唱”", "answer": "B"}, {"chapter": "导论", "number": 6, "question": "马克思主义从广义上说是指", "A": "无产阶级争取自身解放和整个人类解放的学说体系", "B": "关于无产阶级斗争的性质、目的和解放条件的学说", "C": "马克思和恩格斯创立的基本理论、基本观点和学说的体系", "D": "不仅指马克思和恩格斯创立的基本理论、基本观点和学说的体系，也包括继承者对它的发展", "answer": "D"}, {"chapter": "导论", "number": 7, "question": "马克思和恩格斯完成从唯心主义向唯物主义、从革命民主主义向共产主义的转变都是在", "A": "1841年", "B": "1842年", "C": "1844年", "D": "1848年", "answer": "C"}, {"chapter": "导论", "number": 8, "question": "马克思和恩格斯首次系统阐述历史唯物主义基本观点的著作是", "A": "《德法年鉴》", "B": "《神圣家族》", "C": "《德意志意识形态》", "D": "《共产党宣言》", "answer": "C"}, {"chapter": "导论", "number": 9, "question": "标志着马克思主义公开问世的著作是", "A": "《德意志意识形态》", "B": "《共产党宣言》", "C": "《资本论》", "D": "《哥达纲领批判》", "answer": "B"}, {"chapter": "导论", "number": 10, "question": "马克思、恩格斯始终站在革命斗争的最前沿，他们的一生是为推翻旧世界、建立新世界而不息战斗的一生。马克思、恩格斯领导创建的世界上第一个无产阶级政党是", "A": "共产主义者同盟", "B": "正义者同盟", "C": "国际工人协会", "D": "社会主义工人国际", "answer": "A"}, {"chapter": "导论", "number": 11, "question": "马克思系统阐述剩余价值学说，揭示资本主义生产关系秘密的著作是", "A": "《共产党宣言》", "B": "《哥达纲领批判》", "C": "《法兰西内战》", "D": "《资本论》", "answer": "D"}, {"chapter": "导论", "number": 12, "question": "恩格斯于1820年11月28日出生在德国巴门市的一个工厂主家庭。他称自己一生所做的事就是“拉第二小提琴”。恩格斯不仅与马克思一起创立马克思主义，参加并指导国际工人运动，而且在传播和发展马克思主义方面作出了杰出的贡献。恩格斯全面阐述马克思主义理论体系的著作是", "A": "《共产党宣言》", "B": "《家庭、私有制和国家的起源》", "C": "《反杜林论》", "D": "《自然辩证法》", "answer": "C"}, {"chapter": "导论", "number": 13, "question": "在第一次世界大战中成为东西方矛盾焦点和帝国主义政治体系最薄弱环节的国家是", "A": "德国", "B": "奥地利", "C": "中国", "D": "俄国", "answer": "D"}, {"chapter": "导论", "number": 14, "question": "马克思主义中国化的最新理论成果是", "A": "毛泽东思想", "B": "中国特色社会主义理论体系", "C": "邓小平理论", "D": "习近平新时代中国特色社会主义思想", "answer": "D"}, {"chapter": "导论", "number": 15, "question": "马克思主义的科学世界观和方法论基础是", "A": "辩证唯物主义", "B": "历史唯物主义", "C": "辩证唯物主义和历史唯物主义", "D": "唯物主义", "answer": "C"}, {"chapter": "导论", "number": 16, "question": "与科学性高度统一的，是马克思主义的", "A": "人民性", "B": "实践性", "C": "革命性", "D": "发展性", "answer": "C"}, {"chapter": "导论", "number": 17, "question": "马克思主义的革命性建立的基础是它的", "A": "科学性", "B": "实践性", "C": "人民性", "D": "发展性", "answer": "A"}, {"chapter": "导论", "number": 18, "question": "马克思主义的阶级基础是革命的", "A": "无产阶级", "B": "资产阶级", "C": "小资产阶级", "D": "民族资产阶级", "answer": "A"}, {"chapter": "导论", "number": 19, "question": "列宁说，马克思主义创始人兼有的两种品质是", "A": "学者和资本家", "B": "学者和革命家", "C": "政治家和革命家", "D": "资本家和政治家", "answer": "B"}, {"chapter": "导论", "number": 20, "question": "马克思主义首要的和基本的观点是", "A": "唯物主义观点", "B": "辩证法观点", "C": "实践观点", "D": "阶级观点", "answer": "C"}, {"chapter": "导论", "number": 21, "question": "马克思主义的政治立场是", "A": "放眼世界", "B": "实践品格", "C": "人民至上", "D": "解放思想", "answer": "C"}, {"chapter": "导论", "number": 22, "question": "马克思主义最崇高的社会理想是", "A": "实现共产主义", "B": "消灭特权、消灭阶级、消灭国家", "C": "实现个人的绝对自由", "D": "实现普遍人权", "answer": "A"}, {"chapter": "导论", "number": 23, "question": "马克思、恩格斯进一步发展和完善了英国古典经济学中的", "A": "辩证法", "B": "历史观", "C": "劳动价值论", "D": "剩余价值论", "answer": "C"}, {"chapter": "第1章", "number": 1, "question": "哲学是", "A": "科学的世界观和方法论", "B": "科学性和革命性相统一的世界观", "C": "理论化和系统化的世界观", "D": "辩证唯物主义和历史唯物主义", "answer": "C"}, {"chapter": "第1章", "number": 2, "question": "恩格斯认为，全部哲学，特别是近代哲学的重大的基本问题是", "A": "哲学与人类生存活动之间的内在联系问题", "B": "人与周围世界的关系问题", "C": "思维和存在的关系问题", "D": "关于人的本质问题", "answer": "C"}, {"chapter": "第1章", "number": 3, "question": "划分唯物主义和唯心主义的标准是对什么问题的不同回答", "A": "世界是否具有统一性", "B": "物质和意识哪个是第一性", "C": "世界万物是否运动发展", "D": "世界是否可以认识", "answer": "B"}, {"chapter": "第1章", "number": 4, "question": "对哲学基本问题第二个方面的不同回答是划分", "A": "唯物主义和唯心主义的标准", "B": "反映论和先验论的标准", "C": "可知论和不可知论的标准", "D": "辩证法和形而上学的标准", "answer": "C"}, {"chapter": "第1章", "number": 5, "question": "否认思维与存在的同一性问题是", "A": "唯物论", "B": "唯心论", "C": "二元论", "D": "不可知论", "answer": "D"}, {"chapter": "第1章", "number": 6, "question": "唯物主义和唯心主义", "A": "都是一元论", "B": "都是二元论", "C": "都是多元论", "D": "都是可知论", "answer": "A"}, {"chapter": "第1章", "number": 7, "question": "一切唯心主义都主张", "A": "精神是世界的本原", "B": "存在就是被感知", "C": "世界是绝对精神的产物", "D": "理是天地万物之根", "answer": "A"}, {"chapter": "第1章", "number": 8, "question": "在哲学基本问题上，唯心主义的主要错误是", "A": "认为世界是不可认识的", "B": "主张物质和意识都是世界的本原", "C": "否认物质对意识的决定作用", "D": "抹煞意识对物质的能动作用", "answer": "C"}, {"chapter": "第1章", "number": 9, "question": "唯心主义的两种基本形式是", "A": "形而上学唯心主义和辩证唯心主义", "B": "彻底的唯心主义和不彻底的唯心主义", "C": "主观唯心主义和客观唯心主义", "D": "自然观上的唯心主义和历史观上的唯心主义", "answer": "C"}, {"chapter": "第1章", "number": 10, "question": "把可直接感知的某种具体实物看作是世界的本原，这种观点属于", "A": "朴素唯物主义", "B": "形而上学唯物主义", "C": "辩证唯物主义", "D": "庸俗唯物主义", "answer": "A"}, {"chapter": "第1章", "number": 11, "question": "认为原子是构成物质世界一切事物的最小单位，是堆砌宇宙大厦的“宇宙之砖”。这是一种", "A": "朴素唯物主义的物质观", "B": "庸俗唯物主义的物质观", "C": "辩证唯物主义的物质观", "D": "形而上学唯物主义的物质观", "answer": "D"}, {"chapter": "第1章", "number": 12, "question": "形而上学唯物主义物质观的错误是", "A": "否认物质的客观性", "B": "把自然科学的物质结构理论与哲学的物质范畴相混淆", "C": "否认物质的可知性", "D": "把可直接感知的实物当作世界的本原", "answer": "B"}, {"chapter": "第1章", "number": 13, "question": "哲学上的物质范畴与自然科学上的物质形态的关系是", "A": "本原和派生的关系", "B": "普遍和特殊的关系", "C": "本质和现象的关系", "D": "形式和内容的关系", "answer": "B"}, {"chapter": "第1章", "number": 14, "question": "《诗经》上说：“高岸为谷，深谷为陵”。就是说，高的堤岸可以变为深谷，深谷也可以变成丘陵。这种观点是", "A": "朴素辩证法", "B": "客观唯心主义", "C": "形而上学", "D": "相对主义", "answer": "A"}, {"chapter": "第1章", "number": 15, "question": "中国古代的“五行说”属于", "A": "唯心主义", "B": "形而上学唯物主义", "C": "现代唯物主义", "D": "朴素唯物主义", "answer": "D"}, {"chapter": "第1章", "number": 16, "question": "“天不变，道亦不变”。这种观点是", "A": "朴素辩证法", "B": "形而上学", "C": "相对主义", "D": "主观唯心主义", "answer": "B"}, {"chapter": "第1章", "number": 17, "question": "“古之天下，亦今之天下；今之天下，亦古之天下”，这个论断是", "A": "唯物论的观点", "B": "辩证法的观点", "C": "决定论的观点", "D": "形而上学的观点", "answer": "D"}, {"chapter": "第1章", "number": 18, "question": "列宁对辩证唯物主义物质范畴的定义是通过", "A": "物质和意识的关系界定的", "B": "哲学与具体科学的关系界定的", "C": "主体和客体的关系界定的", "D": "一般和个别的关系界定的", "answer": "A"}, {"chapter": "第1章", "number": 19, "question": "物质的唯一特性是", "A": "运动变化性", "B": "客观实在性", "C": "可知性", "D": "广延性", "answer": "B"}, {"chapter": "第1章", "number": 20, "question": "物质的唯一特性是客观实在性，这里说的“客观实在”是指", "A": "看得见、摸得着的实物", "B": "物质的具体形态和结构", "C": "不以人的意志为转移", "D": "不能被人们所认识", "answer": "C"}, {"chapter": "第1章", "number": 21, "question": "物质的根本属性是", "A": "客观实在性", "B": "运动", "C": "结构性", "D": "层次性", "answer": "B"}, {"chapter": "第1章", "number": 22, "question": "“坐地日行八万里，巡天遥看一千河”，这一著名诗句包含的哲理是", "A": "物质运动的客观性和时空的主观性的统一", "B": "物质运动无限性和有限性的统一", "C": "时空的无限性和有限性的统一", "D": "运动的绝对性和静止的相对性的统一", "answer": "D"}, {"chapter": "第1章", "number": 23, "question": "下列各项正确反映物质和运动关系的是", "A": "运动是内容，物质是其形式", "B": "运动是现象，物质是其本质", "C": "运动是暂时的，物质是永恒的", "D": "运动是物质的固有属性，物质是运动的主体", "answer": "D"}, {"chapter": "第1章", "number": 24, "question": "相对静止是指", "A": "事物绝对不动", "B": "事物永恒不变", "C": "事物运动的特殊状态", "D": "事物运动的普遍状态", "answer": "C"}, {"chapter": "第1章", "number": 25, "question": "“人不能两次踏进同一条河流”和“人一次也不能踏进同一条河流”。两种说法：", "A": "都是辩证法的观点", "B": "前者是辩证法观点，后者是诡辩论观点", "C": "都是诡辩论观点", "D": "前者是诡辩论观点，后者是辩证法观点", "answer": "B"}, {"chapter": "第1章", "number": 26, "question": "只承认绝对运动，否认相对静止的观点是", "A": "主观唯心主义", "B": "客观唯心主义", "C": "形而上学", "D": "相对主义诡辩论", "answer": "D"}, {"chapter": "第1章", "number": 27, "question": "有一幅对联，上联“橘子洲，洲旁舟，舟行洲不行，”下联“天心阁，阁中鸽，鸽飞阁不飞。”这形象的说明了运动和静止是相互依存的。静止是", "A": "运动的衡量尺度", "B": "运动的内在原因", "C": "运动的普遍状态", "D": "运动的存在方式", "answer": "A"}, {"chapter": "第1章", "number": 28, "question": "“风定花犹落，鸟鸣山更幽”形象地表达了动和静的辩证关系是", "A": "静不是动，动不是静", "B": "静中有动，动中有静", "C": "动是必然的，静是偶然的", "D": "动是静的原因，静是动的结果", "answer": "B"}, {"chapter": "第1章", "number": 29, "question": "时间是指", "A": "物质运动的持续性", "B": "物质运动的广延性", "C": "人们整理感觉材料的形式", "D": "人们头脑中形成的观念", "answer": "A"}, {"chapter": "第1章", "number": 30, "question": "“机不可失，时不再来”。这句话强调的是时间的", "A": "客观性", "B": "无限性", "C": "一维性", "D": "方向性", "answer": "C"}, {"chapter": "第1章", "number": 31, "question": "古诗“王子去求仙，丹成入九天，洞中方七日，世上几千年。”这是用神话形式，说明时间具有", "A": "客观性", "B": "有限性", "C": "可知性", "D": "相对性", "answer": "D"}, {"chapter": "第1章", "number": 32, "question": "古希腊米利都学派的代表人物泰勒斯提出了“水是万物的本原”的论点，春秋时代《管子》书中的《水地》篇中也表述了“水是万物的根源”的学说。上述观点", "A": "是完全正确的，属于辩证唯物主义的观点", "B": "不符合客观实际，属于唯心主义的观点", "C": "是古代朴素唯物主义的观点，既具有合理性和进步性，又具有明显的局限性", "D": "否认了意识是物质的产物和反映", "answer": "C"}, {"chapter": "第1章", "number": 33, "question": "空间的特性是", "A": "一维性", "B": "二维性", "C": "三维性", "D": "多维性", "answer": "C"}, {"chapter": "第1章", "number": 34, "question": "时间和空间是", "A": "物质的两种属性", "B": "运动着的物质的存在形式", "C": "整理认识材料的工具", "D": "感觉系列调整了的体系", "answer": "B"}, {"chapter": "第1章", "number": 35, "question": "“一切以时间、地点、条件为转移”，这一观点是", "A": "机械决定论观点", "B": "形而上学观点", "C": "唯物主义辩证法观点", "D": "唯心主义辩证法观点", "answer": "C"}, {"chapter": "第1章", "number": 36, "question": "“旧唯物主义是半截子的唯物主义”，这是指", "A": "旧唯物主义是形而上学的唯物主义", "B": "旧唯物主义在社会历史观上是唯心主义", "C": "旧唯物主义是机械唯物主义", "D": "旧唯物主义是割裂了运动与静止的辩证法", "answer": "B"}, {"chapter": "第1章", "number": 37, "question": "任何意识都是人脑对客观世界的", "A": "主观反映", "B": "歪曲反映", "C": "虚幻反映", "D": "正确反映", "answer": "A"}, {"chapter": "第1章", "number": 38, "question": "劳动在人类意识产生过程中起了决定作用，这是因为劳动", "A": "使自然环境发生了变化", "B": "为意识的产生提供了客观需要和可能", "C": "为人类提供了生活资料", "D": "使人更好地适应自然", "answer": "B"}, {"chapter": "第1章", "number": 39, "question": "意识的本质是", "A": "各种感觉的综合", "B": "人脑对客观存在的反映", "C": "人脑分泌的特殊物质", "D": "“绝对精神”的体现", "answer": "B"}, {"chapter": "第1章", "number": 40, "question": "意识是人脑的机能，是说", "A": "意识是人脑自生的", "B": "意识是人脑的一种分泌物", "C": "人脑是产生意识的源泉", "D": "人脑是产生意识的物质器官", "answer": "D"}, {"chapter": "第1章", "number": 41, "question": "“狼孩”没有意识，这一事实说明", "A": "意识是社会的产物", "B": "意识是对客观事物的反映", "C": "意识是人脑发展的产物", "D": "意识是生物长期发展的产物", "answer": "A"}, {"chapter": "第1章", "number": 42, "question": "在意识的产生和发展中起着决定性作用的是", "A": "人脑的进化", "B": "动物心理的形成", "C": "语言的产生", "D": "劳动", "answer": "D"}, {"chapter": "第1章", "number": 43, "question": "有人认为，既然人的意识是对客观外部世界的反映，那么人脑里的“鬼”“神”意识就是对外在世界上鬼、神真实存在的反映。这种观念的错误在于", "A": "夸大了意识的能动作用", "B": "把意识看成是物质的产物", "C": "认为意识是对存在的直观反映", "D": "混淆了人类意识自然演化的阶段", "answer": "C"}, {"chapter": "第1章", "number": 44, "question": "对于同一事物，不同的人有不同的反映，这说明", "A": "意识受主体状况的影响", "B": "意识不受客体影响", "C": "意识是主体的自由创造", "D": "意识的内容是主观的", "answer": "A"}, {"chapter": "第1章", "number": 45, "question": "一切唯物主义都坚持", "A": "物质决定意识，意识具有能动性", "B": "物质是运动的，运动形式具有多样性", "C": "物质第一性，意识第二性", "D": "社会存在第一性．社会意识第二性", "answer": "C"}, {"chapter": "第1章", "number": 46, "question": "意识对物质反作用的基本途径是", "A": "个人的主观努力", "B": "社会实践", "C": "社会的客观物质条件", "D": "主观条件和客观条件的统一", "answer": "B"}, {"chapter": "第1章", "number": 47, "question": "先有工程设计图，然后按工程设计图施工，建成大厦。这一事实说明", "A": "意识在先，物质在后", "B": "意识对物质有能动作用", "C": "意识对物质有决定作用", "D": "物质对意识有决定作用", "answer": "B"}, {"chapter": "第1章", "number": 48, "question": "正确发挥意识能动作用的前提是", "A": "正确反映客观规律", "B": "彻底克服保守思想", "C": "充分发挥集体智慧", "D": "充分调动个人的积极性", "answer": "A"}, {"chapter": "第1章", "number": 49, "question": "“心诚则灵，心不诚则不灵”的说法是", "A": "主张物质和意识具有统一性的辩证唯物主义观点", "B": "主张思想就是物质的庸俗唯物主义观点", "C": "认为世界是绝对精神外化的客观唯心主义观点", "D": "夸大了意识能动作用的唯心主义观点", "answer": "D"}, {"chapter": "第1章", "number": 50, "question": "相信“意念移物”，甚至相信可以用意念来直接改变物质结构，就是信奉", "A": "主张精神主宰客观物质世界的主观唯心论", "B": "主张精神是脱离人脑独立存在的客观唯心论", "C": "认为人的思想是特殊物质的机械唯物主义", "D": "认为人具有主观能动性的实践唯物主义", "answer": "A"}, {"chapter": "第1章", "number": 51, "question": "随着科学技术的发展，人类已经制造出诸如醋酸纤维、聚苯乙烯、合成橡胶等自然界原本不存在的化合物，其数量已达数百万种。这一情况说明", "A": "物质世界是人类创造的", "B": "人类通过实践将“自在之物”转化为“为我之物”", "C": "物质世界依赖于人的意识而存在", "D": "人造物质可以脱离天然物质而存在", "answer": "B"}, {"chapter": "第1章", "number": 52, "question": "物质和意识的对立只有在非常有限的范围内才有绝对的意义，超过这个范围便是相对的了，这个范围是指", "A": "物质和意识何者为第一性", "B": "物质和意识是否具有统一性", "C": "物质和意识何者更为重要", "D": "物质和意识何者与社会生活的关系更密切", "answer": "A"}, {"chapter": "第1章", "number": 53, "question": "广大农民在致富奔小康的过程中深切体会到：“要富口袋，先富脑袋”，这一说法在哲学上的含义是", "A": "精神是第一性的，物质是第二性的", "B": "精神的力量可以变成物质的力量", "C": "精神的力量可以代替物质的力量", "D": "先有精神，后有物质", "answer": "B"}, {"chapter": "第1章", "number": 54, "question": "某地区进入供暖季后常常出现雾霾，而一旦出现大风天气或等到春暖花开后，雾霾就会散去或减少。从该地区较长时间的数据变化看，经过人们努力治霾，污染物排放总量在持续走低；但在某些时段，环境空气质量污染指数会迅速攀升，甚至“爆表”。这种看似“矛盾”的现象凸显了大气污染防治的一个特点：天帮忙很重要，但人努力才是根本。“人努力”与“天帮忙”之间的关系对我们正确处理主观能动性和客观规律性之间辩证关系的启示是", "A": "尊重事物的客观规律是正确发挥主观能动性的前提", "B": "人类有意识的思想活动是掌握客观规律的根本前提", "C": "认识活动是客观规律性与主观能动性相统一的基础", "D": "尚未认识的外在自然规律对人的实践活动起着至关重要的作用", "answer": "A"}, {"chapter": "第1章", "number": 55, "question": "哲学上的一元论就是承认", "A": "世界的本原是精神", "B": "世界的本原是物质", "C": "世界是发展的", "D": "世界是统一的", "answer": "D"}, {"chapter": "第1章", "number": 56, "question": "马克思主义认为，世界的真正统一性在于它的", "A": "实践性", "B": "运动性", "C": "物质性", "D": "客观性", "answer": "C"}, {"chapter": "第1章", "number": 57, "question": "马克思主义哲学认为，世界在本质上是", "A": "思维和存在的统一", "B": "各种实物的总和", "C": "主体和客体的统一", "D": "多样性的物质统一", "answer": "D"}, {"chapter": "第1章", "number": 58, "question": "唯物主义和唯心主义在世界统一性问题上的根本分歧是", "A": "肯定世界的统一性还是否认世界的统一性", "B": "认为世界统一于物质还是统一于精神", "C": "认为世界统一于主体还是统一于客体", "D": "认为世界统一于运动还是统一于静止", "answer": "B"}, {"chapter": "第1章", "number": 59, "question": "一些地方的人们掠夺性地滥挖草原上的甘草，虽获得了一定的经济利益，却破坏了草原植被，造成土地荒漠化，一遇大风，沙尘暴铺天盖地而至，给人们带来了巨大灾难。这些人的做法违背了", "A": "事物普遍联系的观点", "B": "事物永恒发展的观点", "C": "量变和质变统一的观点", "D": "必然性和偶然性统一的观点", "answer": "A"}, {"chapter": "第1章", "number": 60, "question": "有一首描述在战争中缺了钉子的马掌会导致国家灭亡的童谣：“钉子缺，蹄铁卸；蹄铁卸，战马蹶；战马蹶，骑士绝；骑士绝，战事折；战事折，国家灭。”这首童谣包含的哲学原理是", "A": "现象是本质的表现", "B": "事物是变化的", "C": "事物是普遍联系的", "D": "事物的量变引起质变", "answer": "C"}, {"chapter": "第1章", "number": 61, "question": "人们由于利益的驱动，疯狂挖掘草原上的植物——“发菜”，严重地破坏了草原植被，造成局部土地沙漠化。这个案例说明", "A": "过分强调人的主观能动性，忽视了客观规律", "B": "过分强调事物的绝对运动，否认事物的相对静止", "C": "只看到物与物之间的联系，没有看到人与人之间的联系", "D": "只看到人的活动与经济利益的直接联系，没有看到眼前活动与生态平衡的长远的间接联系", "answer": "D"}, {"chapter": "第1章", "number": 62, "question": "唯物辩证法认为，发展是", "A": "事物永不停息的运动变化", "B": "事物从过去到现在再到将来的变化", "C": "事物由低级到高级的运动变化", "D": "事物由小到大、由少到多的变化", "answer": "C"}, {"chapter": "第1章", "number": 63, "question": "区分一个事物是新事物还是旧事物，最根本的是看该事物", "A": "是否为大多数人所支持", "B": "是否同历史发展的必然趋势相符合", "C": "在形式上是否新奇", "D": "在时间上是否是新近发生的", "answer": "B"}, {"chapter": "第1章", "number": 64, "question": "“世界不是既成事物的集合体，而是过程的集合体。”这一论断说明", "A": "一切都在变化和发展，没有永恒不变的事物", "B": "承认运动就必然否认相对稳定", "C": "世界作为过程的集合体处于没有方向的运动状态", "D": "世界除了过程，什么都不存在", "answer": "A"}, {"chapter": "第1章", "number": 65, "question": "“橘生淮南则为橘，生于淮北则为枳，叶徒相似，其实味不同。所以然者何？水土异也。”“橘逾淮为枳”说明了", "A": "任何具体事物都是普遍联系之网上的一个网结", "B": "事物的普遍联系是通过中介来实现的", "C": "事物的发展变化以时间、地点和条件为转移", "D": "事物的变化和发展是一个过程", "answer": "C"}, {"chapter": "第1章", "number": 66, "question": "在内容和形式的矛盾运动中", "A": "同一内容可以通过多种形式来体现", "B": "有什么样的形式，就有什么样的内容", "C": "内容对形式具有反作用", "D": "形式发生了变化，其内容也要发生相应的变化", "answer": "A"}, {"chapter": "第1章", "number": 67, "question": "唯物辩证法的因果联系是指", "A": "一切前后相继的现象之间的联系", "B": "一切同时并存的现象之间的联系", "C": "引起和被引起的现象之间的联系", "D": "反映和被反映的现象之间的联系", "answer": "C"}, {"chapter": "第1章", "number": 68, "question": "一位机械工程专家讲过这样一件事：“文革”中，他在某地劳动，有一天公社派他去割羊草。他没养过羊，怎么认得羊草呢？但终于一个办法出来了。他把羊牵出去，看羊吃什么就割什么。不到半天就割回了羊草。这位专家之所以这样做是因为他认识到，“羊吃草”与“割羊草”两者之间存在着", "A": "主观联系", "B": "必然联系", "C": "因果联系", "D": "本质联系", "answer": "C"}, {"chapter": "第1章", "number": 69, "question": "黑格尔说，割下来的手就不是真正的人手了。这句话表达的哲学道理是", "A": "承认世界的统一性", "B": "承认世界的本原是物质的", "C": "否认联系的形而上学观点", "D": "承认普遍联系的辩证法观点", "answer": "D"}, {"chapter": "第1章", "number": 70, "question": "“挟泰山以超北海，语人曰吾不能，是诚不能也。为长者折枝，语人曰吾不能，是不为也，非不能也。”《孟子》中的这段语启示我们，做事情时要区分可能性和不可能性，二者的区别在于", "A": "人的主观努力程度", "B": "对人是否有利", "C": "现实中有无根据和条件", "D": "现实中的根据和条件是否充分", "answer": "C"}, {"chapter": "第1章", "number": 71, "question": "辩证唯物主义认为事物发展的规律是", "A": "思维对事物本质的概括和反映", "B": "用来整理感性材料的思维形式", "C": "事物内在的本质和稳定的联系", "D": "事物联系和发展的基本环节", "answer": "C"}, {"chapter": "第1章", "number": 72, "question": "古代哲人荀子说：“天行有常，不为尧存，不为桀亡”。这句话体现的哲学道理是", "A": "物质运动规律具有普遍性", "B": "物质运动规律具有重复性", "C": "物质运动规律具有稳定性", "D": "物质运动规律具有客观性", "answer": "D"}, {"chapter": "第1章", "number": 73, "question": "唯物辩证法的实质与核心是", "A": "内容决定形式的规律", "B": "否定之否定规律", "C": "质量互变规律", "D": "对立统一规律", "answer": "D"}, {"chapter": "第1章", "number": 74, "question": "对立统一规律揭示了", "A": "事物发展的动力和源泉", "B": "事物发展的状态和形式", "C": "事物发展的方向和道路", "D": "事物发展的两种趋向", "answer": "A"}, {"chapter": "第1章", "number": 75, "question": "矛盾具有两个基本属性，其中一个是斗争性，另一个是", "A": "同一性", "B": "普遍性", "C": "绝对性", "D": "客观性", "answer": "A"}, {"chapter": "第1章", "number": 76, "question": "事物发展的方向、趋势是", "A": "向没有矛盾的方向转化", "B": "向任何一个方向转化", "C": "向矛盾激化的方向转化", "D": "有规律地向自己的对立面转化", "answer": "D"}, {"chapter": "第1章", "number": 77, "question": "矛盾的斗争性和同一性的关系是", "A": "本原和派生的关系", "B": "主要和次要的关系", "C": "绝对和相对的关系", "D": "根据和条件的关系", "answer": "C"}, {"chapter": "第1章", "number": 78, "question": "矛盾斗争的无条件性是指", "A": "不需要任何条件", "B": "能脱离同一性而进行斗争", "C": "不被任何条件所限制", "D": "能打破特定条件的限制", "answer": "D"}, {"chapter": "第1章", "number": 79, "question": "毛泽东在《矛盾论》中提出“马克思主义的活的灵魂”是指", "A": "矛盾的同一性和斗争性的关系", "B": "内因和外因的关系", "C": "一般和个别的关系", "D": "具体问题具体分析", "answer": "D"}, {"chapter": "第1章", "number": 80, "question": "马克思主义普遍真理同各国具体实际相结合的哲学基础是", "A": "内容与形式辩证关系的原理", "B": "矛盾的普遍性与特殊性辩证关系的原理", "C": "现象与本质辩证关系的原理", "D": "矛盾的同一性与斗争性辩证关系的原理", "answer": "B"}, {"chapter": "第1章", "number": 81, "question": "构建社会主义和谐社会的哲学依据是", "A": "矛盾的普遍性原理", "B": "矛盾的特殊性原理", "C": "矛盾的同一性原理", "D": "矛盾的斗争性原理", "answer": "C"}, {"chapter": "第1章", "number": 82, "question": "“马者所以命形也；白者所以命色也。命色者非命形也，故曰白马非马。”从唯物辩证法的观点看，“白马非马”这一命题的错误在于", "A": "模糊了事物本质和现象之间的联系", "B": "割裂了事物共性和个性之间的联系", "C": "混淆了事物内容和形式之间的区别", "D": "颠倒了事物形态和功能之间的关系", "answer": "B"}, {"chapter": "第1章", "number": 83, "question": "认识我国改革开放和社会主义现代化建设的形势，我们要分清主流和支流，要看主流，同时又不忽略支流。这里依据的哲学道理是", "A": "矛盾的普遍性和特殊性辩证关系的原理", "B": "主要矛盾和次要矛盾辩证关系的原理", "C": "矛盾的主要方面和次要方面辩证关系的原理", "D": "事物变化的内因和外因辩证关系的原理", "answer": "C"}, {"chapter": "第1章", "number": 84, "question": "事物的质是指", "A": "事物的规模和发展程度", "B": "事物中所包含的维持其存在的方面", "C": "事物保持其质的量的限度", "D": "使事物成为它自身并区别于他事物的内在规定性", "answer": "D"}, {"chapter": "第1章", "number": 85, "question": "在实际工作中，要注意掌握分寸，防止“过”或“不及”，这在哲学上属于", "A": "抓事物的主要矛盾", "B": "确定事物的质", "C": "认识事物的量", "D": "把握事物的度", "answer": "D"}, {"chapter": "第1章", "number": 86, "question": "事物发展过程中的“度”是指", "A": "事物质变的关节点", "B": "事物保持一定质的量的限度", "C": "事物质变的临界点", "D": "事物保持一定量的质的限度", "answer": "B"}, {"chapter": "第1章", "number": 87, "question": "鲁迅在评《三国演义》时说：“至于写人，亦颇有失，以致欲显刘备之长厚而似伪，状诸葛之多智而近妖”。这一评述所蕴含的哲理是", "A": "要区分事物的两重性", "B": "要把握事物的度", "C": "对事物既要肯定，又要否定", "D": "要把事物看作一个整体", "answer": "B"}, {"chapter": "第1章", "number": 88, "question": "我国数学家华罗庚在一次报告中以“一支粉笔多长为好”为例来讲解他所倡导的优选法。对此，他解释道：“每支粉笔都要丢掉一段一定短的粉笔头，但就这一点来说，愈长愈好。但太长了，使用起来很不方便，而且容易折断。每断一次，必然多浪费一个粉笔头，反而不合适。因而就出现了粉笔多长合适的问题—这就是一个优选问题。”所谓优选问题，从辩证法的角度看。就是要", "A": "注重量的积累", "B": "保持事物质的稳定性", "C": "坚持适度原则", "D": "全面考虑事物属性的多样性", "answer": "C"}, {"chapter": "第1章", "number": 89, "question": "量变和质变的根本区别是", "A": "量变是渐进的，质变是突然的", "B": "量变是不显著的，质变是显著的", "C": "量变是在度的范围内的变化，质变是超出度的范围的变化", "D": "量变是以数量规定的，质变是以属性规定的", "answer": "C"}, {"chapter": "第1章", "number": 90, "question": "世界惟一不变的是变化，这一论断的含义是", "A": "变是世界的本原", "B": "世界上只有变，没有不变", "C": "变是绝对的，不变是相对的", "D": "变与不变是绝对对立的", "answer": "C"}, {"chapter": "第1章", "number": 91, "question": "事物的发展既是连续的又是非连续的，这是", "A": "辩证法的观点", "B": "形而上学的观点", "C": "二元论的观点", "D": "诡辩论的观点", "answer": "A"}, {"chapter": "第1章", "number": 92, "question": "有一则箴言：“在溪水和岩石的斗争中，胜利的总是溪水，不是因为力量，而是因为坚持。”“坚持就是胜利”的哲理在于", "A": "必然性通过偶然性开辟道路", "B": "肯定中包含着否定的因素", "C": "量变必然引起质变", "D": "有其因必有其果", "answer": "C"}, {"chapter": "第1章", "number": 93, "question": "《百喻经》中有一则寓言：有一个愚人到别人家去做客，他嫌菜没有味道，主人就给他加了点盐。菜里加盐以后，味道好极了。愚人就想：“菜之所以鲜美，是因为有了盐。加一点点就如此鲜美，如果加更多的盐，岂不更加好吃？”回家之后，他把一把盐放进嘴里，结果又苦又咸。这则寓言给我们的启示是", "A": "持续的量变会引起事物发生质的变化", "B": "在认识和处理问题时要掌握适度的原则", "C": "不可能通过一些现象而去认识某个事物的本质", "D": "在事物的发展过程中要时时注意事物的自我否定", "answer": "B"}, {"chapter": "第1章", "number": 94, "question": "有这样一道数学题：“90%×90%×90%×90%×90%=？”其答案是约59%。90分看似一个非常不错的成绩，然而，在一项环环相扣的连续不断的工作中，如果每个环节都打点折扣，最终得出的成绩是不及格。这里蕴含的辩证法道理是", "A": "肯定中包含否定", "B": "量变引起质变", "C": "必然性通过偶然性开辟道路", "D": "可能和现实是相互转化的", "answer": "B"}, {"chapter": "第1章", "number": 95, "question": "事物的否定方面是指", "A": "事物中处于主导地位的方面", "B": "事物中消极的方面", "C": "事物中维持其存在的方面", "D": "事物中促使其灭亡的方面", "answer": "D"}, {"chapter": "第1章", "number": 96, "question": "辩证法的否定即“扬弃”，它的含义是指", "A": "抛弃", "B": "事物中好的方面和坏的方面的组合", "C": "纯粹的否定", "D": "既克服又保留", "answer": "D"}, {"chapter": "第1章", "number": 97, "question": "对外国文化要有分析有选择有批判地借鉴和吸收，这种态度体现的哲学道理是", "A": "对立统一的原理", "B": "辩证否定的原理", "C": "内容和形式关系的原理", "D": "原因和结果关系的原理", "answer": "B"}, {"chapter": "第1章", "number": 98, "question": "在唯物辩证法的科学体系中，否定之否定规律揭示了", "A": "事物发展的动力和源泉", "B": "事物发展的状态和形式", "C": "事物发展的趋势和道路", "D": "事物发展的结构和功能", "answer": "C"}, {"chapter": "第1章", "number": 99, "question": "揭示事物发展是前进性和曲析性统一的规律是", "A": "联系和发展的规律", "B": "对立统一规律", "C": "质量互变规律", "D": "否定之否定规律", "answer": "D"}, {"chapter": "第1章", "number": 100, "question": "否定之否定规律是在自然、社会和人类思维领域普遍起作用的规律，它在", "A": "事物完成一个发展周期后表现出来", "B": "事物经过一次辩证的否定后表现出来", "C": "事物发展的任何阶段上都表现出来", "D": "事物经过量变向质变转化后表现出来", "answer": "A"}, {"chapter": "第1章", "number": 101, "question": "主观辩证法与客观辩证法的关系是", "A": "反映与被反映的关系", "B": "唯心主义与唯物主义的关系", "C": "抽象与具体的关系", "D": "唯心辩证法与唯物辩证法的关系", "answer": "A"}, {"chapter": "第1章", "number": 102, "question": "“从个别到一般，从一般到个别”的思维方法是", "A": "归纳与演绎", "B": "分析与综合", "C": "抽象到具体", "D": "实践到认识", "answer": "A"}, {"chapter": "第1章", "number": 103, "question": "辩证思维方法从抽象上升到具体的过程是", "A": "从实践到认识的过程", "B": "从认识到实践的过程", "C": "思维生成现实具体的过程", "D": "在思维中形成“多种规定的统一”的过程", "answer": "D"}, {"chapter": "第1章", "number": 104, "question": "“历史是逻辑的基础，逻辑是历史的修正”，这一观点是", "A": "主观唯心主义的观点", "B": "逻辑与历史相统一的观点", "C": "片面强调逻辑重要性的观点", "D": "割裂逻辑与历史相统一的观点", "answer": "B"}, {"chapter": "第2章", "number": 1, "question": "马克思主义认识论是", "A": "能动的革命的反映论", "B": "经验论", "C": "先验论", "D": "不可知论", "answer": "A"}, {"chapter": "第2章", "number": 2, "question": "马克思主义认识论首要的和基本的观点是", "A": "唯物论的观点", "B": "实践的观点", "C": "辩证法的观点", "D": "认识是一个过程的观点", "answer": "B"}, {"chapter": "第2章", "number": 3, "question": "马克思主义认为，从实践的活动机制看，实践是", "A": "道德行为和政治活动", "B": "生活、行为、现实、实事等感性活动", "C": "科学实验", "D": "主体与客体通过中介相互作用的过程", "answer": "D"}, {"chapter": "第2章", "number": 4, "question": "实践的主体是", "A": "绝对精神", "B": "有一定的主体能力、从事现实社会实践活动的人", "C": "人", "D": "人的意识", "answer": "B"}, {"chapter": "第2章", "number": 5, "question": "实践的客体是", "A": "绝对精神的对象化", "B": "客观物质世界", "C": "人的意识的创造物", "D": "实践活动所指向的对象", "answer": "D"}, {"chapter": "第2章", "number": 6, "question": "实践的中介是", "A": "各种形式的工具、手段以及运用、操作这些工具、手段的程序和方法", "B": "对一事物存在和发展有联系的各种要素的总和", "C": "构成事物一切要素的总和", "D": "受命于主观、见之于客观的活动", "answer": "A"}, {"chapter": "第2章", "number": 7, "question": "下列命题中，正确阐述了实践含义的是", "A": "实践是个人的日常生活活动", "B": "实践是主观创造客观的活动", "C": "实践是主体改造客体的活动", "D": "实践是主体应付环境的活动", "answer": "C"}, {"chapter": "第2章", "number": 8, "question": "马克思指出：“搬运夫和哲学家之间的原始差别要比家犬和猎犬之间的差别小得多，它们之间的鸿沟是分工造成的。”这表明", "A": "人的聪明才智无先天区别", "B": "人的聪明才智的大小主要取决于主观努力的程度", "C": "人的聪明才智主要来源于后天实践", "D": "人的聪明才智是由人的社会政治地位决定的", "answer": "C"}, {"chapter": "第2章", "number": 9, "question": "在中国，为了治疗疾病，古代就产生了中医学。这说明", "A": "认识产生于实践的需要", "B": "认识是实践的目的", "C": "实践是检验认识的标准", "D": "实践是认识的本质", "answer": "A"}, {"chapter": "第2章", "number": 10, "question": "人类认识发展的根本动力在于", "A": "人类需要和欲望的不断增长", "B": "人类社会实践的不断发展", "C": "人类认识工具的改进发展", "D": "人类思维水平的不断提高", "answer": "B"}, {"chapter": "第2章", "number": 11, "question": "恩格斯指出：“社会一旦有技术上的需要，这种需要就会比十所大学更能把科学推向前进。”这说明", "A": "实践是沟通主客体关系的桥梁", "B": "实践为认识提供了物质手段", "C": "实践是检验认识真理性的标准", "D": "实践是推动认识发展的动力", "answer": "D"}, {"chapter": "第2章", "number": 12, "question": "最初人们把文盲定义为“不识字的人”；后来又把文盲确定为“看不懂现代信息符号、图表的人”；而现在联合国把文盲确定为“不能用计算机交流的人”。从哲学上看，这表明", "A": "人在确定事物的标准上起主导作用", "B": "事物之间是普遍联系的", "C": "人的认识随着社会实践的变化而变化", "D": "人的认识是一个反复曲折的过程", "answer": "C"}, {"chapter": "第2章", "number": 13, "question": "恩格斯说：“人的智力是按照人如何学会改造自然界而发展的。”这说明", "A": "自然界是认识发展的动力", "B": "实践是认识发展的动力", "C": "人的认识具有主观能动性", "D": "人具有认识自然的能力", "answer": "B"}, {"chapter": "第2章", "number": 14, "question": "一切真知都发源于", "A": "直接经验", "B": "间接经验", "C": "客观事物", "D": "人的意识", "answer": "A"}, {"chapter": "第2章", "number": 15, "question": "“听其言必责其用，观其行必求其功。”这种观点是", "A": "强调认识对实践的作用", "B": "强调实践对认识的检验作用", "C": "认为认识可以脱离实践", "D": "认为实践可以脱离认识", "answer": "B"}, {"chapter": "第2章", "number": 16, "question": "“人的思维是否具有客观的真理性，这不是一个理论的问题，而是一个实践的问题。人应该在实践中证明自己思维的真理性，即自己思维的现实性和力量，自己思维的此岸性。”这一论断说明", "A": "实践是认识的来源和动力", "B": "实践是检验认识是否具有真理性的唯一标准", "C": "实践检验真理不需要理论指导", "D": "认识活动与实践活动具有同样的作用和力量", "answer": "B"}, {"chapter": "第2章", "number": 17, "question": "判断一种观点对错的依据是", "A": "伟人之言", "B": "吾人之心", "C": "众人意见", "D": "社会实践", "answer": "D"}, {"chapter": "第2章", "number": 18, "question": "实践是认识的基础，表明", "A": "每个人必须事事经过实践才能有认识", "B": "直接知识来自实践，间接知识不来自实践", "C": "只要坚持实践就一定能获得正确认识", "D": "一切认识归根到底来自实践", "answer": "D"}, {"chapter": "第2章", "number": 19, "question": "实践是认识的来源，这种观点是说", "A": "只要参加实践活动就能获得正确认识", "B": "一切认识都要直接参加实践活动才能获得", "C": "一切认识归根到底都要从实践中获得", "D": "只有直接经验来自实践", "answer": "C"}, {"chapter": "第2章", "number": 20, "question": "坚持“从物到感觉和思想”，是", "A": "唯物主义认识论的路线", "B": "唯心主义认识论的路线", "C": "先验论的认识路线", "D": "唯理论的认识路线", "answer": "A"}, {"chapter": "第2章", "number": 21, "question": "坚持“从思想和感觉到物”，是", "A": "马克思主义的认识路线", "B": "唯心主义的认识路线", "C": "旧唯物主义的认识路线", "D": "经验论的认识路线", "answer": "B"}, {"chapter": "第2章", "number": 22, "question": "列宁提出的：“从物到感觉和思想”与“从思想和感觉到物”是", "A": "辩证法与形而上学的对立", "B": "能动的反映论与被动的反映论的对立", "C": "可知论与不可知论的对立", "D": "唯物主义反映论与唯心主义先验论的对立", "answer": "D"}, {"chapter": "第2章", "number": 23, "question": "两条根本对立的认识路线是", "A": "可知论与不可知论", "B": "唯物主义反映论与唯心主义先验论", "C": "唯物辩证法与形而上学", "D": "能动革命的反映论与直观被动的反映论", "answer": "B"}, {"chapter": "第2章", "number": 24, "question": "唯物主义认识论和唯心主义认识论的根本区别在于是否承认", "A": "认识是主体对客体的反映", "B": "人有认识能力", "C": "认识世界是为了改造世界", "D": "世界是可以被认识的", "answer": "A"}, {"chapter": "第2章", "number": 25, "question": "马克思主义认识论与旧唯物主义认识论有两个相同观点，其中一个是都主张是主体对客体的反映，另一个是都主张", "A": "实践是认识的基础", "B": "认识是一个辩证发展过程", "C": "人能够认识客观世界", "D": "真理是绝对性与相对性的统一", "answer": "C"}, {"chapter": "第2章", "number": 26, "question": "“人的认识是主体对客体的直观反映。”这种观点属于", "A": "形而上学唯物主义认识论", "B": "辩证唯物主义认识论", "C": "客观唯心主义认识论", "D": "主观唯心主义认识论", "answer": "A"}, {"chapter": "第2章", "number": 27, "question": "马克思主义认识论认为，能动的反映论是", "A": "物质和精神的统一", "B": "真理性和实践性的统一", "C": "摹写和创造的统一", "D": "可知论和本体论的统一", "answer": "C"}, {"chapter": "第2章", "number": 28, "question": "一切唯物主义的认识论都是", "A": "反映论", "B": "不可知论", "C": "经验论", "D": "先验论", "answer": "A"}, {"chapter": "第2章", "number": 29, "question": "辩证唯物主义认为，认识的本质是", "A": "主观精神的产物", "B": "客观精神的显现", "C": "主体对客体的直观反映", "D": "主体在实践基础上对客体的能动反映", "answer": "D"}, {"chapter": "第2章", "number": 30, "question": "“观念的东西不外是移入人脑并在人的头脑中改造过的物质的东西而已。”这一观点是", "A": "客观唯心主义观点", "B": "朴素唯物主义观点", "C": "唯意志主义观点", "D": "辩证唯物主义观点", "answer": "D"}, {"chapter": "第2章", "number": 31, "question": "感觉、知觉、表象是（ ）的三种形式", "A": "理性认识", "B": "感性认识", "C": "社会心理", "D": "意识形态", "answer": "B"}, {"chapter": "第2章", "number": 32, "question": "概念、判断、推理是（ ）的三种形式", "A": "理性认识", "B": "感性认识", "C": "社会心理", "D": "意识形态", "answer": "A"}, {"chapter": "第2章", "number": 33, "question": "我们通过眼、耳、鼻、舌、身各种感官感觉到一个梨子的各种属性，再把它们联系起来形成了关于这个梨子的感性形象，这种反映形式是", "A": "感觉", "B": "知觉", "C": "表象", "D": "分析", "answer": "B"}, {"chapter": "第2章", "number": 34, "question": "在头脑中回忆起苹果的形状、颜色、气味和滋味，这种反映形式属于", "A": "概念", "B": "感觉", "C": "知觉", "D": "表象", "answer": "D"}, {"chapter": "第2章", "number": 35, "question": "感性认识和理性认识的区别是", "A": "感性认识是可靠的，理性认识是不可靠的", "B": "感性认识来源于实践，理性认识来源于书本", "C": "感性认识是对现象的认识，理性认识是对本质的认识", "D": "感性认识包含错误认识成分，理性认识是正确的认识", "answer": "C"}, {"chapter": "第2章", "number": 36, "question": "下列选项中，属于感性认识不同于理性认识的特点的是", "A": "形象性", "B": "间接性", "C": "全面性", "D": "主观性", "answer": "A"}, {"chapter": "第2章", "number": 37, "question": "下列选项中，属于理性认识不同于感性认识的特点的是", "A": "直接性", "B": "主观性", "C": "摹写性", "D": "抽象性", "answer": "D"}, {"chapter": "第2章", "number": 38, "question": "“意识是人脑分泌的特殊物质”这是", "A": "辩证唯物主义的观点", "B": "机械唯物主义的观点", "C": "朴素唯物主义的观点", "D": "庸俗唯物主义的观点", "answer": "D"}, {"chapter": "第2章", "number": 39, "question": "“存在就是被感知”这是", "A": "机械唯物主义观点", "B": "客观唯物主义观点", "C": "朴素唯物主义观点", "D": "主观唯心主义观点", "answer": "D"}, {"chapter": "第2章", "number": 40, "question": "感性认识和理性认识统一的基础是", "A": "感性材料", "B": "理性抽象", "C": "认识能力", "D": "社会实践", "answer": "D"}, {"chapter": "第2章", "number": 41, "question": "对于哲学史上长期争论不休的唯理论和经验论两大派别的正确评价是", "A": "唯理论是正确的，经验论是错误的", "B": "经验论是正确的，唯理论是错误的", "C": "唯理论和经验论各有片面的真理性", "D": "唯理论和经验论都是完全错误的", "answer": "C"}, {"chapter": "第2章", "number": 42, "question": "过分强调理性认识的作用，否认感性认识的重要性的观点，在哲学上属于", "A": "可知论", "B": "不可知论", "C": "唯理论", "D": "经验论", "answer": "C"}, {"chapter": "第2章", "number": 43, "question": "过分强调感性认识的作用，否认理性认识的重要性的观点，在哲学上属于", "A": "唯理论", "B": "经验论", "C": "唯物主义", "D": "唯心主义", "answer": "B"}, {"chapter": "第2章", "number": 44, "question": "有人认为，只有写到书本上的理论才是真实可靠的。这种不顾实际情况，死搬书本上的教条，在认识论上犯了", "A": "类似唯理论的错误", "B": "类似唯心主义先验论的错误", "C": "类似经验论的错误", "D": "类似旧唯物主义认识论的错误", "answer": "A"}, {"chapter": "第2章", "number": 45, "question": "列宁说：“没有革命的理论，就不会有革命的运动”，这一命题的含义是", "A": "革命理论比革命运动更重要", "B": "革命理论对革命实践具有指导作用", "C": "革命运动是革命理论的派生物", "D": "革命理论最终决定革命运动的成败", "answer": "B"}, {"chapter": "第2章", "number": 46, "question": "认识发展过程的第一次飞跃是", "A": "从意识到物质的过程", "B": "从感觉和知觉到表象的过程", "C": "从认识到实践的过程", "D": "从感性认识到理性认识的过程", "answer": "D"}, {"chapter": "第2章", "number": 47, "question": "一个完整的认识过程，需要经过两次飞跃。下列选项中属于第二次飞跃的是", "A": "进行社会调查", "B": "分析实际情况", "C": "理论付诸实践", "D": "总结经验教训", "answer": "C"}, {"chapter": "第2章", "number": 48, "question": "要正确实现理性认识到实践的飞跃，必须使理论为群众所掌握，化为群众的自觉行动。这是因为", "A": "群众是人口中的大多数", "B": "群众是社会实践的主体", "C": "群众的意见都是正确的", "D": "群众的行动都是合理的", "answer": "B"}, {"chapter": "第2章", "number": 49, "question": "通过实践和调查，获得十分丰富的感性材料，然后运用科学的思维方法对这些感性材料进行加工制作，透过现象，抓住本质。从认识发展过程看，这是", "A": "从感性认识到理性认识的飞跃", "B": "从感觉到知觉的飞跃", "C": "从意识到物质的飞跃", "D": "从认识到实践的飞跃", "answer": "A"}, {"chapter": "第2章", "number": 50, "question": "一个完整的认识过程是", "A": "感觉—知觉—表象", "B": "概念—判断—推理", "C": "实践—认识—实践", "D": "感性认识—理性认识—感性认识", "answer": "C"}, {"chapter": "第2章", "number": 51, "question": "“认识运动是一个反复循环、无限发展的过程”的观点属于", "A": "马克思主义认识论的观点", "B": "唯心主义认识论的观点", "C": "旧唯物主义认识论的观点", "D": "机械唯物主义认识论的观点", "answer": "A"}, {"chapter": "第2章", "number": 52, "question": "中国工程院院士袁隆平曾结合自己的科研经历，语重心长地对年轻人说：“书本知识非常重要，电脑技术也很重要，但是书本电脑里面种不出水稻来，只有在田里才能种出水稻来。”这表明", "A": "实践是人类认识的基础和来源", "B": "实践水平的提高有赖于认识水平的提高", "C": "理论对实践的指导作用没有正确与错误之分", "D": "由实践到认识的第一次飞跃比认识到实践的第二次飞跃更重要", "answer": "A"}, {"chapter": "第2章", "number": 53, "question": "真理是", "A": "被大多数人普遍认同的意见", "B": "客观事物及其规律", "C": "对人们有用的观点或者理论", "D": "是对客观事物及其规律的正确反映", "answer": "D"}, {"chapter": "第2章", "number": 54, "question": "“对客观事物的反映即是真理”，这是", "A": "辩证唯物主义的真理观", "B": "混淆了真理性认识与一般性认识的错误观点", "C": "一切唯物主义的真理观", "D": "混淆了真理的客观性与规律的客观性", "answer": "B"}, {"chapter": "第2章", "number": 55, "question": "辨别一种认识是不是真理，关键是看它", "A": "是不是被大多数人所接受", "B": "是不是反映客观事物的本质和规律", "C": "是不是具有绝对性", "D": "是不是能够满足人的需要", "answer": "B"}, {"chapter": "第2章", "number": 56, "question": "一种理论是不是真理，根本之点是看它是否", "A": "被大多数人承认", "B": "与已有的理论相一致", "C": "与客观实际相一致", "D": "对事物有新的认识", "answer": "C"}, {"chapter": "第2章", "number": 57, "question": "“真理是思想形式，是人类经验的组织形式”这是", "A": "客观真理论", "B": "辩证唯物主义真理论", "C": "形而上学真理论", "D": "主观唯心主义真理论", "answer": "D"}, {"chapter": "第2章", "number": 58, "question": "“有用就是真理”，这种真理观是", "A": "主观唯心主义", "B": "客观唯心主义", "C": "辩证唯物主义", "D": "机械唯物主义", "answer": "A"}, {"chapter": "第2章", "number": 59, "question": "“真理是人造的供人使用的工具”的看法是", "A": "客观唯心主义", "B": "主观唯心主义", "C": "辩证唯物主义", "D": "机械唯物主义", "answer": "B"}, {"chapter": "第2章", "number": 60, "question": "下列观点正确的是", "A": "真理具有一元性", "B": "谎言说一百遍就成为真理", "C": "有用即真理", "D": "真理和谬误没有严格的界限", "answer": "A"}, {"chapter": "第2章", "number": 61, "question": "任何真理都带有近似正确的性质，这说明真理具有", "A": "客观性", "B": "绝对性", "C": "相对性", "D": "全面性", "answer": "C"}, {"chapter": "第2章", "number": 62, "question": "任何真理都有自己适用的条件和范围，这说明真理具有", "A": "不确定性", "B": "主观性", "C": "相对性", "D": "绝对性", "answer": "C"}, {"chapter": "第2章", "number": 63, "question": "真理的绝对性是指", "A": "真理主客观统一的确定性和发展的无限性", "B": "真理不能继续发展", "C": "真理的运用不受条件限制", "D": "真理不需要检验", "answer": "A"}, {"chapter": "第2章", "number": 64, "question": "任何科学理论都不是终极真理，而是在实践中不断发展的。这说明", "A": "真理具有客观性", "B": "真理具有绝对性", "C": "真理具有相对性", "D": "真理具有全面性", "answer": "C"}, {"chapter": "第2章", "number": 65, "question": "任何科学理论都不能穷尽真理，只能在实践中不断开辟认识真理的道路。这说明真理具有", "A": "客观性", "B": "绝对性", "C": "相对性", "D": "全面性", "answer": "C"}, {"chapter": "第2章", "number": 66, "question": "真理是一个不断发展的过程，任何真理都不是“终极真理”。这说明真理具有", "A": "客观性", "B": "绝对性", "C": "全面性", "D": "相对性", "answer": "D"}, {"chapter": "第2章", "number": 67, "question": "承认知识的相对性，就", "A": "必然归结为诡辩论", "B": "必然归结为怀疑主义", "C": "必然归结为不可知论", "D": "可以防止认识的僵化", "answer": "D"}, {"chapter": "第2章", "number": 68, "question": "真理观上的相对主义，错误在于", "A": "夸大真理的相对性，否认真理的绝对性", "B": "夸大真理的绝对性，否认真理的相对性", "C": "只讲真理的客观性，否认真理的相对性", "D": "认为关于同一对象真理性的认识只有一个", "answer": "A"}, {"chapter": "第2章", "number": 69, "question": "没有抽象的真理，真理总是具体的。这一命题强调", "A": "真理是感性的直观，不是理性的抽象", "B": "真理的内容是客观的，形式是主观的", "C": "同一对象真理性的认识只有一个", "D": "真理是与人的具体利益相联系的", "answer": "C"}, {"chapter": "第2章", "number": 70, "question": "在真理观上坚持辩证法，就必须承认", "A": "真理既具有绝对性，又具有相对性", "B": "真理既是正确的，又包含错误因素", "C": "真理既具有统一性，又具有多样性", "D": "真理的形式是客观的，内容是主观的", "answer": "A"}, {"chapter": "第2章", "number": 71, "question": "辩证法和形而上学在真理观上的对立表现在", "A": "前者认为真理是发展的，后者认为真理是不发展的", "B": "前者认为真理中包含着错误，后者认为真理是绝对正确的", "C": "前者认为真理具有客观性，后者认为真理是纯粹主观的", "D": "前者认为真理来源于客观世界，后者认为真理来源于先验原则", "answer": "A"}, {"chapter": "第2章", "number": 72, "question": "真理和谬误的根本区别在于", "A": "是否能够激励人和影响人", "B": "主观与客观是否相符合、相一致", "C": "是否能够满足人们的需要", "D": "是否被大多数人所接受或同意", "answer": "B"}, {"chapter": "第2章", "number": 73, "question": "真理和谬误的界限在于", "A": "是否符合人的利益和愿望", "B": "是否符合马克思主义", "C": "是否反映了客观事物的本质和规律", "D": "是否为大多数人所接受", "answer": "C"}, {"chapter": "第2章", "number": 74, "question": "“真理和谬误的对立，只是在非常有限的范围内才有意义。”这是", "A": "形而上学的观点", "B": "唯物辩证法的观点", "C": "诡辩论的观点", "D": "相对主义的观点", "answer": "B"}, {"chapter": "第2章", "number": 75, "question": "真理与谬误之间的相互关系是", "A": "在任何情况下都是绝对对立的", "B": "没有相互转化的可能性", "C": "在一定条件下可以互相转化", "D": "两者之间没有原则区别", "answer": "C"}, {"chapter": "第2章", "number": 76, "question": "真理和谬误在一定条件下可以相互转化，这种观点是", "A": "诡辩论", "B": "经验论", "C": "辩证唯物主义", "D": "旧唯物主义", "answer": "C"}, {"chapter": "第2章", "number": 77, "question": "“此亦一是非，彼亦一是非”的命题，其含义是", "A": "强调真理的客观性", "B": "强调真理具有客观标准", "C": "否认真理的主观性", "D": "否认真理具有客观标准", "answer": "D"}, {"chapter": "第2章", "number": 78, "question": "古希腊的亚里士多德提出物体的降落速度与物体的重量成正比，人们长期把它视为真理。16世纪末，伽利略通过在比萨斜塔所做的自由落体实验，推翻了亚里士多德的观点。这件事说明", "A": "实践是认识的目的和认识发展的动力", "B": "只有理性认识才能把握事物的本质", "C": "实践是检验认识正确与否的唯一标准", "D": "真理是对客观事物及其规律的正确反映", "answer": "C"}, {"chapter": "第2章", "number": 79, "question": "实践之所以是检验真理的唯一标准，是由", "A": "真理的相对性和绝对性决定的", "B": "真理的本性和实践的特点决定的", "C": "实践的具体性和历史性决定的", "D": "实践的有条件性和相对性决定的", "answer": "B"}, {"chapter": "第2章", "number": 80, "question": "实践是检验真理的唯一标准，因为它是", "A": "把主观和客观联系起来的桥梁", "B": "感性的物质活动", "C": "有意识的能动性活动", "D": "社会历史性活动", "answer": "A"}, {"chapter": "第2章", "number": 81, "question": "实践是检验真理的唯一标准，因为它具有", "A": "直接现实性", "B": "客观普遍性", "C": "能动目的性", "D": "社会历史性", "answer": "A"}, {"chapter": "第2章", "number": 82, "question": "检验认识的真理性，就是检验认识是否同", "A": "已有的理论相符合", "B": "已被实践证明的真理相符合", "C": "党的路线、方针、政策相符合", "D": "客观事物及其发展规律相符合", "answer": "D"}, {"chapter": "第2章", "number": 83, "question": "把经过实践证实的理论看成绝对真理，并当成检验其他一切认识真理性的标准，这是一种", "A": "形而上学和唯心主义观点", "B": "辩证法和唯物主义观点", "C": "相对主义诡辩论观点", "D": "轻视实践经验的唯理论观点", "answer": "A"}, {"chapter": "第2章", "number": 84, "question": "逻辑证明是", "A": "先于实践标准的检验真理的标准", "B": "实践标准的一个重要补充", "C": "优于实践标准的检验真理的标准", "D": "实践标准以外的又一个检验真理的标准", "answer": "B"}, {"chapter": "第2章", "number": 85, "question": "“追求真理比占有真理更宝贵”这一命题所包含的哲理是", "A": "认识经历着从感性认识到理性认识的发展", "B": "认识的根本任务是通过现象认识本质", "C": "认识不能停滞，而应该不断扩展和深化", "D": "改造世界比认识世界更重要", "answer": "C"}, {"chapter": "第2章", "number": 86, "question": "在真理标准问题上坚持辩证法，就是要坚持", "A": "实践标准是确定性和不确定性的统一", "B": "实践标准是主观性和客观性的统一", "C": "实践是检验真理的唯一标准", "D": "具体的实践能对一切认识做出确定检验", "answer": "A"}, {"chapter": "第2章", "number": 87, "question": "实践作为检验真理的标准，既具有确定性，又具有不确定性。实践标准之所以具有不确定性，是因为任何具体实践活动都具有", "A": "客观性", "B": "能动性", "C": "历史局限性", "D": "社会性", "answer": "C"}, {"chapter": "第2章", "number": 88, "question": "实践基础上的理论创新，", "A": "决定了社会发展趋势", "B": "决定着社会变革力度", "C": "社会发展和变革的先导", "D": "一个国家兴旺发达的最终源泉", "answer": "C"}, {"chapter": "第2章", "number": 89, "question": "重视理论创新，必须反对", "A": "经验主义", "B": "先验论", "C": "绝对主义", "D": "教条主义", "answer": "D"}, {"chapter": "第2章", "number": 90, "question": "毛泽东说：“马克思主义哲学认为十分重要的问题，不在于懂得了客观世界的规律性，因而能够解释世界，而在于拿了这种对于客观规律性的认识去能动地改造世界。”这段话强调的是", "A": "认识的任务在于透过事物的现象抓住事物的本质", "B": "认识的任务不仅在于解释世界，更重要的在于改造世界", "C": "认识的任务在于运用客观规律解释世界", "D": "只要了解了客观规律就能成功地改造世界", "answer": "B"}, {"chapter": "第2章", "number": 91, "question": "认识世界的根本目的在于", "A": "满足自己的求知欲望", "B": "了解事物的各种现象", "C": "揭示事物的本质和发展规律", "D": "指导实践有效地改造世界", "answer": "D"}, {"chapter": "第3章", "number": 1, "question": "社会历史观的基本问题是", "A": "生产力和生产关系的关系问题", "B": "经济基础和上层建筑的关系问题", "C": "人类社会和自然界的关系问题", "D": "社会存在和社会意识的关系问题", "answer": "D"}, {"chapter": "第3章", "number": 2, "question": "社会存在是指", "A": "社会物质生活条件的总和", "B": "社会物质财富的总和", "C": "社会各种关系的总和", "D": "社会各种要素的总和", "answer": "A"}, {"chapter": "第3章", "number": 3, "question": "“地理环境是人类社会赖以存在和发展的必要前提之一”，这种观点属于", "A": "地理环境决定论", "B": "形而上学唯物主义", "C": "历史唯物主义", "D": "历史宿命论", "answer": "C"}, {"chapter": "第3章", "number": 4, "question": "地理环境对社会发展的作用主要通过", "A": "对人的生理结构的影响来实现", "B": "对人的心理素质的影响来实现", "C": "对民族气质的影响来实现", "D": "对生产过程的影响来实现", "answer": "D"}, {"chapter": "第3章", "number": 5, "question": "人口因素在社会发展中的作用表现为，它可以", "A": "决定社会形态的更替", "B": "决定社会制度的性质", "C": "制约和影响社会发展", "D": "决定社会进步的程度", "answer": "C"}, {"chapter": "第3章", "number": 6, "question": "人类社会历史发展的决定力量是", "A": "生产方式", "B": "地理条件", "C": "社会意识", "D": "人口因素", "answer": "A"}, {"chapter": "第3章", "number": 7, "question": "决定社会制度性质和社会制度更替的是", "A": "上层建筑", "B": "生产方式", "C": "生产工具", "D": "生产资料", "answer": "B"}, {"chapter": "第3章", "number": 8, "question": "物质资料生产是人类社会", "A": "生产力的社会形式", "B": "生产关系的构成要素", "C": "存在和发展的基础", "D": "经济规律产生的客观经济条件", "answer": "C"}, {"chapter": "第3章", "number": 9, "question": "社会意识是", "A": "社会生活的精神方面", "B": "社会的政治生活过程", "C": "人类改造社会的过程", "D": "人类自我改造的过程", "answer": "A"}, {"chapter": "第3章", "number": 10, "question": "下列各组社会意识诸形式中，全部属于意识形态范围的是", "A": "自然科学、道德、宗教", "B": "法律思想、逻辑学、宗教", "C": "法律思想、哲学、宗教", "D": "政治思想、艺术、语言学", "answer": "C"}, {"chapter": "第3章", "number": 11, "question": "社会意识相对独立性的最突出表现是它", "A": "同社会存在发展的不同步性", "B": "对社会存在具有能动的反作用", "C": "具有历史的继承性", "D": "同社会经济的发展具有不平衡性", "answer": "B"}, {"chapter": "第3章", "number": 12, "question": "下列各项属于历史唯心主义的是", "A": "社会意识决定社会存在", "B": "在社会中占统治地位的思想都是统治阶级的思想", "C": "在阶级社会里社会意识具有阶级性", "D": "社会意识随社会存在的变化而变化", "answer": "A"}, {"chapter": "第3章", "number": 13, "question": "历史唯物主义认为，生产力范畴是标志", "A": "人类进行生产活动、政治活动和科学实验能力的范畴", "B": "人类改造旧的社会制度、创建新的社会制度能力的范畴", "C": "人类利用和改造自然，从自然界获取物质资料能力的范畴", "D": "人类认识和改造主观世界与外部物质世界能力的范畴", "answer": "C"}, {"chapter": "第3章", "number": 14, "question": "历史唯物主义的生产力范畴反映的是", "A": "人与自然界之间的关系", "B": "人与社会制度之间的关系", "C": "人与人之间的社会关系", "D": "人与人之间的经济关系", "answer": "A"}, {"chapter": "第3章", "number": 15, "question": "生产力水平表现为", "A": "生产的物质技术性质", "B": "劳动资料的性质", "C": "生产发展的现实程度", "D": "劳动产品的数量和质量", "answer": "C"}, {"chapter": "第3章", "number": 16, "question": "各种经济时代的区别，主要看它", "A": "生产产品品种的多少", "B": "生产产品质量的优劣", "C": "劳动对象的丰富程度", "D": "用什么劳动资料进行生产", "answer": "D"}, {"chapter": "第3章", "number": 17, "question": "生产力诸因素中的最活跃的因素是", "A": "劳动者", "B": "劳动对象", "C": "劳动资料", "D": "生产工具", "answer": "A"}, {"chapter": "第3章", "number": 18, "question": "在生产力的基本因素中占主体地位的是", "A": "劳动者", "B": "生产工具", "C": "劳动资料", "D": "劳动对象", "answer": "A"}, {"chapter": "第3章", "number": 19, "question": "现阶段，先进生产力集中体现为", "A": "劳动对象", "B": "科学技术", "C": "劳动者", "D": "管理方式", "answer": "B"}, {"chapter": "第3章", "number": 20, "question": "科学技术是生产力，是因为科学技术", "A": "是直接现实的生产力", "B": "能把生产力诸要素结合起来构成现实的生产力", "C": "是构成生产力的最重要的独立因素", "D": "渗透到生产力诸要素中转化为现实的生产力", "answer": "D"}, {"chapter": "第3章", "number": 21, "question": "生产关系概念反映的是", "A": "人们在物质生产中的经济关系", "B": "人与自然界之间的关系", "C": "人们之间的领导与被领导关系", "D": "人们之间的压迫与被压迫关系", "answer": "A"}, {"chapter": "第3章", "number": 22, "question": "在人类全部社会关系中，最基础的关系是", "A": "政治关系", "B": "家庭关系", "C": "生产关系", "D": "思想关系", "answer": "C"}, {"chapter": "第3章", "number": 23, "question": "生产关系包括多项内容，其中起决定作用的是", "A": "生产资料所有制", "B": "在生产中人与人的关系", "C": "产品的分配和交换", "D": "管理者和生产者的不同地位", "answer": "A"}, {"chapter": "第3章", "number": 24, "question": "生产关系是人们在物质生产过程中形成的不以人的意志为转移的", "A": "政治关系", "B": "经济关系", "C": "思想关系", "D": "家庭关系", "answer": "B"}, {"chapter": "第3章", "number": 25, "question": "划分生产关系类型的基本标志是", "A": "产品的分配形式", "B": "生产资料的所有制形式", "C": "人们在生产中的地位 ", "D": "生产关系与生产力的矛盾性质", "answer": "B"}, {"chapter": "第3章", "number": 26, "question": "人类历史上出现的各种生产资料所有制形式可以分为两大类型，这两大类型是", "A": "原始社会的公有制和共产主义社会的公有制", "B": "资本主义私有制和社会主义公有制", "C": "个体生产的所有制和社会化生产的所有制", "D": "生产资料公有制和生产资料私有制", "answer": "D"}, {"chapter": "第3章", "number": 27, "question": "物质资料生产方式是哪二者的统一", "A": "主体与客体", "B": "自然与社会", "C": "生产与消费", "D": "生产力与生产关系", "answer": "D"}, {"chapter": "第3章", "number": 28, "question": "在生产力和生产关系这对矛盾中", "A": "生产关系是生产力的物质基础", "B": "只有不断变革生产关系才能促进生产力发展", "C": "生产力的发展变化决定生产关系的改变", "D": "生产关系可以超越生产力的发展水平", "answer": "C"}, {"chapter": "第3章", "number": 29, "question": "生产力决定生产关系，这是因为", "A": "生产力是最革命最活跃的因素，生产关系则是相对稳定的因素", "B": "生产力反映的是人与自然之间的关系，生产关系反映的是人与人之间的关系", "C": "生产力是人类社会生活和全部历史的基础", "D": "生产力是具有能动性的因素，生产关系是派生的第二性的因素", "answer": "C"}, {"chapter": "第3章", "number": 30, "question": "“手推磨产生的是封建主的社会，蒸汽磨产生的是工业资本家的社会。”这句话揭示了", "A": "科学技术是第一生产力", "B": "生产工具是衡量生产力水平的重要尺度", "C": "社会形态的更替有其一定的顺序性", "D": "物质生产的发展需要建立相应的生产关系", "answer": "D"}, {"chapter": "第3章", "number": 31, "question": "判断一种生产关系先进还是落后的根本标志，是看它", "A": "是封闭的自然经济还是开放的市场经济", "B": "是促进生产力的发展还是阻碍生产力的发展", "C": "是否实现了社会公平和社会平等", "D": "是生产资料公有制还是生产资料私有制", "answer": "B"}, {"chapter": "第3章", "number": 32, "question": "一定社会形态的经济基础是", "A": "与一定生产力发展阶段相适应的生产关系的总和", "B": "生产力", "C": "该社会的各种生产关系", "D": "政治制度和法律制度", "answer": "A"}, {"chapter": "第3章", "number": 33, "question": "上层建筑是指", "A": "社会的经济制度", "B": "科学技术", "C": "社会生产关系", "D": "建立在一定社会经济基础之上的意识形态以及与之相应的制度、组织和设施", "answer": "D"}, {"chapter": "第3章", "number": 34, "question": "上层建筑由两部分组成，是指", "A": "政治法律制度与军队、警察等", "B": "生产关系和政治制度", "C": "观念上层建筑和政治上层建筑", "D": "政权和政治法律制度", "answer": "C"}, {"chapter": "第3章", "number": 35, "question": "在整个上层建筑中居主导地位的是", "A": "政治上层建筑", "B": "国家政权", "C": "政治法律思想", "D": "观念上层建筑", "answer": "A"}, {"chapter": "第3章", "number": 36, "question": "整个上层建筑的核心是", "A": "国家政权", "B": "党派组织", "C": "社群组织", "D": "法律设施", "answer": "A"}, {"chapter": "第3章", "number": 37, "question": "国家的实质是", "A": "为人民服务的机关", "B": "一个阶级统治另一个阶级的工具", "C": "正义、公正的社会组织", "D": "社会秩序的维持者", "answer": "B"}, {"chapter": "第3章", "number": 38, "question": "国家就其起源来说，它是", "A": "暴力掠夺的产物", "B": "社会契约的产物", "C": "产品分配不公的产物", "D": "阶级矛盾不可调和的产物", "answer": "D"}, {"chapter": "第3章", "number": 39, "question": "社会主义民主的本质和核心是", "A": "一切为了群众", "B": "一切依靠群众", "C": "人民当家作主", "D": "崇尚自由", "answer": "C"}, {"chapter": "第3章", "number": 40, "question": "区分不同类型的国家的根据是", "A": "民主的发展程度", "B": "国家政权的组织形式", "C": "法制的健全程度", "D": "国家政权掌握在哪个阶级手里", "answer": "D"}, {"chapter": "第3章", "number": 41, "question": "经济基础决定上层建筑，说的是", "A": "任何社会的上层建筑都要在它的经济基础建立之后才能产生", "B": "任何社会的上层建筑都根源于它的经济基础", "C": "上层建筑任何部分的变化都是与经济基础的变化同步的", "D": "上层建筑中的任何部分的性质都是由生产力直接决定的", "answer": "B"}, {"chapter": "第3章", "number": 42, "question": "在经济基础和上层建筑这对矛盾中", "A": "上层建筑决定经济基础的性质", "B": "上层建筑决定经济基础的变革要求", "C": "上层建筑对经济基础具有反作用", "D": "上层建筑各部分随着经济基础的变更立即发生变化", "answer": "C"}, {"chapter": "第3章", "number": 43, "question": "上层建筑对社会发展的作用性质取决于它", "A": "是否符合经济基础的要求", "B": "所服务的经济基础的性质", "C": "是否推动经济基础的发展", "D": "是否符合统治阶级的愿望", "answer": "B"}, {"chapter": "第3章", "number": 44, "question": "我国社会主义初级阶段实行以公有制为主体、多种所有制经济共同发展的基本经济制度，促进了生产力的发展。说明实行这种制度遵循了", "A": "生产力决定生产关系的原理", "B": "经济基础决定上层建筑的原理", "C": "社会存在决定社会意识的原理", "D": "经济制度决定生产力状况的原理", "answer": "A"}, {"chapter": "第3章", "number": 45, "question": "十一届三中全会以来，我党制定的一系列正确的路线、方针、政策促进了我国经济的迅猛发展。这说明", "A": "经济基础发展的道路是由上层建筑决定的", "B": "上层建筑的发展决定经济基础的发展方向", "C": "上层建筑对经济基础具有积极的能动作用", "D": "社会主义社会的发展不受经济基础决定上层建筑规律的制约", "answer": "C"}, {"chapter": "第3章", "number": 46, "question": "社会形态是", "A": "生产力和生产关系的统一", "B": "同生产力发展一定阶段相适应的经济基础和上层建筑的统一体", "C": "社会存在和社会意识的统一", "D": "物质世界和精神世界的统一", "answer": "B"}, {"chapter": "第3章", "number": 47, "question": "马克思主义把人类社会的发展划分为五种社会形态，这种划分法所依据的标准是", "A": "意识形态的不同性质", "B": "生产力的不同水平", "C": "生产关系的不同性质", "D": "人的发展的不同状况", "answer": "C"}, {"chapter": "第3章", "number": 48, "question": "理解整个人类发展史的钥匙是", "A": "阶级斗争发展史", "B": "生产劳动发展史", "C": "宗教信仰变迁史", "D": "政治制度演变史", "answer": "B"}, {"chapter": "第3章", "number": 49, "question": "“社会形态发展是一种自然历史过程”。这句话说的是", "A": "人的思想动机对社会发展不起作用", "B": "社会形态的发展与自然界的发展完全一样", "C": "社会规律与自然规律没有差别", "D": "社会发展具有不以人的意志为转移的客观规律性", "answer": "D"}, {"chapter": "第3章", "number": 50, "question": "人类社会发展的最基本规律是", "A": "社会存在决定社会意识的规律", "B": "阶级斗争推动社会发展的规律", "C": "生产关系必须适合生产力状况的规律", "D": "社会形态由低级到高级依次更替的规律", "answer": "C"}, {"chapter": "第3章", "number": 51, "question": "既承认社会形态发展的客观规律性又承认人的活动的选择性的观点，属于", "A": "历史唯物主义观点", "B": "相对主义观点", "C": "折衷主义观点", "D": "历史唯心主义观点", "answer": "A"}, {"chapter": "第3章", "number": 52, "question": "社会形态的基础是", "A": "政治形态", "B": "意识形态", "C": "经济形态", "D": "文化形态", "answer": "C"}, {"chapter": "第3章", "number": 53, "question": "人们的历史选择性归根结底是", "A": "统治阶级的选择性", "B": "历史人物的选择性", "C": "人民群众的选择性", "D": "杰出人物的选择性", "answer": "C"}, {"chapter": "第3章", "number": 54, "question": "从总趋势上看，人类历史发展是", "A": "周而复始的循环过程", "B": "前进的、上升的、由低级到高级的过程", "C": "有时前进、有时倒退的过程", "D": "有时进步、有时落后的过程", "answer": "B"}, {"chapter": "第3章", "number": 55, "question": "人类社会的基本矛盾是", "A": "人与自然、个人与社会之间的矛盾", "B": "先进与落后、革新与守旧之间的矛盾", "C": "落后的社会生产与人们日益增长的物质文化需要之间的矛盾", "D": "生产力与生产关系、经济基础与上层建筑之间的矛盾", "answer": "D"}, {"chapter": "第3章", "number": 56, "question": "社会基本矛盾运动中最基本的动力因素是", "A": "生产力", "B": "生产关系", "C": "经济基础", "D": "上层建筑", "answer": "A"}, {"chapter": "第3章", "number": 57, "question": "社会发展的根本动力是", "A": "生产力", "B": "生产关系", "C": "社会基本矛盾", "D": "上层建筑", "answer": "C"}, {"chapter": "第3章", "number": 58, "question": "阶级实质上是一个", "A": "思想范畴", "B": "经济范畴", "C": "政治范畴", "D": "文化范畴", "answer": "B"}, {"chapter": "第3章", "number": 59, "question": "主体选择是指作为历史主体的人，从自身的需要和知识结构、经验、技能出发，根据历史的客观条件和发展趋势确定自己行为的方式和方向的行动。这种观点说明", "A": "承认主体选择作用必然否定历史决定论", "B": "承认主体选择作用与承认历史决定论不矛盾", "C": "任何一种社会制度的产生都根源于主体的选择", "D": "历史决定论是根本错误的", "answer": "B"}, {"chapter": "第3章", "number": 60, "question": "划分阶级的主要标志是各种社会集团", "A": "在国家政权中的不同地位", "B": "在劳动组织中的不同作用", "C": "取得劳动产品的不同方式", "D": "对生产资料的不同关系", "answer": "D"}, {"chapter": "第3章", "number": 61, "question": "在阶级社会，统治阶级的思想在思想领域里处于统治地位，最根本的原因是", "A": "他们在政治上占有统治地位", "B": "他们在经济上占有统治地位", "C": "他们掌握了宣传机器", "D": "他们控制了大多数知识分子", "answer": "B"}, {"chapter": "第3章", "number": 62, "question": "阶级斗争根源于不同阶级之间", "A": "物质利益上的根本对立", "B": "政治态度上的根本对立", "C": "意识形态上的根本对立", "D": "社会分工中的不同角色", "answer": "A"}, {"chapter": "第3章", "number": 63, "question": "阶级斗争是推动阶级社会发展的", "A": "根本动力", "B": "直接动力", "C": "最终动力", "D": "唯一动力", "answer": "B"}, {"chapter": "第3章", "number": 64, "question": "阶级斗争对阶级社会发展的推动作用突出表现在", "A": "生产力的发展", "B": "生产关系的变革", "C": "社会形态的更替", "D": "科技的进步", "answer": "C"}, {"chapter": "第3章", "number": 65, "question": "在社会主义社会中，阶级分析方法是", "A": "分析一切社会现象的基本方法", "B": "分析一切带有阶级矛盾和阶级斗争性质的社会现象的基本方法", "C": "分析一切经济现象的基本方法", "D": "分析思想意识形态领域中各种现象的基本方法", "answer": "B"}, {"chapter": "第3章", "number": 66, "question": "狭义的社会革命主要是指", "A": "社会关系的重大变革", "B": "社会形态的变更", "C": "不同阶级之间的斗争", "D": "同一社会形态内部的变化", "answer": "B"}, {"chapter": "第3章", "number": 67, "question": "社会革命首要的基本标志是", "A": "先进的政治思想代替落后的政治思想", "B": "高效率的政治体制代替低效率的政治体制", "C": "国家政权从反动阶级手里转移到革命阶级手里", "D": "合理的经济体制代替不合理的经济体制", "answer": "C"}, {"chapter": "第3章", "number": 68, "question": "社会革命的根本目的是", "A": "拯救劳动人民", "B": "解放和发展生产力", "C": "夺取国家政权", "D": "打破旧的上层建筑", "answer": "B"}, {"chapter": "第3章", "number": 69, "question": "社会革命的根本问题是", "A": "争取民主自由问题", "B": "争取人类解放问题", "C": "争取公平正义问题", "D": "夺取国家政权问题", "answer": "D"}, {"chapter": "第3章", "number": 70, "question": "社会革命根源于", "A": "保护原有生产关系的客观要求", "B": "少数英雄人物组织暴动", "C": "先进思想和革命理论的传播", "D": "社会基本矛盾的尖锐化", "answer": "D"}, {"chapter": "第3章", "number": 71, "question": "社会革命最深刻的根源在于", "A": "剥削阶级和被剥削阶级之间的矛盾", "B": "生产力和生产关系之间的矛盾尖锐化", "C": "产品分配不公，收入差距加大", "D": "不同地区、不同部门之间经济发展不平衡", "answer": "B"}, {"chapter": "第3章", "number": 72, "question": "“革命是历史的火车头”这句名言的含义是", "A": "社会革命和社会改良是绝对对立的", "B": "每次革命都会创造奇迹，要不间断地“革命”", "C": "社会革命是对旧世界的彻底否定", "D": "社会革命是推动社会发展的决定性环节", "answer": "D"}, {"chapter": "第3章", "number": 73, "question": "马克思认为科学是“最高意义上的革命力量”。这句话形象而深刻地说明了", "A": "革命是社会发展的最深刻根源", "B": "革命阶级要积极主动地创造革命条件以推动社会发展", "C": "科学技术的伟大历史作用", "D": "革命在推动社会发展中的重要作用", "answer": "C"}, {"chapter": "第3章", "number": 74, "question": "社会革命适用于解决现存的", "A": "社会基本制度存在的问题", "B": "生产力存在的问题", "C": "阶级矛盾存在的问题", "D": "社会体制存在的问题", "answer": "A"}, {"chapter": "第3章", "number": 75, "question": "改革和社会革命都根源于", "A": "生产力和生产关系之间的矛盾", "B": "统治阶级和被统治阶级之间的矛盾", "C": "剥削阶级和被剥削阶级之间的矛盾", "D": "统治阶级内部各政治派别之间的矛盾", "answer": "A"}, {"chapter": "第3章", "number": 76, "question": "改革不仅存在于社会主义社会中，而且存在于有史以来的各种社会制度中。这说明改革", "A": "具有社会性", "B": "具有普遍性", "C": "具有现实性", "D": "具有历史性", "answer": "B"}, {"chapter": "第3章", "number": 77, "question": "革命对社会发展起巨大作用，它是", "A": "统治阶级向被统治阶级实行让步", "B": "对社会体制进行的改善和革新", "C": "实行社会制度更替的一种形式", "D": "缓和阶级矛盾、保持社会稳定的一种手段", "answer": "C"}, {"chapter": "第3章", "number": 78, "question": "改革主要是变革", "A": "社会基本制度", "B": "意识形态", "C": "生产方式", "D": "生产关系和上层建筑的某些方面和环节", "answer": "D"}, {"chapter": "第3章", "number": 79, "question": "社会主义改革的根本目的在于", "A": "改变社会主义制度", "B": "完善社会主义制度", "C": "解放和发展生产力", "D": "实现社会公平正义", "answer": "C"}, {"chapter": "第3章", "number": 80, "question": "我国的改革是社会主义制度的自我完善和自我发展。从根本上说，这是由", "A": "党的正确的路线、方针、政策决定的", "B": "我国社会主义社会基本矛盾的性质和特点决定的", "C": "和平与发展是时代主题的国际环境决定的", "D": "广大人民群众积极主动地参与改革决定的", "answer": "B"}, {"chapter": "第3章", "number": 81, "question": "发生在19世纪末20世纪初的科技革命，主要标志是", "A": "蒸汽机的发明", "B": "原子能的利用、电子计算机和空间技术的发展", "C": "电力的发明", "D": "信息技术、新材料、新能源、生物工程等高科技的出现", "answer": "C"}, {"chapter": "第3章", "number": 82, "question": "经济基础是生产关系的总和，这个总和是指", "A": "社会中现存各种生产关系的总和", "B": "占统治地位生产关系各方面的总和", "C": "一定社会生产力和生产关系的总和", "D": "生产资料所有制和生产工具的总和", "answer": "B"}, {"chapter": "第3章", "number": 83, "question": "区分普通个人和历史人物的标准是", "A": "对历史发展的作用是主动还是被动的", "B": "对历史发展的作用是积极还是消极的", "C": "对历史发展作用的大小", "D": "对历史发展的作用是必然还是偶然的", "answer": "C"}, {"chapter": "第3章", "number": 84, "question": "两种根本对立的历史观是指", "A": "唯物史观和唯心史观", "B": "宿命论和唯意志论", "C": "可知论和不可知论", "D": "辩证法和形而上学", "answer": "A"}, {"chapter": "第3章", "number": 85, "question": "每一个社会时代都需要自己的伟大人物，如果没有这样的人物，它就要把他们创造出来。这种观点", "A": "违背了党的群众观点和群众路线", "B": "属于英雄创造历史的唯心史观", "C": "否认了人民群众是历史发展的决定力量", "D": "正确说明了杰出人物的产生和作用", "answer": "D"}, {"chapter": "第3章", "number": 86, "question": "历史人物在历史上的作用表现为", "A": "加速或延缓历史的发展", "B": "改变历史发展的规律", "C": "决定历史时代的根本特点", "D": "改变历史发展的方向", "answer": "A"}, {"chapter": "第3章", "number": 87, "question": "“任何英雄人物的历史作用都不能超出他们所处历史条件许可的范围”。这种看法是", "A": "历史宿命论观点", "B": "机械决定论观点", "C": "历史唯物主义观点", "D": "历史循环论观点", "answer": "C"}, {"chapter": "第3章", "number": 88, "question": "关于历史人物和杰出人物的关系，表述正确的是", "A": "历史人物包含杰出人物", "B": "杰出人物包含历史人物", "C": "历史人物就是杰出人物", "D": "历史人物都是杰出人物", "answer": "A"}, {"chapter": "第3章", "number": 89, "question": "历史上杰出人物的产生是", "A": "纯粹偶然的", "B": "纯粹必然的", "C": "偶然与必然的统一", "D": "有的是偶然，有的是必然", "answer": "C"}, {"chapter": "第3章", "number": 90, "question": "历史唯物主义认为，决定人的本质的是", "A": "人的社会属性", "B": "人的生理结构", "C": "人的心理状况", "D": "人的自然属性", "answer": "A"}, {"chapter": "第3章", "number": 91, "question": "群众路线的基本出发点和最终归宿是", "A": "从群众中来", "B": "到群众中去", "C": "一切依靠群众", "D": "一切为了群众", "answer": "D"}, {"chapter": "第3章", "number": 92, "question": "英雄史观的理论出发点是主张", "A": "人是社会历史的主体", "B": "人的意识对社会存在具有能动的作用", "C": "社会意识决定社会存在", "D": "社会运动受偶然性支配", "answer": "C"}, {"chapter": "第3章", "number": 93, "question": "人们根据自己的目的和需要所从事的社会活动所引起的社会结果，是由各个个人和各种社会力量相互作用所形成的合力造成的。这是一种", "A": "相对主义诡辩论观点", "B": "历史唯心主义观点", "C": "历史唯物主义观点", "D": "唯心主义非决定论观点", "answer": "C"}, {"chapter": "第3章", "number": 94, "question": "人民群众创造历史的物质基础和前提是", "A": "地理环境", "B": "一定历史阶段所达到的生产力水平", "C": "生产关系", "D": "人口因素", "answer": "B"}, {"chapter": "第3章", "number": 95, "question": "人民群众是历史的创造者。这是因为人民群众是社会变革的决定力量，还因为", "A": "人民群众是社会物质财富和精神财富的创造者", "B": "人民群众的一切活动都能推动历史进步", "C": "人民群众的愿望要求都是天然合理的", "D": "人民群众的活动是不受历史条件制约的", "answer": "A"}, {"chapter": "第3章", "number": 96, "question": "生产关系的变革、社会制度的更替必须依靠的力量是", "A": "历史人物", "B": "人民群众", "C": "英雄领袖", "D": "杰出人物", "answer": "B"}, {"chapter": "第3章", "number": 97, "question": "人民群众既是历史的“剧中人”，又是历史的“剧作者”。这是", "A": "唯心主义的观点", "B": "折中主义的观点", "C": "历史唯物主义的观点", "D": "历史循环论的观点", "answer": "C"}, {"chapter": "第3章", "number": 98, "question": "唯物史观和唯心史观在历史创造者问题上的根本分歧在于是否承认", "A": "人民群众是推动历史发展的决定力量", "B": "剥削阶级代表人物在历史发展中的作用", "C": "思想动机在历史发展中的作用", "D": "杰出的个人在历史发展中的作用", "answer": "A"}, {"chapter": "第3章", "number": 99, "question": "人民群众创造历史的活动受既定的历史条件限制。这种观点是说", "A": "人民群众不是推动历史发展的决定力量", "B": "人民群众不是历史活动的主体", "C": "人民群众没有杰出人物的创造能力强", "D": "人民群众不能随心所欲地创造历史", "answer": "D"}, {"chapter": "第3章", "number": 100, "question": "制约人民群众创造历史的决定性条件是", "A": "经济条件", "B": "法律制度", "C": "传统观念", "D": "文化水平", "answer": "A"}, {"chapter": "第3章", "number": 101, "question": "坚持无产阶级政党的群众观点，就要坚信", "A": "群众有自发的社会主义觉悟", "B": "群众有高度的改革开放自觉性", "C": "群众运动具有天然合理性", "D": "人民群众自己解放自己", "answer": "D"}, {"chapter": "第4章", "number": 1, "question": "商品经济是", "A": "以自给自足为特征的经济形式", "B": "为他人而生产的经济形式", "C": "直接以交换为目的的经济形式", "D": "存在于一切社会的经济形式", "answer": "C"}, {"chapter": "第4章", "number": 2, "question": "商品经济产生和存在的条件是", "A": "社会化大生产和资本主义私有制", "B": "社会分工以及生产资料和产品属于不同所有者", "C": "社会化大生产和资本主义公有制", "D": "自然经济的存在和发展", "answer": "B"}, {"chapter": "第4章", "number": 3, "question": "商品的二因素是", "A": "具体劳动和抽象劳动", "B": "私人劳动和社会劳动", "C": "生产和消费", "D": "使用价值和价值", "answer": "D"}, {"chapter": "第4章", "number": 4, "question": "下述关于使用价值表述中不正确的是", "A": "使用价值是价值的物质承担者", "B": "使用价值即劳动产品的有用性", "C": "使用价值构成社会财富的物质内容", "D": "使用价值反映人与人之间的经济关系", "answer": "D"}, {"chapter": "第4章", "number": 5, "question": "商品诸因素中反映人与自然关系的因素是", "A": "使用价值", "B": "价值", "C": "私人劳动", "D": "社会劳动", "answer": "A"}, {"chapter": "第4章", "number": 6, "question": "“我们从小麦的滋味中根本无法判断它是封建农民生产的，还是资本主义制度下农业工人生产的。”这说明", "A": "同一种物品的使用价值会随生产关系的变化而变化", "B": "使用价值是个历史范畴", "C": "一种物品具有的使用价值并不反映生产关系的性质", "D": "有使用价值一定是劳动产品", "answer": "C"}, {"chapter": "第4章", "number": 7, "question": "商品的本质因素是", "A": "使用价值", "B": "价值", "C": "交换价值", "D": "价格", "answer": "B"}, {"chapter": "第4章", "number": 8, "question": "马克思说：“如果物没有用，那么其中包含的劳动也就没有用，不能算作劳动，因此不形成价值。”这句话表明", "A": "只要物有使用价值也就有价值", "B": "使用价值是价值的物质承担者", "C": "使用价值与价值是不可分离的", "D": "价值是由使用价值决定的", "answer": "B"}, {"chapter": "第4章", "number": 9, "question": "具体劳动和抽象劳动", "A": "在时间上是相互分离的", "B": "在空间上是相互分离的", "C": "是同一劳动过程的两个方面", "D": "是先后进行的两次劳动", "answer": "C"}, {"chapter": "第4章", "number": 10, "question": "生产商品的劳动二重性中，创造商品使用价值的是", "A": "具体劳动", "B": "抽象劳动", "C": "简单劳动", "D": "复杂劳动", "answer": "A"}, {"chapter": "第4章", "number": 11, "question": "生产商品的劳动分为具体劳动和抽象劳动，其中具体劳动的作用是", "A": "创造新价值", "B": "创造剩余价值", "C": "创造必要价值", "D": "创造使用价值", "answer": "D"}, {"chapter": "第4章", "number": 12, "question": "在商品经济中，形成价值的抽象劳动的支出必须借助于", "A": "具体劳动", "B": "剩余劳动", "C": "商品的生产形式", "D": "资本主义生产方式", "answer": "A"}, {"chapter": "第4章", "number": 13, "question": "对“劳动是财富之父，土地是财富之母”这句话的正确解释是", "A": "劳动和土地都是价值的源泉", "B": "劳动是创造价值的外部条件，土地是价值的真正源泉", "C": "劳动创造使用价值，土地形成价值", "D": "劳动必须和自然物相结合才能创造出物质财富", "answer": "D"}, {"chapter": "第4章", "number": 14, "question": "马克思在《资本论》中指出：“不管生产力发生了什么变化，同一劳动在同样的时间内提供的价值量总是相同的。但它在同样的时间内提供的使用价值量是不同的，生产力提高时就多些，生产力降低时就少些。”这段话表明，生产力的变化", "A": "不影响同一劳动在同样的时间内生产的商品数量", "B": "不改变同一劳动在同样的时间内的生产效率", "C": "影响同一劳动在同样的时间内生产的单个商品价值量", "D": "改变同一劳动在同样的时间内提供的价值总量", "answer": "C"}, {"chapter": "第4章", "number": 15, "question": "不同的商品之所以能按一定的量的比例相交换，其原因在于它们", "A": "有不同的使用价值", "B": "可以满足人们不同的需要", "C": "都是具体劳动的产物", "D": "都凝结了一般人类劳动", "answer": "D"}, {"chapter": "第4章", "number": 16, "question": "两种商品相交换的量的关系或比例就是商品的", "A": "使用价值", "B": "交换价值", "C": "价值", "D": "价格", "answer": "B"}, {"chapter": "第4章", "number": 17, "question": "商品使用价值、交换价值和价值的关系是", "A": "使用价值是价值的物质承担者，交换价值是价值的表现形式", "B": "交换价值是价值的物质承担者，使用价值是价值的表现形式", "C": "使用价值是价值的表现形式，交换价值是价值的基础", "D": "使用价值是价值的基础，价值是交换价值的表现形式", "answer": "A"}, {"chapter": "第4章", "number": 18, "question": "马克思说：“一切商品对它们的所有者是非使用价值，对它们的非所有者是使用价值。”这句话表明", "A": "有使用价值的不一定有价值", "B": "商品的使用价值是对它的购买消费者而言的", "C": "商品所有者同时获得使用价值和价值", "D": "商品是使用价值和价值的对立统一", "answer": "B"}, {"chapter": "第4章", "number": 19, "question": "形成商品价值量的劳动，是以", "A": "具体劳动为尺度的", "B": "个别劳动为尺度的", "C": "简单劳动为尺度的", "D": "复杂劳动为尺度的", "answer": "C"}, {"chapter": "第4章", "number": 20, "question": "商品的价值量是由生产商品的", "A": "个别劳动时间决定的", "B": "社会必要劳动时间决定的", "C": "必要劳动时间决定的", "D": "生产某种使用价值的时间决定的", "answer": "B"}, {"chapter": "第4章", "number": 21, "question": "商品的价值量由生产商品的社会必要劳动时间决定，它的实现要靠", "A": "同一种商品的生产者之间的竞争", "B": "商品的生产者和消费者之间的竞争", "C": "不同商品的生产者之间的竞争", "D": "商品的生产者和销售者之间的竞争", "answer": "A"}, {"chapter": "第4章", "number": 22, "question": "商品生产者要获得更多收益必须使生产商品的", "A": "个别劳动时间等于倍加的社会必要劳动时间", "B": "个别劳动时间等于社会必要劳动时间", "C": "个别劳动时间大于社会必要劳动时间", "D": "个别劳动时间小于社会必要劳动时间", "answer": "D"}, {"chapter": "第4章", "number": 23, "question": "商品经济是通过商品货币关系实行等价交换的经济形式，它的基本规律是", "A": "价值规律", "B": "剩余价值规律", "C": "竞争规律", "D": "货币流通规律", "answer": "A"}, {"chapter": "第4章", "number": 24, "question": "价值规律是商品经济的基本规律，它的作用是通过", "A": "生产者之间的竞争实现的", "B": "生产者和消费者之间的竞争实现的", "C": "消费者之间的竞争实现的", "D": "价格机制、供求机制和竞争机制实现的", "answer": "D"}, {"chapter": "第4章", "number": 25, "question": "价值规律调节社会资源配置的作用是通过", "A": "商品价格始终与价值相一致实现的", "B": "商品价格围绕价值上下波动实现的", "C": "商品价格经常高于价值实现的", "D": "商品价格经常低于价值实现的", "answer": "B"}, {"chapter": "第4章", "number": 26, "question": "货币的本质是", "A": "商品交换的媒介物", "B": "流通手段", "C": "固定充当一般等价物的商品", "D": "价值的表现形式", "answer": "C"}, {"chapter": "第4章", "number": 27, "question": "货币之所以能执行价值尺度的职能，是因为", "A": "它能衡量其他商品价值的大小", "B": "它是社会劳动的产物，本身具有价值", "C": "它可以是观念上的货币", "D": "它具有计量单位", "answer": "B"}, {"chapter": "第4章", "number": 28, "question": "资本积累和资本主义扩大再生产的关系是", "A": "扩大再生产是资本积累的源泉", "B": "扩大再生产与资本积累无内在联系", "C": "资本积累本身就是扩大再生产", "D": "资本积累是资本主义扩大再生产的源泉", "answer": "D"}, {"chapter": "第4章", "number": 29, "question": "私有制商品经济的基本矛盾是", "A": "使用价值和价值的矛盾", "B": "具体劳动和抽象劳动的矛盾", "C": "私人劳动和社会劳动的矛盾", "D": "生产力和生产关系的矛盾", "answer": "C"}, {"chapter": "第4章", "number": 30, "question": "货币转化为资本的决定性前提是", "A": "资本家拥有大量货币", "B": "劳动力成为商品", "C": "生产资料成为商品", "D": "消费资料成为商品", "answer": "B"}, {"chapter": "第4章", "number": 31, "question": "在货币和资本的关系上，正确的论断是", "A": "货币本身就是资本", "B": "任何数量的货币都能成为资本", "C": "凡是用来购买生产资料的货币都是资本", "D": "只有增殖自身价值的货币才是资本", "answer": "D"}, {"chapter": "第4章", "number": 32, "question": "劳动力商品的价值是由", "A": "劳动者创造的价值大小决定的", "B": "劳动者创造的剩余价值大小决定的", "C": "再生产劳动力所必需的具体劳动时间决定的", "D": "再生产劳动力所必需的生活资料价值决定的", "answer": "D"}, {"chapter": "第4章", "number": 33, "question": "劳动力商品与其他商品不同的最根本特征是", "A": "劳动力存在于人的身体之内", "B": "劳动力在一定条件下可以转化为商品", "C": "劳动力使用价值是价值的源泉", "D": "劳动力价值受历史和道德因素影响", "answer": "C"}, {"chapter": "第4章", "number": 34, "question": "资本主义生产关系的基础是", "A": "劳动力成为商品", "B": "对剩余价值的追求", "C": "货币转化为资本", "D": "生产资料资本主义私有制", "answer": "D"}, {"chapter": "第4章", "number": 35, "question": "资本主义所有制的实质是", "A": "资本家无偿占有雇佣工人的剩余价值", "B": "劳资双方既对立又统一", "C": "雇佣工人丝毫不占有自己的劳动价值", "D": "劳资双方既排斥又依靠", "answer": "A"}, {"chapter": "第4章", "number": 36, "question": "资本主义生产的实质是", "A": "社会化大生产", "B": "国际化大生产", "C": "剩余价值生产", "D": "现代商品生产", "answer": "C"}, {"chapter": "第4章", "number": 37, "question": "资本主义生产过程具有二重性，它是", "A": "劳动过程和价值形成过程的统一", "B": "劳动过程和价值增殖过程的统一", "C": "生产过程与流通过程的统一", "D": "价值形成过程与价值增殖过程的统一", "answer": "B"}, {"chapter": "第4章", "number": 38, "question": "分析资本主义生产过程是劳动过程和价值增殖过程的统一，关键是运用", "A": "商品二因素的原理", "B": "资本区分为不变资本和可变资本的原理", "C": "劳动二重性的原理", "D": "资本区分为固定资本和流动资本的原理", "answer": "C"}, {"chapter": "第4章", "number": 39, "question": "在资本主义生产过程中，具体劳动的作用是", "A": "创造劳动力的价值", "B": "创造使用价值", "C": "转移劳动力的价值", "D": "转移生活资料的价值", "answer": "B"}, {"chapter": "第4章", "number": 40, "question": "在资本主义生产过程中，生产资料的价值", "A": "随着生产耗费而逐渐消失", "B": "能够发生价值增殖", "C": "借助具体劳动转移到产品中去", "D": "借助抽象劳动而再生产出来", "answer": "C"}, {"chapter": "第4章", "number": 41, "question": "在资本主义生产中，工人新创造的全部价值，是", "A": "商品价值", "B": "剩余价值", "C": "劳动力自身的价值", "D": "劳动力价值和剩余价值", "answer": "D"}, {"chapter": "第4章", "number": 42, "question": "资本的不同部分按其在价值增殖过程中的作用，可分为", "A": "固定资本和流动资本", "B": "不变资本和可变资本", "C": "生产资本和流通资本", "D": "生产资本和商品资本", "answer": "B"}, {"chapter": "第4章", "number": 43, "question": "不变资本是指", "A": "在生产过程中实物形态不发生变化的资本", "B": "在生产过程中其价值不发生转移的资本", "C": "在价值增殖过程中不发生价值转移的资本", "D": "在价值增殖过程中不发生价值增殖的资本", "answer": "D"}, {"chapter": "第4章", "number": 44, "question": "马克思在《资本论》中指出:“一个商品占有者出售他现有的商品，而另一个商品占有者却只是作为货币的代表或作为未来货币的代表来购买这种商品。卖者成为债权人，买者成为债务人。由于商品的形态变化或商品的价值形式的发展在这里起了变化，货币也就取得了另一种职能。”这里所论述的货币“另一种职能”指的是", "A": "价值尺度", "B": "流通手段", "C": "支付手段", "D": "贮藏手段", "answer": "C"}, {"chapter": "第4章", "number": 45, "question": "以劳动力形式存在的那部分资本被称为可变资本，是因为", "A": "它的价值会转移到产品中去", "B": "它的价值不仅会发生转移，而且会自行增殖", "C": "劳动力仅能创造出相当于自身价值的价值", "D": "劳动力不仅再生产出劳动力的价值，并且生产出剩余价值", "answer": "D"}, {"chapter": "第4章", "number": 46, "question": "剩余价值率反映的是", "A": "不变资本价值的增殖程度", "B": "资本家的赚钱程度", "C": "固定资本价值的增殖程度", "D": "资本家对工人的剥削程度", "answer": "D"}, {"chapter": "第4章", "number": 47, "question": "假定资本家投入100万元的资本，其中不变资本80万元，可变资本20万元，雇佣劳动者生产出来的商品价值120万元，那么，剩余价值率为", "A": "50%", "B": "100%", "C": "150%", "D": "200%", "answer": "B"}, {"chapter": "第4章", "number": 48, "question": "个别企业采用先进技术，提高劳动生产率的直接动机是", "A": "获取绝对剩余价值", "B": "获取相对剩余价值", "C": "获取超额剩余价值", "D": "降低劳动力价值", "answer": "C"}, {"chapter": "第4章", "number": 49, "question": "超额剩余价值是本企业", "A": "商品的个别价值低于社会价值之间的差额", "B": "商品的价值与生产成本的差额", "C": "工人必要劳动创造的全部价值", "D": "工人剩余劳动创造的全部价值", "answer": "A"}, {"chapter": "第4章", "number": 50, "question": "某资本家经营的企业通过改进技术、提高劳动生产率，使其生产商品花费的劳动时间比社会必要劳动时间减少20%，由此，形成商品个别价值低于社会价值的部分是", "A": "超额剩余价值", "B": "绝对剩余价值", "C": "相对剩余价值", "D": "剩余价值", "answer": "A"}, {"chapter": "第4章", "number": 51, "question": "绝对剩余价值的生产和相对剩余价值的生产都是依靠", "A": "提高劳动生产率获得的", "B": "减少工人的必要劳动时间获得的", "C": "延长工作日获得的", "D": "增加工人的剩余劳动时间获得的", "answer": "D"}, {"chapter": "第4章", "number": 52, "question": "假设原来工作日为8小时，其中必要劳动时间为4小时，剩余劳动时间为4小时，若分别采用绝对剩余价值生产方法和相对剩余价值生产方法，使剩余劳动时间各延长2小时，则它们的剩余价值率应分别为", "A": "150%，100%", "B": "150%，200%", "C": "150%，300%", "D": "100%，200%", "answer": "C"}, {"chapter": "第4章", "number": 53, "question": "资本主义再生产的特点是", "A": "简单再生产", "B": "扩大再生产", "C": "物质资料的再生产", "D": "生产关系的再生产", "answer": "B"}, {"chapter": "第4章", "number": 54, "question": "资本主义扩大再生产的重要源泉是", "A": "剩余价值", "B": "资本积累", "C": "资本集中", "D": "资本有机构成的提高", "answer": "B"}, {"chapter": "第4章", "number": 55, "question": "资本有机构成是指", "A": "反映生产资料和劳动力比例关系的资本技术构成", "B": "反映不变资本和可变资本比例关系的资本价值构成", "C": "以资本价值构成为基础并反映其变化的资本技术构成", "D": "以资本技术构成为基础并反映其变化的资本价值构成", "answer": "D"}, {"chapter": "第4章", "number": 56, "question": "资本有机构成具体表现为", "A": "不变资本与可变资本的比率", "B": "生产资料与劳动力的比率", "C": "固定资本与流动资本的比率", "D": "生产资本与流通资本的比率", "answer": "A"}, {"chapter": "第4章", "number": 57, "question": "资本有机构成的提高意味着在不变资本和可变资本的比重中", "A": "不变资本的比重增大", "B": "不变资本和可变资本按相同的比例扩大", "C": "可变资本的比重增大", "D": "不变资本和可变资本按相同的比例缩小", "answer": "A"}, {"chapter": "第4章", "number": 58, "question": "资本主义相对过剩人口的产生是", "A": "人口增长过多过快的结果", "B": "资本有机构成不断提高条件下资本积累的结果", "C": "工业吸收的人口绝对减少的结果", "D": "资本有机构成不变条件下资本积累的结果", "answer": "B"}, {"chapter": "第4章", "number": 59, "question": "在资本循环第一阶段中，货币之所以成为资本关键在于", "A": "货币购买了劳动力", "B": "货币购买了生产资料", "C": "货币充当了流通手段", "D": "货币购买了一般商品", "answer": "A"}, {"chapter": "第4章", "number": 60, "question": "产业资本循环中生产剩余价值的阶段是", "A": "购买阶段", "B": "生产阶段", "C": "销售阶段", "D": "流通阶段", "answer": "B"}, {"chapter": "第4章", "number": 61, "question": "资本循环所经历的时间包括", "A": "购买时间和销售时间", "B": "生产时间和流通时间", "C": "生产时间和销售时间", "D": "劳动时间和流通时间", "answer": "B"}, {"chapter": "第4章", "number": 62, "question": "产业资本循环中属于流通领域的阶段是", "A": "购买阶段和生产阶段", "B": "生产阶段和销售阶段", "C": "销售阶段和消费阶段", "D": "购买阶段和销售阶段", "answer": "D"}, {"chapter": "第4章", "number": 63, "question": "资本循环的三种职能形式是", "A": "产业资本、商业资本、借贷资本", "B": "固定资本、流动资本、生产资本", "C": "货币资本、生产资本、商品资本", "D": "不变资本、可变资本、流通资本", "answer": "C"}, {"chapter": "第4章", "number": 64, "question": "产业资本划分为货币资本、生产资本、商品资本的依据是资本各个部分", "A": "在价值增殖过程中的作用不同", "B": "价值周转方式不同", "C": "存在的物质形态不同", "D": "在循环中的职能不同", "answer": "D"}, {"chapter": "第4章", "number": 65, "question": "在产业资本循环中，执行实现价值和剩余价值职能的资本是", "A": "货币资本", "B": "生产资本", "C": "商品资本", "D": "流动资本", "answer": "C"}, {"chapter": "第4章", "number": 66, "question": "在产业资本循环的第一阶段之后，", "A": "货币资本转化为商品资本", "B": "货币资本转化为生产资本", "C": "生产资本转化为商品资本", "D": "商品资本转化为货币资本", "answer": "B"}, {"chapter": "第4章", "number": 67, "question": "经过产业资本循环的第三阶段，", "A": "货币资本变成商品资本", "B": "货币资本变成生产资本", "C": "生产资本变成商品资本", "D": "商品资本变成货币资本", "answer": "D"}, {"chapter": "第4章", "number": 68, "question": "社会再生产的核心问题是", "A": "社会资本的周转速度问题", "B": "社会生产两大部类的划分问题", "C": "社会总产品的价值构成问题", "D": "社会总产品的实现问题", "answer": "D"}, {"chapter": "第4章", "number": 69, "question": "马克思把社会生产分为两大部类，即", "A": "制造生产资料的部类和制造消费资料的部类", "B": "制造物质产品的部类和制造精神产品的部类", "C": "制造耐用消费品的部类和制造普通消费品的部类", "D": "制造农产品的部类和制造工业品的部类", "answer": "A"}, {"chapter": "第4章", "number": 70, "question": "表面上看，工资表现为“劳动的价格”或工人全部劳动的报酬。实际上，工资仅是对所耗费的", "A": "必要劳动的补偿", "B": "剩余劳动的补偿", "C": "无酬劳动的补偿", "D": "抽象劳动的补偿", "answer": "A"}, {"chapter": "第4章", "number": 71, "question": "资本主义社会中工人的工资是", "A": "工人全部劳动的报酬", "B": "劳动价值或价格的转化形式", "C": "劳动力价值或价格的转化形式", "D": "工人在剩余劳动时间内创造的新价值", "answer": "C"}, {"chapter": "第4章", "number": 72, "question": "剩余价值转化为利润，是由于将剩余价值看作是", "A": "不变资本的产物", "B": "所费资本的产物", "C": "全部预付资本的产物", "D": "资本家“监督劳动”的产物", "answer": "C"}, {"chapter": "第4章", "number": 73, "question": "剩余价值和利润的区别是", "A": "剩余价值是利润的本质，利润是剩余价值的转化形式", "B": "利润是剩余价值的本质，剩余价值是利润的转化形式", "C": "剩余价值和利润在质上相同，在量上相等", "D": "剩余价值表现为全部预付资本的产物，利润是可变资本的产物", "answer": "A"}, {"chapter": "第4章", "number": 74, "question": "一般情况下利润率", "A": "小于剩余价值率", "B": "大于剩余价值率", "C": "等于剩余价值率", "D": "与剩余价值率无关", "answer": "A"}, {"chapter": "第4章", "number": 75, "question": "资本主义利润率反映的是", "A": "资本家对工人的剥削程度", "B": "预付不变资本的增殖程度", "C": "预付可变资本的增殖程度", "D": "全部预付资本的增殖程度", "answer": "D"}, {"chapter": "第4章", "number": 76, "question": "平均利润的形成是", "A": "部门内部竞争的结果", "B": "个别企业率首先采用先进技术的结果", "C": "部门之间竞争的结果", "D": "社会资本总额增大的结果", "answer": "C"}, {"chapter": "第4章", "number": 77, "question": "在资本主义条件下，部门之间的竞争形成了", "A": "商品的社会价值", "B": "商品的市场价格", "C": "超额剩余价值", "D": "平均利润率", "answer": "D"}, {"chapter": "第4章", "number": 78, "question": "生产社会化与生产资料私人占有的矛盾是", "A": "商品经济的基本矛盾", "B": "市场经济的基本矛盾", "C": "封建社会的基本矛盾", "D": "资本主义社会的基本矛盾", "answer": "D"}, {"chapter": "第4章", "number": 79, "question": "资本主义经济危机的实质是", "A": "生产过剩的危机", "B": "生产不足的危机", "C": "生产相对过剩的危机", "D": "生产绝对过剩的危机", "answer": "C"}, {"chapter": "第4章", "number": 80, "question": "资本主义经济危机呈现出周期性的原因在于", "A": "资本主义基本矛盾的不断缓和", "B": "资本主义基本矛盾运动的特点", "C": "资本主义基本矛盾的不断加深", "D": "资本主义再生产的周期性", "answer": "B"}, {"chapter": "第4章", "number": 81, "question": "所谓三权分立的“三权”是指", "A": "立法权、行政权和司法权", "B": "立法权、行政权和执法权", "C": "立法权、财政权和司法权", "D": "人事权、行政权和司法权", "answer": "A"}, {"chapter": "第4章", "number": 82, "question": "资本主义国家法律制度的核心是", "A": "民法", "B": "宪法", "C": "刑法", "D": "行政法", "answer": "B"}, {"chapter": "第4章", "number": 83, "question": "资本主义国家的选举的实质是", "A": "资产阶级和无产阶级分权", "B": "协调统治阶级内部利益关系和矛盾的重要措施", "C": "人民当家作主", "D": "每个公民都能通过竞选参与政治活动，表达自己的愿望和要求", "answer": "B"}, {"chapter": "第4章", "number": 84, "question": "资本主义政党制度的实质是", "A": "允许工人阶级及其政党参与国家政治生活", "B": "允许马克思主义政党独立执政", "C": "受资本主义国家政权的资本主义性质制约", "D": "资产阶级选择自己的国家管理者，实现其内部利益平衡的政治机制", "answer": "D"}, {"chapter": "第4章", "number": 85, "question": "资本主义政治制度本质上是", "A": "为世界和平服务", "B": "为资产阶级专政服务", "C": "为世界稳定服务", "D": "为资本主义经济发展服务", "answer": "B"}, {"chapter": "第5章", "number": 1, "question": "资本主义的发展历史上，自由竞争资本主义逐步向垄断资本主义过渡，开始于", "A": "19世纪末20世纪初", "B": "19世纪60年代", "C": "19世纪70年代", "D": "19世纪50年代", "answer": "C"}, {"chapter": "第5章", "number": 2, "question": "资本主义的发展大体经历了两个阶段，即", "A": "自由竞争资本主义和垄断资本主义", "B": "私人垄断资本主义和国家垄断资本主义", "C": "一般垄断资本主义和垄断资本主义", "D": "国家垄断资本主义和国际垄断资本主义", "answer": "A"}, {"chapter": "第5章", "number": 3, "question": "资本主义由自由竞争阶段进入垄断阶段，最根本的标志在于", "A": "垄断代替自由竞争在经济生活中占统治地位", "B": "资本输出代替商品输出在经济生活中占统治地位", "C": "银行资本代替工业资本在经济生活中占统治地位", "D": "国家垄断代替私人垄断在经济生活中占统治地位", "answer": "A"}, {"chapter": "第5章", "number": 4, "question": "少数资本主义大企业联合起来，控制一个或几个部门商品的生产、销售和价格的行为，称之为", "A": "联合", "B": "兼并", "C": "收购", "D": "垄断", "answer": "D"}, {"chapter": "第5章", "number": 5, "question": "垄断的形成是", "A": "生产集中发展到—定阶段的产物", "B": "自由竞争发展到—定阶段的产物", "C": "资本集中发展到—定阶段的产物", "D": "资本集聚发展到—定阶段的产物", "answer": "B"}, {"chapter": "第5章", "number": 6, "question": "在垄断资本主义阶段占统治地位的资本是", "A": "金融资本", "B": "银行资本", "C": "工业资本", "D": "商业资本", "answer": "A"}, {"chapter": "第5章", "number": 7, "question": "金融寡头在经济上的统治主要借助于", "A": "参与制", "B": "个人联合", "C": "代理制", "D": "建立垄断同盟", "answer": "A"}, {"chapter": "第5章", "number": 8, "question": "金融寡头实现经济上统治的“参与制”是指金融寡头", "A": "直接参与工业企业的生产经营和管理", "B": "直接参与银行的经营和管理", "C": "通过购买一定数量的股票层层控制许多大企业和大银行的经济统治方式", "D": "通过购买所属公司全部股票直接掌握许多大企业和大银行的经济统治方式", "answer": "C"}, {"chapter": "第5章", "number": 9, "question": "金融寡头实现其政治上的统治主要是通过", "A": "参与制", "B": "代理制", "C": "个人联合", "D": "企业联合", "answer": "C"}, {"chapter": "第5章", "number": 10, "question": "垄断利润是垄断组织通过垄断地位获得的", "A": "平均利润", "B": "超过平均利润的那部分利润", "C": "全部利润", "D": "平均利润的一部分", "answer": "B"}, {"chapter": "第5章", "number": 11, "question": "垄断利润的获得，主要是通过", "A": "自由竞争实现的", "B": "市场调节实现的", "C": "垄断价格实现的", "D": "行政干预实现的", "answer": "C"}, {"chapter": "第5章", "number": 12, "question": "垄断价格是指", "A": "按商品价值制定的价格", "B": "垄断组织制定的以保证平均利润的价格", "C": "按商品生产价格制定的价格", "D": "垄断组织制定的以保证垄断利润的价格", "answer": "D"}, {"chapter": "第5章", "number": 13, "question": "下列关于垄断价格的理解中，不正确的是", "A": "垄断组织获取垄断利润的主要手段", "B": "分为垄断高价和垄断低价两种", "C": "是垄断组织凭借其垄断地位规定的价格", "D": "它增加了价值总量", "answer": "D"}, {"chapter": "第5章", "number": 14, "question": "垄断资本主义国家事实上的主宰者是", "A": "银行资本家", "B": "工业资本家", "C": "金融寡头", "D": "商业资本家", "answer": "C"}, {"chapter": "第5章", "number": 15, "question": "马克思指出：资本主义在发展“社会劳动的生产力”的同时进而不自觉的创造着一种更高级的生产形式的物质条件，这表明", "A": "资本主义生产方式能够无限制解放和发展社会生产力", "B": "资本越发展越有利于巩固资本主义", "C": "资本越扩张越不利于创造更多的物质财富", "D": "资本主义生产是一种历史的、过渡性生产形式", "answer": "D"}, {"chapter": "第5章", "number": 16, "question": "垄断利润与垄断价格的出现", "A": "改变了价值规律的内涵", "B": "使价值规律作用的形式发生变化", "C": "否定了价值规律", "D": "价值规律在某些领域不起作用", "answer": "B"}, {"chapter": "第5章", "number": 17, "question": "垄断利润的产生说明", "A": "垄断可以创造新价值", "B": "垄断能转移更多旧价值", "C": "价值规律不再起作用", "D": "价值规律作用的形式发生了变化", "answer": "D"}, {"chapter": "第5章", "number": 18, "question": "垄断资本主义发展的两个阶段是", "A": "私人垄断资本主义与一般垄断资本主义", "B": "私人垄断资本主义与国家垄断资本主义", "C": "私人垄断资本主义与国际垄断资本主义", "D": "国家垄断资本主义与国际垄断资本主义", "answer": "B"}, {"chapter": "第5章", "number": 19, "question": "国家垄断资本主义是资本主义国家", "A": "与私人垄断资本相结合的资本主义", "B": "直接投资建立的垄断资本主义", "C": "掌握全部私人垄断资本的资本主义", "D": "掌握全部社会垄断资本的资本主义", "answer": "A"}, {"chapter": "第5章", "number": 20, "question": "国家垄断资本主义是", "A": "消除生产无政府状态的垄断资本主义", "B": "资产阶级国家同垄断资本相互分离的垄断资本主义", "C": "资产阶级国家同垄断资本融合在一起的垄断资本主义", "D": "带有社会主义因素的垄断资本主义", "answer": "C"}, {"chapter": "第5章", "number": 21, "question": "国家垄断资本主义有很大发展并成为资本主义发展的一个新阶段是在", "A": "19世纪末20世纪初", "B": "两次世界大战之间", "C": "第二次世界大战之后", "D": "20世纪80年代之后", "answer": "C"}, {"chapter": "第5章", "number": 22, "question": "第二次世界大战后，发达资本主义国家的发展进入国家垄断资本主义的新阶段。这意味着", "A": "国家垄断重于私人垄断", "B": "发达国家的政府担当调控国家宏观经济的重要职能", "C": "国家垄断资本掌控经济生活", "D": "所有重要的经济部门实行国有化", "answer": "B"}, {"chapter": "第5章", "number": 23, "question": "第二次世界大战后，国家垄断资本主义迅速发展的根本原因是", "A": "资本主义基本矛盾发展的结果", "B": "凯恩斯理论被广泛认同和运用的结果", "C": "全球经济一体化发展的结果", "D": "发达资本主义国家政府作用加强的结果", "answer": "A"}, {"chapter": "第5章", "number": 24, "question": "国家垄断资本主义的产生和发展，从根本上说是", "A": "国内市场竞争的结果", "B": "国际竞争激烈化的结果", "C": "垄断统治加强的结果", "D": "资本主义基本矛盾发展的结果", "answer": "D"}, {"chapter": "第5章", "number": 25, "question": "国家垄断资本主义的产生归根到底是", "A": "政治斗争的需要", "B": "社会生产力发展的要求和结果", "C": "资产阶级的自我觉醒", "D": "生产关系发展的要求和结果", "answer": "B"}, {"chapter": "第5章", "number": 26, "question": "国家垄断资本主义的产生，意味着", "A": "资本主义的经济危机将不再存在", "B": "资本主义制度已经发生了根本性质的变化", "C": "资本主义的基本矛盾已不再存在", "D": "资本主义生产关系内部有了局部的调整和变革", "answer": "D"}, {"chapter": "第5章", "number": 27, "question": "国家垄断资本主义的发展", "A": "改变了经济的资本主义性质", "B": "符合垄断资本家的整体利益", "C": "代表了个别资本家的利益", "D": "消灭了私人垄断资本主义的基础", "answer": "B"}, {"chapter": "第5章", "number": 28, "question": "国家垄断资本主义的宏观管理和调节体现的是", "A": "全体劳动人民的经济利益", "B": "个别金融寡头的经济利益", "C": "垄断资产阶级的整体利益", "D": "国有企业的经济利益", "answer": "C"}, {"chapter": "第5章", "number": 29, "question": "国家垄断资本主义为向社会主义过渡准备了物质条件，是指", "A": "社会化达到了资本主义生产方式的更高程度", "B": "商品化达到了资本主义生产方式的更高程度", "C": "市场化达到了资本主义生产方式的更高程度", "D": "计划化达到了资本主义生产方式的更高程度", "answer": "A"}, {"chapter": "第5章", "number": 30, "question": "国家垄断资本主义对经济的干预", "A": "改变了资本主义私有制的性质", "B": "从根本上解决了垄断资本主义国家的阶级矛盾", "C": "没有改变劳动者受剥削的地位", "D": "使资产阶级和工人阶级形成了一致的利益", "answer": "C"}, {"chapter": "第5章", "number": 31, "question": "国家垄断资本主义的局限性在于", "A": "使垄断资本主义存在着时而迅速发展时而停滞的趋势", "B": "使垄断资本主义经济长期处于停滞状态", "C": "使垄断资本主义经济长期处于滞胀状态", "D": "它只能暂时使某些矛盾缓和，从长期看会使这些矛盾进一步加深和复杂化", "answer": "D"}, {"chapter": "第5章", "number": 32, "question": "在自由竞争资本主义阶段，资本主义国家对外经济联系主要是", "A": "以资本输出为主", "B": "以原料输出为主", "C": "以商品输出为主", "D": "以劳动力输出为主", "answer": "C"}, {"chapter": "第5章", "number": 33, "question": "垄断资本主义阶段对外经济关系中的重要经济特征是", "A": "货币输出", "B": "资本输出", "C": "劳动力输出", "D": "自然资源输出", "answer": "B"}, {"chapter": "第5章", "number": 34, "question": "垄断资本主义时期资本输出的财力基础是", "A": "资本的原始积累", "B": "剩余价值的资本化", "C": "“过剩资本”的出现", "D": "银行垄断的形成", "answer": "C"}, {"chapter": "第5章", "number": 35, "question": "垄断资本主义国家出现大量“过剩资本”的根源是", "A": "生产社会化", "B": "经济全球化", "C": "国内已无投资需求", "D": "垄断统治的形成", "answer": "D"}, {"chapter": "第5章", "number": 36, "question": "从资本形态上说，资本输出的主要形式是", "A": "私人资本输出和国家资本输出", "B": "金融资本输出和商业资本输出", "C": "借贷资本输入和生产资本输出", "D": "垄断资本输出和国家资本输出", "answer": "C"}, {"chapter": "第5章", "number": 37, "question": "从资本输出主体来看，其主要形式有", "A": "私人资本输出和社会资本输出", "B": "私人资本输出和国家资本输出", "C": "企业资本输出和个人资本输出", "D": "企业资本输出和社会资本输出", "answer": "B"}, {"chapter": "第5章", "number": 38, "question": "在垄断资本主义的各个基本经济特征中最根本的特征是", "A": "国家垄断同盟的形成", "B": "垄断在经济生活中占统治地位", "C": "资本输出具有重要的意义", "D": "瓜分世界领土，形成殖民体系", "answer": "B"}, {"chapter": "第5章", "number": 39, "question": "经济全球化本质上是", "A": "生产经营的国际化", "B": "市场交换的国际化", "C": "资源配置的国际化", "D": "社会消费的国际化", "answer": "C"}, {"chapter": "第5章", "number": 40, "question": "美国波音747客机的600万个零部件由美国及另外6个国家的1200多家企业提供。这种表现是", "A": "商品国际化", "B": "生产全球化", "C": "贸易全球化", "D": "资本全球化", "answer": "B"}, {"chapter": "第5章", "number": 41, "question": "经济全球化带给发达国家的好处很多，但不包括", "A": "降低其生产成本", "B": "从世界各地获取大量的利润", "C": "扩大了贸易逆差", "D": "加强对国际金融市场的控制", "answer": "C"}, {"chapter": "第5章", "number": 42, "question": "经济全球化带给发展中国家的消极影响有许多，但不包括", "A": "经济发展机会大大减少", "B": "在国际贸易关系中剩余价值大量流失", "C": "金融风险加大", "D": "经济发展受到一定程度的损失", "answer": "A"}, {"chapter": "第5章", "number": 43, "question": "资本主义发展初期占主导地位的所有制形式是", "A": "个体资本所有制", "B": "私人股份资本所有制", "C": "法人资本所有制", "D": "国家资本所有制", "answer": "A"}, {"chapter": "第5章", "number": 44, "question": "垄断资本主义国家的工人持有垄断企业的小额股票表明", "A": "工人成为企业的主人", "B": "垄断资产阶级失去了生产资料所有权", "C": "人人都成为有产者", "D": "工人的雇佣劳动地位并未改变", "answer": "D"}, {"chapter": "第5章", "number": 45, "question": "当代资本主义的新变化", "A": "从根本上改变了资本主义社会", "B": "意味着资本主义生产关系的根本性质发生了变化", "C": "从根本上适应了生产的社会化", "D": "从根本上说是人类社会发展一般规律作用的结果", "answer": "D"}, {"chapter": "第5章", "number": 46, "question": "当代资本主义发生新变化的原因是多方面的，最根本的原因是", "A": "科学技术革命和生产力的发展", "B": "工人阶级争取自身权力和利益斗争的作用", "C": "社会主义制度初步显示的优越性对资本主义产生了一定影响", "D": "主张改良主义的政党对资本主义制度的改革", "answer": "A"}, {"chapter": "第5章", "number": 47, "question": "资本主义发展的历史趋势是", "A": "计划经济取代市场经济", "B": "市场经济取代计划经济", "C": "计划经济取代商品经济", "D": "社会主义公有制取代资本主义私有制", "answer": "D"}, {"chapter": "第5章", "number": 48, "question": "正确认识资本主义的历史过渡性要", "A": "对资本主义采取全面肯定的态度", "B": "借鉴资本主义社会中反映人类文明进步的成果", "C": "借鉴并发展资本主义的经济制度", "D": "否定资本主义生产关系的一切改良", "answer": "B"}, {"chapter": "第5章", "number": 49, "question": "社会主义取代资本主义是", "A": "生产力自身运动规律决定的", "B": "资本主义各国经济政治不平衡规律决定的", "C": "资本积累的一般规律决定的", "D": "生产关系一定要适合生产力状况的规律决定的", "answer": "D"}, {"chapter": "第6章", "number": 1, "question": "科学社会主义的直接思想来源是", "A": "早期空想社会主义的学说", "B": "18世纪空想平均主义的学说", "C": "唯物史观和剩余价值学说", "D": "19世纪初期的空想社会主义", "answer": "D"}, {"chapter": "第6章", "number": 2, "question": "空想社会主义的开山之作是", "A": "康帕内拉的《太阳城》", "B": "摩莱里的《自然法典》", "C": "莫尔的《乌托邦》", "D": "马布利的《论法制或法律的原则》", "answer": "C"}, {"chapter": "第6章", "number": 3, "question": "1864年成立的国际工人协会又称为", "A": "第一国际", "B": "第二国际", "C": "第三国际", "D": "共产国际", "answer": "A"}, {"chapter": "第6章", "number": 4, "question": "科学社会主义创立的理论依据是", "A": "空想社会主义学说", "B": "德国古典哲学", "C": "唯物史观和剩余价值学说", "D": "英国古典政治经济学", "answer": "C"}, {"chapter": "第6章", "number": 5, "question": "无产阶级夺取政权的第一次伟大尝试是", "A": "普法战争", "B": "法国大革命", "C": "1848年革命", "D": "巴黎公社革命", "answer": "D"}, {"chapter": "第6章", "number": 6, "question": "列宁得出社会主义可能在一国或数国首先取得胜利的理论依据是", "A": "无产阶级是最先进、最革命的阶级的原理", "B": "资本主义国家无产阶级与资产阶级斗争的规律", "C": "帝国主义时代资本主义政治经济发展不平衡的规律", "D": "资本主义必然灭亡、社会主义和共产主义必然胜利的规律", "answer": "C"}, {"chapter": "第6章", "number": 7, "question": "世界上第一个社会主义国家是", "A": "波兰人民共和国", "B": "巴黎公社", "C": "苏维埃俄国", "D": "中华人民共和国", "answer": "C"}, {"chapter": "第6章", "number": 8, "question": "提出社会主义革命同时胜利论的是", "A": "马克思和恩格斯", "B": "列宁", "C": "斯大林", "D": "毛泽东", "answer": "A"}, {"chapter": "第6章", "number": 9, "question": "社会主义事业从一国向多国发展壮大开始于", "A": "第一次世界大战之后", "B": "第二次世界大战之后", "C": "新中国成立之后", "D": "苏联建成社会主义国家之后", "answer": "B"}, {"chapter": "第6章", "number": 10, "question": "“资本主义必然灭亡、社会主义必然胜利”的根本依据是", "A": "无产阶级是最先进、最革命的阶级", "B": "无产阶级要进行暴力革命", "C": "资本主义社会会爆发经济危机", "D": "人类社会发展规律和资本主义基本矛盾", "answer": "D"}, {"chapter": "第6章", "number": 11, "question": "下列不属于无产阶级反抗资产阶级斗争形式的是", "A": "思想斗争", "B": "经济斗争", "C": "文化斗争", "D": "政治斗争", "answer": "C"}, {"chapter": "第6章", "number": 12, "question": "无产阶级革命的根本问题是", "A": "国家政权问题", "B": "生产资料所有制问题", "C": "社会形态问题", "D": "产品分配原则问题", "answer": "A"}, {"chapter": "第6章", "number": 13, "question": "社会主义社会生产的根本目的是", "A": "资本的增殖", "B": "满足全体社会成员的需要", "C": "发展社会生产力", "D": "增强国家竞争力", "answer": "B"}, {"chapter": "第6章", "number": 14, "question": "社会主义社会的分配原则是", "A": "按需分配", "B": "按计划分配", "C": "按市场分配", "D": "按劳分配", "answer": "D"}, {"chapter": "第6章", "number": 15, "question": "马克思主义政党的组织原则是", "A": "集体领导制度", "B": "党委负责制度", "C": "群众监督制度", "D": "民主集中制", "answer": "D"}, {"chapter": "第6章", "number": 16, "question": "临时应付，迁就眼前的事变，迁就微小的政治变动，忘记无产阶级的根本利益，忘记整个资本主义制度、整个资本主义演进的基本特点，为了实际的或假想的一时的利益而牺牲无产阶级的根本利益，这种政策是", "A": "历史虚无主义", "B": "修正主义", "C": "改良主义", "D": "机会主义", "answer": "B"}, {"chapter": "第6章", "number": 17, "question": "马克思的理论“所提供的只是总的指导原理，而这些原理的应用具体地说，在英国不同于法国，在法国不同于德国，在德国又不同于俄国。”这是谁的观点", "A": "恩格斯", "B": "列宁", "C": "毛泽东", "D": "邓小平", "answer": "B"}, {"chapter": "第6章", "number": 18, "question": "什么是社会主义、怎样建设社会主义，是邓小平在领导改革开放和现代化建设过程中，不断提出和反复思考的首要的基本理论问题。搞清楚这一基本理论问题，关键是要", "A": "科学分析我国社会的主要矛盾", "B": "厘清不合乎时代进步和社会发展规律的模糊观念", "C": "系统总结社会主义社会发展的经验", "D": "在坚持社会主义基本制度基础上进一步认清社会主义本质", "answer": "D"}, {"chapter": "第6章", "number": 19, "question": "中国共产党全部工作的出发点和落脚点是", "A": "实事求是", "B": "最广大人民的根本利益", "C": "加强党的先进性", "D": "保证党始终与时代发展同步伐", "answer": "B"}, {"chapter": "第7章", "number": 1, "question": "列宁在谈到未来社会时写道，“生产力将以什么样的速度向前发展，将以什么样的速度发展到打破分工、消灭脑力劳动和体力劳动的对立、把劳动变为‘生活的第一需要'，这都是我们所不知道而且也不可能知道的”，“我们只能谈国家消亡的必然性，同时着重指出这个过程是长期的，指出它的长短将取决于共产主义高级阶段的发展速度，而把消灭的日期或消亡的具体形式作为悬案，因为现在还没有可供解决这些问题的材料”。这表明，列宁在展望未来社会时", "A": "揭示了社会历史发展的各项措施、方式、方法", "B": "认为不存在适用于各种社会形态发展的普遍规律", "C": "没有提出未来社会发展的方向、原则和基本特征", "D": "不对历史发展的各种细节作具体描绘", "answer": "D"}, {"chapter": "第7章", "number": 2, "question": "在展望未来社会问题上，马克思主义与空想社会主义的根本区别在于", "A": "是否对资本主义进行辛辣批判", "B": "是否看到资本主义旧制度灭亡的命运", "C": "是否坚持科学的立场、观点和方法", "D": "是否对未来社会进行描绘", "answer": "C"}, {"chapter": "第7章", "number": 3, "question": "“通过批判旧世界发现新世界”是", "A": "理性主义预见未来社会的方法", "B": "空想社会主义预见未来社会的方法", "C": "唯心主义预见未来社会的方法", "D": "马克思主义预见未来社会的方法", "answer": "D"}, {"chapter": "第7章", "number": 4, "question": "“未来的事情具体如何发展，应该由未来的实践去回答。”这种观点是", "A": "历史唯物论的观点", "B": "历史唯心论的观点", "C": "不可知论的观点", "D": "怀疑论的观点", "answer": "A"}, {"chapter": "第7章", "number": 5, "question": "马克思主义经典作家揭示了未来社会的", "A": "具体细节", "B": "一般特征", "C": "具体阶段", "D": "建设举措", "answer": "B"}, {"chapter": "第7章", "number": 6, "question": "实现共产主义的必要条件是", "A": "消灭一切剥削制度", "B": "消灭一切旧风俗、旧习惯", "C": "社会生产力的高度发展", "D": "社会道德水平的极大提高", "answer": "C"}, {"chapter": "第7章", "number": 7, "question": "“各尽所能，按需分配”是", "A": "原始社会的分配方式", "B": "社会主义社会的分配方式", "C": "阶级社会的分配方式", "D": "共产主义社会的分配方式", "answer": "D"}, {"chapter": "第7章", "number": 8, "question": "马克思主义认为，共产主义社会的分配原则是", "A": "按劳分配", "B": "按需分配", "C": "按生产要素分配", "D": "平均分配", "answer": "B"}, {"chapter": "第7章", "number": 9, "question": "“各尽所能，按需分配”所体现的重大意义是", "A": "第一次以人的劳动作为分配的标准", "B": "它将最终实现人类在分配上的真正平等", "C": "第一次否定了特权作为分配的标准", "D": "第一次否定了资本作为分配的标准", "answer": "B"}, {"chapter": "第7章", "number": 10, "question": "社会主义的“按劳分配”原则", "A": "以劳动作为分配的标准", "B": "以资本或特权作为分配的标准", "C": "实现了绝对的公平", "D": "不利于激发社会活力", "answer": "A"}, {"chapter": "第7章", "number": 11, "question": "关于社会主义的“按劳分配”原则的局限性，不正确的是", "A": "它默认了基于个人天赋的不同工作能力是天然特权", "B": "只把人当作劳动者看待，撇开了人社会生活的丰富性", "C": "没有跳出等价交换的资产阶级框架", "D": "彻底实现了人类的平等", "answer": "D"}, {"chapter": "第7章", "number": 12, "question": "共产主义社会的根本特征是", "A": "社会生产力高度发展", "B": "各尽所能，按需分配", "C": "人的自由而全面发展", "D": "人们精神境界极大提高", "answer": "C"}, {"chapter": "第7章", "number": 13, "question": "马克思主义认为，消灭“三大差别”的关键在于", "A": "消灭工业和农业的差别", "B": "消灭城市和乡村的差别", "C": "消灭脑力劳动和体力劳动的差别", "D": "消灭私有制和利益差别", "answer": "D"}, {"chapter": "第7章", "number": 14, "question": "“代替那存在着阶级和阶级对立的资产阶级旧社会的，将是这样一个联合体，在那里，每个人的自由发展是一切人的自由发展的条件”。这出自", "A": "《共产主义原理》", "B": "《共产党宣言》", "C": "《哥达纲领批判》", "D": "《资本论》", "answer": "B"}, {"chapter": "第7章", "number": 15, "question": "“以每个人的全面而自由的发展为基本原则的社会形式”，这样的社会形式是指", "A": "资本主义社会", "B": "社会主义的初级阶段", "C": "社会主义社会", "D": "共产主义社会", "answer": "D"}, {"chapter": "第7章", "number": 16, "question": "在共产主义社会里，成为人们生活第一需要的是", "A": "娱乐", "B": "劳动", "C": "兴趣", "D": "人的自由而全面的发展", "answer": "B"}, {"chapter": "第7章", "number": 17, "question": "“人的依赖性关系”是", "A": "资本主义社会以前的人与人之间的关系", "B": "资本主义社会之中的人与人之间的关系", "C": "社会主义社会之中的人与人之间的关系", "D": "共产主义社会之中的人与人之间的关系", "answer": "A"}, {"chapter": "第7章", "number": 18, "question": "“物的依赖性关系”是", "A": "资本主义社会以前的人与人之间的关系", "B": "资本主义社会之中的人与人之间的关系", "C": "社会主义社会之中的人与人之间的关系", "D": "共产主义社会之中的人与人之间的关系", "answer": "B"}, {"chapter": "第7章", "number": 19, "question": "实现了人的“自由个性”的发展，是", "A": "资本主义社会以前的人与人之间的关系", "B": "资本主义社会之中的人与人之间的关系", "C": "社会主义社会之中的人与人之间的关系", "D": "共产主义社会之中的人与人之间的关系", "answer": "D"}, {"chapter": "第7章", "number": 20, "question": "到了共产主义社会，下列选项中不会消亡的是", "A": "劳动", "B": "阶级", "C": "战争", "D": "国家", "answer": "A"}, {"chapter": "第7章", "number": 21, "question": "自由王国是指人们", "A": "处于绝对自由的原始社会状态", "B": "不再受自然规律和社会规律支配的状态", "C": "允许自由竞争的资本主义状态", "D": "摆脱了自然和社会关系的奴役，成为主人", "answer": "D"}, {"chapter": "第7章", "number": 22, "question": "中国共产党的最高纲领是", "A": "实现共产主义", "B": "建构和谐社会", "C": "实现“天下为公”", "D": "实现“大同世界”", "answer": "A"}, {"chapter": "第7章", "number": 23, "question": "“无产阶级只有解放全人类，才能最终解放自己。”这一命题的本质内涵是", "A": "工人阶级和其他阶级在本质上融为一个阶级", "B": "工人阶级和其他阶级在利益上没有差别", "C": "工人阶级只有使整个社会彻底摆脱剥削、压迫，才能彻底解放自己", "D": "工人阶级的解放分为两步：首先解放其他阶级，最后解放自己", "answer": "C"}, {"chapter": "第7章", "number": 24, "question": "对于共产主义社会中人与自然关系的理解，错误的是", "A": "人与自然实现了和谐", "B": "人处理与自然的关系不再以利润为动机", "C": "人以合乎自然规律的方式来利用自然", "D": "人类放弃了对自然的改造和利用", "answer": "D"}, {"chapter": "第7章", "number": 25, "question": "共产主义社会，劳动时间大大缩短。以下说法错误的是", "A": "人们用很短时间就能生产足够物质财富", "B": "人们的自由时间大幅度延长", "C": "社会发展的物质基础被削弱", "D": "人们可以从事丰富的精神活动", "answer": "C"}, {"chapter": "第7章", "number": 26, "question": "实现共产主义是人类最伟大的事业，下列表述错误的是", "A": "实现共产主义理想是广大人民群众的共同愿望", "B": "实现共产主义的阶级力量是现代工人阶级或无产阶级", "C": "实现共产主义需要资产阶级做出妥协和让步", "D": "实现共产主义是工人阶级解放斗争的最终目标", "answer": "C"}, {"chapter": "第7章", "number": 27, "question": "对于共产主义和社会主义关系的表述，错误的是", "A": "社会主义是共产主义的低级阶段", "B": "社会主义是实现共产主义的必由之路", "C": "共产主义和社会主义具有内在联系", "D": "可以跳过社会主义直接进入共产主义", "answer": "D"}];
+
+const CHAPTERS = [...new Set(QUESTIONS.map(q=>q.chapter))];
+
+// ===== APP STATE =====
+const S = {
+  screen:'home',
+  pool:[],
+  idx:0,
+  answers:[],
+  selected:null,
+  answered:false,
+  notebook:{},
+  nbChapter:null,
+  modalChapter:null,
+  quizSource:null,
+  quizShuffle:true,
+  autoAdvance:null,
+  justNow:false,
+};
+
+// ===== PERSISTENCE (File + localStorage fallback) =====
+var NB_FILE_NAME = '马原错题本.json';
+var dirHandle = null;
+var fileHandle = null;
+
+// IndexedDB for persisting the directory handle across sessions
+function idbOpen(){ return new Promise(function(resolve,reject){
+  var r=indexedDB.open('mayuan_fs',1);
+  r.onupgradeneeded=function(e){ e.target.result.createObjectStore('handles'); };
+  r.onsuccess=function(e){ resolve(e.target.result); };
+  r.onerror=function(e){ reject(e); };
+});}
+
+function idbGet(key){ return idbOpen().then(function(db){
+  return new Promise(function(resolve,reject){
+    var tx=db.transaction('handles','readonly');
+    var r=tx.objectStore('handles').get(key);
+    r.onsuccess=function(){ resolve(r.result); };
+    r.onerror=function(e){ reject(e); };
+  });
+});}
+
+function idbSet(key,val){ return idbOpen().then(function(db){
+  return new Promise(function(resolve,reject){
+    var tx=db.transaction('handles','readwrite');
+    tx.objectStore('handles').put(val,key);
+    tx.oncomplete=function(){ resolve(); };
+    tx.onerror=function(e){ reject(e); };
+  });
+});}
+
+// Initialize: try to restore file handle from IndexedDB, then load from file
+async function initFS(){
+  if(typeof window.showDirectoryPicker !== 'function'){
+    console.log('File System Access API not available, using localStorage only');
+    return false;
+  }
+  try {
+    // Restore directory handle from IDB
+    var stored = await idbGet('dirHandle');
+    if(stored){
+      dirHandle = stored;
+      // Verify permission
+      var perm = await dirHandle.queryPermission({mode:'readwrite'});
+      if(perm === 'granted' || (await dirHandle.requestPermission({mode:'readwrite'})) === 'granted'){
+        // Try to read existing notebook file
+        try {
+          fileHandle = await dirHandle.getFileHandle(NB_FILE_NAME, {create:false});
+          var file = await fileHandle.getFile();
+          var text = await file.text();
+          if(text && text.trim()){
+            S.notebook = JSON.parse(text);
+            saveNB(); // sync to localStorage
+            console.log('Loaded notebook from file: '+NB_FILE_NAME);
+            return true;
+          }
+        } catch(e){
+          // File doesn't exist yet, will create on first save
+          fileHandle = await dirHandle.getFileHandle(NB_FILE_NAME, {create:true});
+          console.log('Created new notebook file: '+NB_FILE_NAME);
+          return true;
+        }
+      }
+    }
+  } catch(e){
+    console.log('FS init failed, using localStorage:', e);
+  }
+  dirHandle = null; fileHandle = null;
+  return false;
+}
+
+// Write notebook to file
+async function flushToFile(){
+  if(!dirHandle) return false;
+  try {
+    if(!fileHandle){
+      fileHandle = await dirHandle.getFileHandle(NB_FILE_NAME, {create:true});
+    }
+    var writable = await fileHandle.createWritable();
+    await writable.write(JSON.stringify(S.notebook, null, 2));
+    await writable.close();
+    return true;
+  } catch(e){
+    console.log('File write failed:', e);
+    dirHandle = null; fileHandle = null;
+    return false;
+  }
+}
+
+// Pick save directory (user action required)
+async function pickSaveDir(){
+  if(typeof window.showDirectoryPicker !== 'function'){
+    toast('浏览器不支持文件系统访问，请使用 Chrome/Edge');
+    return;
+  }
+  try {
+    dirHandle = await window.showDirectoryPicker({mode:'readwrite'});
+    await idbSet('dirHandle', dirHandle);
+    fileHandle = await dirHandle.getFileHandle(NB_FILE_NAME, {create:true});
+    // Try to read existing
+    try {
+      var file = await fileHandle.getFile();
+      var text = await file.text();
+      if(text && text.trim()){ S.notebook = JSON.parse(text); saveNB(); }
+    } catch(e){}
+    await flushToFile();
+    toast('已关联目录，错题本将自动保存到 '+NB_FILE_NAME);
+    render();
+  } catch(e){
+    if(e.name !== 'AbortError') toast('选择目录失败: '+e.message);
+  }
+}
+
+function loadNB(){
+  try{ var r=localStorage.getItem('mayuan_nb'); if(r)S.notebook=JSON.parse(r); }catch(e){S.notebook={};}
+}
+
+function saveNB(){
+  localStorage.setItem('mayuan_nb',JSON.stringify(S.notebook));
+  if(dirHandle) flushToFile();
+}
+function nbCount(){ return Object.values(S.notebook).reduce((s,a)=>s+(a||[]).length,0); }
+function chNB(ch){ return S.notebook[ch]||[]; }
+function inNB(ch,n){ return (S.notebook[ch]||[]).includes(n); }
+function addNB(ch,n){ if(!S.notebook[ch])S.notebook[ch]=[]; if(!S.notebook[ch].includes(n)){S.notebook[ch].push(n);S.notebook[ch].sort((a,b)=>a-b);saveNB();return true;} return false; }
+function rmNB(ch,n){ if(S.notebook[ch]){S.notebook[ch]=S.notebook[ch].filter(x=>x!==n);if(S.notebook[ch].length===0)delete S.notebook[ch];saveNB();return true;} return false; }
+function toggleNB(ch,n){ return inNB(ch,n)?rmNB(ch,n):addNB(ch,n); }
+
+// ===== HELPERS =====
+function toast(msg){ const e=document.createElement('div');e.className='toast';e.textContent=msg;document.getElementById('toast-zone').appendChild(e);setTimeout(function(){e.remove();},2000); }
+function shuffle(a){ const arr=[...a];for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+function qByChapter(ch){ return QUESTIONS.filter(function(q){return q.chapter===ch;}); }
+function qFind(ch,n){ return QUESTIONS.find(function(q){return q.chapter===ch&&q.number===n;}); }
+
+// ===== RENDER DISPATCH =====
+function render(){
+  const app=document.getElementById('app');
+  if(S.autoAdvance){clearTimeout(S.autoAdvance);S.autoAdvance=null;}
+  S.modalChapter=null;
+  switch(S.screen){
+    case'home':app.innerHTML=homeHTML();break;
+    case'quiz':app.innerHTML=quizHTML();bindQuiz();break;
+    case'results':app.innerHTML=resultsHTML();break;
+    case'notebook':app.innerHTML=notebookHTML();bindNotebook();break;
+  }
+  app.innerHTML+='<div style="text-align:center;padding:24px 0 12px;font-size:13px;color:var(--text2);opacity:.6;">Written by WXT</div>';
+}
+
+// ===== HOME SCREEN =====
+function homeHTML(){
+  const nb=nbCount();
+  var h='';
+  h+='<div class="home-header"><h1>CAU马原题库练习器</h1><p>马克思主义基本原理 · 单选题题库 · '+QUESTIONS.length+'题</p><p style="font-size:13px;color:var(--text2);max-width:480px;margin:10px auto 0;line-height:1.7;">期末单选几乎全部出自本题库，刷完即稳。本工具仅供学习参考，助力高效记忆。祝大家马原全部 A / A+！</p></div>';
+
+  h+='<div class="notebook-bar" onclick="gotoScreen(\'notebook\')">';
+  h+='<div class="nb-left"><div class="nb-icon">&#128214;</div><div class="nb-info"><div class="nb-title">错题本</div><div class="nb-sub">管理错题 针对性复习</div></div></div>';
+  h+='<div style="display:flex;align-items:center;gap:10px;">';
+  if(nb>0)h+='<span class="nb-count">'+nb+'</span>';
+  h+='<span class="nb-arrow">&gt;</span></div></div>';
+
+  if(nb>0){
+    h+='<div style="text-align:center;margin-bottom:18px;">';
+    h+='<button class="btn btn-warning btn-lg" onclick="startErrorQuiz()">测验全部错题 ('+nb+'题)</button>';
+    h+='</div>';
+  }
+
+  h+='<div class="section-title">按章节练习</div>';
+  h+='<div class="chapter-grid">';
+  for(var i=0; i<CHAPTERS.length; i++){
+    var ch=CHAPTERS[i];
+    var cnt=qByChapter(ch).length;
+    h+='<div class="chapter-card" data-ch="'+ch+'" data-cnt="'+cnt+'" onclick="onChapterCardClick(this)">';
+    h+='<div class="ch-name">'+ch+'</div><div class="ch-count">'+cnt+'题</div></div>';
+  }
+  h+='<div class="chapter-card all-card" data-ch="all" data-cnt="'+QUESTIONS.length+'" onclick="onChapterCardClick(this)">';
+  h+='<div class="ch-name">全部题目</div><div class="ch-count">'+QUESTIONS.length+'题</div></div>';
+  h+='</div>';
+  return h;
+}
+
+function gotoScreen(name){ S.screen=name; render(); }
+
+function onChapterCardClick(el){
+  var ch=el.getAttribute('data-ch');
+  var cnt=parseInt(el.getAttribute('data-cnt'));
+  openChModal(ch,cnt);
+}
+
+function openChModal(ch,total){
+  S.modalChapter=ch;
+  var modal=document.createElement('div');
+  modal.className='modal-overlay';
+  modal.onclick=function(e){if(e.target===modal)closeModal();};
+  var inner='<div class="modal"><h3>'+(ch==='all'?'全部题目':ch)+'</h3>';
+  inner+='<div class="modal-sub">共 '+total+' 道单选题</div>';
+  inner+='<div class="btn-group">';
+  if(total<=100){
+    inner+='<button class="btn btn-primary btn-lg" onclick="startQuiz(\''+ch+'\','+total+',false)">顺序练习（全部 '+total+' 题）</button>';
+    inner+='<button class="btn btn-outline" onclick="startQuiz(\''+ch+'\','+total+',true)">随机练习（全部 '+total+' 题）</button>';
+  }else{
+    inner+='<button class="btn btn-primary btn-lg" onclick="startQuiz(\''+ch+'\',100,true)">随机 100 题</button>';
+    inner+='<button class="btn btn-outline" onclick="startQuiz(\''+ch+'\','+total+',false)">顺序全部 '+total+' 题</button>';
+    inner+='<button class="btn btn-outline" onclick="startQuiz(\''+ch+'\','+total+',true)">随机全部 '+total+' 题</button>';
+  }
+  inner+='<button class="btn btn-ghost" onclick="closeModal()">取消</button>';
+  inner+='</div></div>';
+  modal.innerHTML=inner;
+  document.getElementById('app').appendChild(modal);
+}
+
+function closeModal(){
+  var overlay=document.querySelector('.modal-overlay');
+  if(overlay)overlay.remove();
+  S.modalChapter=null;
+}
+
+// ===== START QUIZ =====
+function startQuiz(ch,count,doShuffle){
+  closeModal();
+  var pool=ch==='all'?[...QUESTIONS]:qByChapter(ch);
+  if(doShuffle) pool=shuffle(pool);
+  if(count<pool.length)pool=pool.slice(0,count);
+  S.pool=pool;S.idx=0;S.answers=[];S.selected=null;S.answered=false;S.quizSource=ch;S.quizShuffle=doShuffle;S.screen='quiz';
+  render();window.scrollTo(0,0);document.getElementById('app').scrollIntoView();
+}
+
+function startErrorQuiz(){
+  var pool=[];
+  for(var ch in S.notebook){
+    var nums=S.notebook[ch]||[];
+    for(var i=0;i<nums.length;i++){
+      var q=qFind(ch,nums[i]);
+      if(q)pool.push(q);
+    }
+  }
+  if(pool.length===0){toast('错题本为空，请先添加错题');return;}
+  S.pool=shuffle(pool);S.idx=0;S.answers=[];S.selected=null;S.answered=false;S.quizSource='errors';S.screen='quiz';
+  render();window.scrollTo(0,0);
+}
+
+// ===== QUIZ SCREEN =====
+function quizHTML(){
+  if(S.pool.length===0){S.screen='home';render();return'';}
+  var q=S.pool[S.idx];
+  var total=S.pool.length;
+  var i=S.idx;
+  var correctCount=S.answers.filter(function(a){return a.correct;}).length;
+  var pct=((i)/total)*100;
+
+  var h='<div class="quiz-top">';
+  h+='<button class="quiz-back-btn" onclick="confirmExit()">&#10005;</button>';
+  h+='<button class="quiz-prev-btn" onclick="goPrev()" '+(i===0?'disabled':'')+' title="上一题">&#8592;</button>';
+  h+='<div class="quiz-progress"><div class="quiz-progress-outer"><div class="quiz-progress-inner" style="width:'+pct+'%"></div></div>';
+  h+='<div class="quiz-progress-info"><span>'+(i+1)+'/'+total+'</span><span>'+correctCount+'</span></div></div>';
+  h+='<span class="quiz-badge">'+q.chapter+'</span></div>';
+
+  h+='<div class="quiz-question-card"><div class="qq-num">#'+q.number+' '+q.chapter+' 第'+(i+1)+'题</div>';
+  h+='<div class="qq-text">'+q.question+'</div></div>';
+
+  h+='<div class="quiz-options">';
+  var labels=['A','B','C','D'];
+  for(var j=0;j<labels.length;j++){
+    var L=labels[j];
+    var cls='quiz-option';
+    if(S.answered){
+      cls+=' opt-done';
+      if(L===q.answer)cls+=' opt-correct';
+      else if(L===S.selected)cls+=' opt-wrong';
+      else cls+=' opt-dim';
+    }
+    h+='<div class="'+cls+'" data-opt="'+L+'" onclick="pickOption(\''+L+'\')">';
+    h+='<span class="opt-letter">'+L+'</span><span>'+q[L]+'</span></div>';
+  }
+  h+='</div>';
+
+  h+='<div class="quiz-bottom">';
+  if(S.answered){
+    var isRight=S.selected===q.answer;
+    if(isRight){
+      h+='<div class="quiz-feedback fb-correct">回答正确！</div>';
+      if(S.justNow&&i<total-1)h+='<div style="font-size:13px;color:var(--text2);">即将进入下一题...</div>';
+    }else{
+      h+='<div class="quiz-feedback fb-wrong">回答错误 正确答案是 '+q.answer+'</div>';
+    }
+    h+='<div class="quiz-action-row">';
+    if(!isRight || !S.justNow){
+      var isIn=inNB(q.chapter,q.number);
+      if(isIn)h+='<button class="btn btn-outline btn-sm" onclick="toggleNBFromQuiz()">已加入错题本（点击移除）</button>';
+      else h+='<button class="btn btn-danger btn-sm" onclick="toggleNBFromQuiz()">+ 加入错题本</button>';
+    }else{
+      var isIn2=inNB(q.chapter,q.number);
+      if(isIn2)h+='<button class="btn btn-outline btn-sm" onclick="toggleNBFromQuiz()">从错题本中移除</button>';
+    }
+    if(i<total-1)h+='<button class="btn btn-primary" onclick="goNext()">下一题 </button>';
+    else h+='<button class="btn btn-primary" onclick="goResults()">查看结果</button>';
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='<div style="text-align:center;margin-top:8px;font-size:11px;color:var(--text2);opacity:.7;">键盘: A/1 B/2 C/3 D/4 选择 Enter/Space 继续</div>';
+  return h;
+}
+
+function bindQuiz(){
+  document.addEventListener('keydown',quizKeyHandler);
+}
+
+function quizKeyHandler(e){
+  if(S.screen!=='quiz'){document.removeEventListener('keydown',quizKeyHandler);return;}
+  var key=e.key.toUpperCase();
+  if(!S.answered&&['A','B','C','D','1','2','3','4'].indexOf(key)>=0){
+    var map={'1':'A','2':'B','3':'C','4':'D'};
+    pickOption(map[key]||key);
+    return;
+  }
+  if(S.answered&&(key==='ENTER'||key===' ')){
+    e.preventDefault();
+    if(S.idx<S.pool.length-1)goNext();else goResults();
+  }
+}
+
+function pickOption(L){
+  if(S.answered)return;
+  S.selected=L;S.answered=true; S.justNow=true;
+  var q=S.pool[S.idx];
+  var isRight=L===q.answer;
+  S.answers.push({idx:S.idx,selected:L,correct:isRight,chapter:q.chapter,number:q.number});
+  if(isRight){
+    // Correct: disable all options, flash green briefly then advance
+    var opts=document.querySelectorAll('.quiz-option');
+    for(var i=0;i<opts.length;i++){
+      opts[i].classList.add('opt-done');
+      if(opts[i].getAttribute('data-opt')===q.answer){
+        opts[i].classList.add('opt-correct');
+      }
+    }
+    setTimeout(function(){
+      if(S.idx<S.pool.length-1)goNext();else goResults();
+    },300);
+  }else{
+    render();
+    setTimeout(function(){var el=document.querySelector('.quiz-option.opt-wrong');if(el)el.style.animation='shake .5s ease';},50);
+  }
+}
+
+function toggleNBFromQuiz(){
+  var q=S.pool[S.idx];
+  var added=toggleNB(q.chapter,q.number);
+  toast(added?'已加入错题本':'已从错题本移除');
+  render();
+}
+
+function restoreState(){
+  var ans=S.answers.find(function(a){return a.idx===S.idx;});
+  S.justNow=false;
+  if(ans){
+    S.answered=true; S.selected=ans.selected;
+  }else{
+    S.answered=false; S.selected=null;
+  }
+}
+
+function goNext(){
+  if(S.autoAdvance){clearTimeout(S.autoAdvance);S.autoAdvance=null;}
+  S.idx++; restoreState();
+  render();window.scrollTo(0,0);
+}
+
+function goPrev(){
+  if(S.idx<=0) return;
+  if(S.autoAdvance){clearTimeout(S.autoAdvance);S.autoAdvance=null;}
+  S.idx--; restoreState();
+  render();window.scrollTo(0,0);
+}
+
+function goResults(){ S.screen='results';render(); }
+
+function confirmExit(){
+  if(S.answers.length>0&&S.idx<S.pool.length-1){
+    if(!confirm('确定退出吗？已完成 '+S.answers.length+' 题，当前进度将丢失。'))return;
+  }
+  if(S.autoAdvance){clearTimeout(S.autoAdvance);S.autoAdvance=null;}
+  S.screen='home';render();
+}
+
+// ===== RESULTS SCREEN =====
+function resultsHTML(){
+  var total=S.pool.length;
+  var correct=S.answers.filter(function(a){return a.correct;}).length;
+  var wrong=total-correct;
+  var pct=total>0?Math.round((correct/total)*100):0;
+  var ringClass='poor';
+  if(pct>=90)ringClass='excellent';
+  else if(pct>=70)ringClass='good';
+  else if(pct>=50)ringClass='ok';
+
+  var wrongItems=S.answers.filter(function(a){return !a.correct;});
+  var autoAdded=0;
+  if(S.quizSource!=='errors'){
+    for(var i=0;i<wrongItems.length;i++){
+      if(addNB(wrongItems[i].chapter,wrongItems[i].number))autoAdded++;
+    }
+  }
+
+  var h='<div class="results-wrap">';
+  h+='<h2>'+((S.quizSource==='errors')?'错题测验完成':'测验完成')+'</h2>';
+  h+='<div class="score-ring '+ringClass+'"><span class="sr-num">'+pct+'%</span><span class="sr-pct">正确率</span></div>';
+  h+='<div class="results-stats">';
+  h+='<div class="rstat"><div class="rstat-val c-green">'+correct+'</div><div class="rstat-label">正确</div></div>';
+  h+='<div class="rstat"><div class="rstat-val c-red">'+wrong+'</div><div class="rstat-label">错误</div></div>';
+  h+='<div class="rstat"><div class="rstat-val">'+total+'</div><div class="rstat-label">总题数</div></div>';
+  h+='</div>';
+
+  if(wrong>0){
+    h+='<p style="color:var(--text2);font-size:14px;margin-bottom:20px;">';
+    if(autoAdded>0)h+='已将 '+autoAdded+' 道错题自动加入错题本 ';
+    h+='可到错题本中查看和复习</p>';
+  }
+
+  h+='<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">';
+  if(S.quizSource==='errors'){
+    h+='<button class="btn btn-warning" onclick="startErrorQuiz()">再来一组错题</button>';
+  }else{
+    h+='<button class="btn btn-primary" onclick="retryQuiz()">再来一组</button>';
+  }
+  h+='<button class="btn btn-outline" onclick="gotoScreen(\'notebook\')">查看错题本</button>';
+  h+='<button class="btn btn-ghost" onclick="gotoScreen(\'home\')">返回首页</button>';
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+
+function retryQuiz(){
+  closeModal();
+  startQuiz(S.quizSource,S.pool.length,S.quizShuffle);
+}
+
+// ===== NOTEBOOK SCREEN =====
+function notebookHTML(){
+  var nb=nbCount();
+  if(!S.nbChapter||CHAPTERS.indexOf(S.nbChapter)<0)S.nbChapter=CHAPTERS.filter(function(c){return chNB(c).length>0;})[0]||CHAPTERS[0];
+  var c=S.nbChapter;
+  var list=chNB(c);
+
+  var h='<div class="nb-header">';
+  h+='<button class="btn btn-ghost" onclick="gotoScreen(\'home\')"> 返回</button>';
+  h+='<div style="flex:1;text-align:center;"><h2>错题本</h2></div>';
+  h+='<span class="nb-total">共 '+nb+' 题</span></div>';
+
+  if(dirHandle){
+    h+='<div style="background:var(--success-light);border:1px solid var(--success);border-radius:10px;padding:8px 14px;margin-bottom:14px;font-size:13px;color:#065F46;text-align:center;"> 已关联文件保存：'+NB_FILE_NAME+'，每次修改自动写入，清空浏览器不会丢失</div>';
+  }else{
+    h+='<div style="background:var(--warning-light);border:1px solid var(--warning);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#92400E;display:flex;align-items:center;justify-content:space-between;gap:8px;">';
+    h+='<span> 当前数据仅保存在浏览器中，清空浏览器缓存后会丢失。建议保存到文件，手机版用户暂不支持。</span>';
+    h+='<button class="btn btn-warning btn-sm" onclick="pickSaveDir()" style="flex-shrink:0;">选择目录</button>';
+    h+='</div>';
+  }
+
+  h+='<div class="nb-tabs">';
+  for(var i=0;i<CHAPTERS.length;i++){
+    var ch=CHAPTERS[i];
+    var cnt=chNB(ch).length;
+    h+='<button class="nb-tab'+(c===ch?' active':'')+'" onclick="S.nbChapter=\''+ch+'\';render();">'+ch+' ('+cnt+')</button>';
+  }
+  h+='</div>';
+
+  h+='<div class="nb-add"><input type="text" id="nb-inp" placeholder="输入题号添加到 '+c+' 错题本（如: 1,3,5）" min="1">';
+  h+='<button class="btn btn-primary btn-sm" onclick="addNBManual()">添加</button></div>';
+
+  if(list.length===0){
+    h+='<div class="nb-empty"><p style="font-size:36px;margin-bottom:8px;">&#128203;</p><p>'+c+' 暂无错题</p><p style="font-size:13px;">在上方输入题号手动添加，或测验中自动收集</p></div>';
+  }else{
+    h+='<ul class="nb-list">';
+    for(var j=0;j<list.length;j++){
+      var n=list[j];
+      var q=qFind(c,n);
+      if(!q)continue;
+      h+='<li class="nb-item"><div class="nbi-info"><div class="nbi-num">#'+n+'</div>';
+      h+='<div class="nbi-q">'+q.question+'</div>';
+      h+='<div class="nbi-a">答案：'+q.answer+'</div></div>';
+      h+='<button class="nbi-btn" onclick="rmNB(\''+c+'\','+n+');render();" title="移除">&#10005;</button></li>';
+    }
+    h+='</ul>';
+  }
+
+  h+='<div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap;">';
+  if(nb>0)h+='<button class="btn btn-warning" onclick="startErrorQuiz()">测验全部错题 ('+nb+'题)</button>';
+  h+='<button class="btn btn-outline btn-sm" onclick="if(confirm(\'确定清空全部错题？此操作不可撤销。\')){S.notebook={};saveNB();S.nbChapter=null;render();}">清空全部错题</button>';
+  h+='</div>';
+  return h;
+}
+
+function bindNotebook(){
+  var inp=document.getElementById('nb-inp');
+  if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')addNBManual();});
+}
+
+function addNBManual(){
+  var inp=document.getElementById('nb-inp');
+  if(!inp)return;
+  var raw=inp.value.trim();
+  if(!raw){toast('请输入题号');return;}
+  // Support comma/space/chinese-comma separated: "1,2,3" or "1 2 3" or "1，2，3"
+  var parts=raw.split(/[,，\s]+/);
+  var c=S.nbChapter;
+  var added=0, skipped=0, notFound=0;
+  for(var i=0;i<parts.length;i++){
+    var n=parseInt(parts[i]);
+    if(isNaN(n)||n<1){skipped++;continue;}
+    var q=qFind(c,n);
+    if(!q){notFound++;continue;}
+    if(addNB(c,n))added++;else skipped++;
+  }
+  var msgs=[];
+  if(added>0)msgs.push('已添加 '+added+' 题');
+  if(notFound>0)msgs.push(notFound+' 个题号不存在');
+  if(skipped>0)msgs.push(skipped+' 个已跳过');
+  toast(msgs.join('，'));
+  inp.value='';render();
+}
+
+// ===== INIT =====
+loadNB();
+render();
+
+// Try to restore file system access asynchronously
+initFS().then(function(ok){
+  if(ok && Object.keys(S.notebook).length===0){
+    // File loaded empty or newly created, localStorage may have data
+    var local=null;
+    try{ local=localStorage.getItem('mayuan_nb'); }catch(e){}
+    if(local){ S.notebook=JSON.parse(local); flushToFile(); }
+  }
+  if(!ok) console.log('Using localStorage for notebook persistence');
+});
+
+</script>
+</body>
+</html>

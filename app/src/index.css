@@ -1,0 +1,8 @@
+/*
+ * 秋功 AutumnAUTools — React 入口样式
+ *
+ * 本项目为遗留静态站点迁移：各页面样式由页面自身 <style> 块与
+ * public/css/GlobalStyle.css 提供（在 index.html 中全局引入）。
+ * 故意不引入 Tailwind preflight，避免全局重置污染遗留页面样式。
+ * 后续新增 React 原生组件时，可在此逐步引入 Tailwind 分层样式。
+ */

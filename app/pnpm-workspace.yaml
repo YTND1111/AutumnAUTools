@@ -1,0 +1,6 @@
+allowBuilds:
+  esbuild: true
+# pnpm 11 的项目级配置（settings 已从 package.json 的 pnpm 字段迁至本文件）
+# 允许 esbuild 执行安装构建脚本（Vite 依赖其平台二进制）
+onlyBuiltDependencies:
+  - esbuild

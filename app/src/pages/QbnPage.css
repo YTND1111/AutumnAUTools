@@ -1,0 +1,120 @@
+/*
+ * 题库页样式 —— 原 qbn.html 内联 <style> 的 scoped 移植。
+ * 全部规则收敛在 .qbn-page 作用域内，避免通用类名（.header/.main/.container 等）
+ * 与未来其他原生页面互相污染；原 `*` 与 `body` 规则相应收敛。
+ */
+
+.qbn-page,
+.qbn-page * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Microsoft Yahei", SimSun, sans-serif;
+}
+
+.qbn-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.qbn-page .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* 头部导航 */
+.qbn-page .header {
+    color: #ffffff;
+    height: 60px;
+    line-height: 60px;
+}
+
+.qbn-page .header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.qbn-page .logo {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.qbn-page .nav-list {
+    display: flex;
+    gap: 35px;
+}
+
+.qbn-page .nav-item {
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.qbn-page .nav-item a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.qbn-page .nav-item:hover {
+    text-decoration: underline;
+}
+
+/* 主体内容布局 */
+.qbn-page .main {
+    flex: 1 0 auto;
+    display: flex;
+    gap: 30px;
+    margin: 30px auto;
+    width: 100%;
+}
+
+.qbn-page .left-box {
+    flex: 840 0 0;
+    min-width: 0;
+}
+
+.qbn-page .right-box {
+    flex: 330 0 0;
+    min-width: 0;
+}
+
+/* 页面宽度短于 850px 时改为上下排列 */
+@media (max-width: 849px) {
+    .qbn-page .main {
+        flex-direction: column;
+    }
+
+    .qbn-page .left-box,
+    .qbn-page .right-box {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+}
+
+.qbn-page .title-bar {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--joint-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.qbn-page .title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #222;
+}
+
+.qbn-page .intro {
+    color: #666;
+    line-height: 1.6;
+}
+
+/* 页脚 */
+.qbn-page .footer {
+    margin-top: auto;
+    padding: 16px 0;
+}

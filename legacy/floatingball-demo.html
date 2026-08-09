@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>悬浮球三横线 → X 动画 Demo</title>
+    <style>
+        :root {
+            /* 动画参数：可用下方滑杆实时调整 */
+            --fb-dur: 0.26s;          /* 单阶段时长（与悬浮球变色时长一致） */
+            --fb-gap: 15px;           /* 三条横条的间距 */
+            --fb-bar-w: 45px;         /* 横条长度 */
+            --fb-bar-h: 5px;          /* 横条宽度（粗细） */
+            --fb-bar-color: #c9cdd3;  /* 未触发时的灰色 */
+            --fb-bar-x-color: #ffffff;/* X 形态时的颜色 */
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            background: #f2f5f3;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /* ========================
+           悬浮球本体（复刻正式页面外观）
+           ======================== */
+        #floatingBall {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            background-color: #0f7a47;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.26s ease, filter 0.2s ease;
+        }
+
+        #floatingBall:hover {
+            filter: drop-shadow(0 0 14px rgba(15, 122, 71, 0.6));
+        }
+
+        #floatingBall.is-expanded {
+            background-color: #2b6cff;
+        }
+
+        /* ========================
+           三横线 → X（纯 CSS，transition 驱动，正反向自动播放）
+           上/下横条用 ::before/::after，中横条用内部 span.fb-bar
+           ======================== */
+        #floatingBall::before,
+        #floatingBall::after,
+        #floatingBall .fb-bar {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: var(--fb-bar-w);
+            height: var(--fb-bar-h);
+            margin-left: calc(var(--fb-bar-w) / -2);
+            margin-top: calc(var(--fb-bar-h) / -2);
+            background: var(--fb-bar-color);
+            border-radius: calc(var(--fb-bar-h) / 2);
+            will-change: translate, rotate, scale;
+        }
+
+        /* 未触发态：三条等长等宽等间距灰条
+           反向动画（X → 三横线）：先回旋，再归位，中条最后重新撑开 */
+        #floatingBall::before {
+            translate: 0 calc(-1 * var(--fb-gap));
+            rotate: 0deg;
+            transition: translate var(--fb-dur) ease var(--fb-dur),
+                        rotate var(--fb-dur) ease 0s,
+                        background-color 0.26s ease;
+        }
+
+        #floatingBall::after {
+            translate: 0 var(--fb-gap);
+            rotate: 0deg;
+            transition: translate var(--fb-dur) ease var(--fb-dur),
+                        rotate var(--fb-dur) ease 0s,
+                        background-color 0.26s ease;
+        }
+
+        #floatingBall .fb-bar {
+            scale: 1 1;
+            transition: scale var(--fb-dur) ease calc(var(--fb-dur) * 2),
+                        background-color 0.26s ease;
+        }
+
+        /* 触发态：上条先下压再旋 45°（向下凹折），
+           下条先上抬再旋 -45°（向上凸起），中条先从两端向内收缩消失 */
+        #floatingBall.is-expanded::before {
+            translate: 0 0;
+            rotate: 45deg;
+            background: var(--fb-bar-x-color);
+            transition: translate var(--fb-dur) ease 0s,
+                        rotate var(--fb-dur) ease var(--fb-dur),
+                        background-color 0.26s ease;
+        }
+
+        #floatingBall.is-expanded::after {
+            translate: 0 0;
+            rotate: -45deg;
+            background: var(--fb-bar-x-color);
+            transition: translate var(--fb-dur) ease 0s,
+                        rotate var(--fb-dur) ease var(--fb-dur),
+                        background-color 0.26s ease;
+        }
+
+        #floatingBall.is-expanded .fb-bar {
+            scale: 0 1;
+            background: var(--fb-bar-x-color);
+            transition: scale var(--fb-dur) ease 0s,
+                        background-color 0.26s ease;
+        }
+
+        /* ========================
+           Demo 控制区
+           ======================== */
+        .demo-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 24px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #333;
+            min-width: 300px;
+        }
+
+        .demo-panel .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-panel label {
+            flex: 0 0 90px;
+        }
+
+        .demo-panel input[type="range"] {
+            flex: 1;
+        }
+
+        .demo-panel .val {
+            flex: 0 0 52px;
+            text-align: right;
+            color: #0f7a47;
+            font-weight: bold;
+        }
+
+        .demo-panel button {
+            padding: 8px 0;
+            border: 0;
+            border-radius: 8px;
+            background: #0f7a47;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .demo-panel button.is-on {
+            background: #cc4444;
+        }
+
+        .hint {
+            color: #888;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 悬浮球：结构同正式页面，仅多一个 span.fb-bar 作为中横条 -->
+    <div id="floatingBall" tabindex="0"><span class="fb-bar"></span></div>
+    <div class="hint">点击悬浮球触发 / 结束触发动画</div>
+
+    <div class="demo-panel">
+        <div class="row">
+            <label>单阶段时长</label>
+            <input type="range" id="durRange" min="0.06" max="0.40" step="0.01" value="0.26">
+            <span class="val" id="durVal">0.26s</span>
+        </div>
+        <div class="row">
+            <label>横条间距</label>
+            <input type="range" id="gapRange" min="8" max="18" step="1" value="15">
+            <span class="val" id="gapVal">15px</span>
+        </div>
+        <div class="row">
+            <label>横条长度</label>
+            <input type="range" id="widRange" min="30" max="56" step="1" value="45">
+            <span class="val" id="widVal">45px</span>
+        </div>
+        <button id="autoBtn">自动循环播放：关</button>
+    </div>
+
+    <script>
+        const floatingBall = document.getElementById("floatingBall");
+
+        // 点击切换触发态（与正式页面 is-expanded 开关一致）
+        floatingBall.addEventListener("click", () => {
+            floatingBall.classList.toggle("is-expanded");
+        });
+
+        // 演示滑杆：实时调整 CSS 变量
+        function bindRange(id, valId, cssVar, unit) {
+            const range = document.getElementById(id);
+            const val = document.getElementById(valId);
+            range.addEventListener("input", () => {
+                document.documentElement.style.setProperty(cssVar, range.value + unit);
+                val.textContent = range.value + unit;
+            });
+        }
+        bindRange("durRange", "durVal", "--fb-dur", "s");
+        bindRange("gapRange", "gapVal", "--fb-gap", "px");
+        bindRange("widRange", "widVal", "--fb-bar-w", "px");
+
+        // 自动循环播放开关
+        const autoBtn = document.getElementById("autoBtn");
+        let autoTimer = 0;
+        autoBtn.addEventListener("click", () => {
+            if (autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = 0;
+                autoBtn.textContent = "自动循环播放：关";
+                autoBtn.classList.remove("is-on");
+            } else {
+                autoTimer = setInterval(() => {
+                    floatingBall.classList.toggle("is-expanded");
+                }, 1200);
+                autoBtn.textContent = "自动循环播放：开";
+                autoBtn.classList.add("is-on");
+            }
+        });
+    </script>
+</body>
+</html>

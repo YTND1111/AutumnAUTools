@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .is-hidden {
+            display: none !important;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f3ff 50%, #fef9ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            color: #1f2933;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        button:focus-visible {
+            outline: 3px solid rgba(37, 99, 235, 0.4);
+            outline-offset: 3px;
+        }
+
+        .app-shell {
+            width: min(960px, 100%);
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .app-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .app-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .subtitle {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .header-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            color: #1f2933;
+            cursor: pointer;
+        }
+
+        .toggle input {
+            width: 18px;
+            height: 18px;
+            accent-color: #2563eb;
+        }
+
+        .header-controls button {
+            background: #f1f5f9;
+            border: none;
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #0f172a;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .header-controls button:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .header-controls button:disabled {
+            cursor: default;
+            opacity: 0.65;
+            transform: none;
+        }
+
+        .question-card {
+            background: #f8fbff;
+            border-radius: 18px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .question-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #2563eb;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        #modeHint {
+            font-weight: 500;
+            color: #22c55e;
+            font-size: 14px;
+        }
+
+        .wrong-panel {
+            background: #f9fafb;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .wrong-panel.is-hidden {
+            display: none;
+        }
+
+        .wrong-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .wrong-panel-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .wrong-empty {
+            margin: 0;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 15px;
+        }
+
+        .wrong-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .wrong-item {
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(99, 102, 241, 0.18);
+            background: #eef2ff;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .wrong-item__info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: min(100%, 520px);
+        }
+
+        .wrong-item__title {
+            margin: 0;
+            font-weight: 600;
+            color: #312e81;
+            font-size: 16px;
+        }
+
+        .wrong-item__desc {
+            margin: 0;
+            color: #4338ca;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .review-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 8px 15px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            background: #bae6fd;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .review-btn:hover {
+            background: #7dd3fc;
+            transform: translateY(-1px);
+        }
+
+        #clearWrongRecords {
+            border: none;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #b91c1c;
+            background: #fee2e2;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #clearWrongRecords:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 16px rgba(248, 113, 113, 0.2);
+        }
+
+        .question-text {
+            margin: 0;
+            line-height: 1.6;
+            font-size: 20px;
+            color: #0f172a;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+        }
+
+        @media (min-width: 720px) {
+            .options {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid #d0d8e5;
+            background: #ffffff;
+            font-size: 16px;
+            text-align: left;
+            line-height: 1.5;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+            cursor: pointer;
+        }
+
+        .option .badge {
+            flex: 0 0 auto;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #eff6ff;
+            color: #2563eb;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+        }
+
+        .option .content {
+            flex: 1;
+            color: #1f2933;
+        }
+
+        .option:hover {
+            border-color: #2563eb;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .option.is-selected {
+            border-color: #2563eb;
+            background: #eef2ff;
+            box-shadow: 0 10px 18px rgba(79, 70, 229, 0.12);
+        }
+
+        .option.is-correct {
+            border-color: #16a34a;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .option.is-correct .badge {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .option.is-wrong {
+            border-color: #dc2626;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .option.is-wrong .badge {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .actions button {
+            min-width: 120px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            border: none;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb, #4c6ef5);
+        }
+
+        .actions button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+        }
+
+        .actions button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #getBack {
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+        }
+
+        #getBack:hover {
+            box-shadow: 0 12px 24px rgba(14, 165, 233, 0.2);
+        }
+
+        #checkAnswer {
+            background: linear-gradient(135deg, #ec4899, #f97316);
+        }
+
+        #checkAnswer:hover {
+            box-shadow: 0 12px 24px rgba(236, 72, 153, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <div>
+                <h1>习概选择题练习</h1>
+                <p class="subtitle">随时巩固习近平新时代中国特色社会主义思想重点知识</p>
+            </div>
+            <div class="header-controls">
+                <label class="toggle">
+                    <input type="checkbox" id="shuffleToggle">
+                    <span>随机打乱题序</span>
+                </label>
+                <button type="button" id="toggleWrongPanel" disabled>错题记录 (0)</button>
+                <button type="button" id="resetProgress">清除当前选项</button>
+            </div>
+        </header>
+        <section class="question-card">
+            <div class="question-meta">
+                <span id="progress"></span>
+                <span id="modeHint"></span>
+            </div>
+            <p class="question-text" id="questionText"></p>
+            <div class="options">
+                <button class="option" type="button" data-index="0">
+                    <span class="badge">A</span>
+                    <span class="content"></span>
+                </button>
+                <button class="option" type="button" data-index="1">
+                    <span class="badge">B</span>
+                    <span class="content"></span>
+                </button>
+                <button class="option" type="button" data-index="2">
+                    <span class="badge">C</span>
+                    <span class="content"></span>
+                </button>
+                <button class="option" type="button" data-index="3">
+                    <span class="badge">D</span>
+                    <span class="content"></span>
+                </button>
+            </div>
+        </section>
+        <footer class="actions">
+            <button type="button" id="getBack">上一题</button>
+            <button type="button" id="checkAnswer">查看答案</button>
+            <button type="button" id="continue">下一题</button>
+        </footer>
+        <section class="wrong-panel is-hidden" id="wrongPanel">
+            <div class="wrong-panel-header">
+                <h2>错题记录</h2>
+                <button type="button" id="clearWrongRecords">清空错题</button>
+            </div>
+            <p class="wrong-empty" id="wrongEmpty">目前还没有错题，保持住！</p>
+            <ul class="wrong-list" id="wrongList"></ul>
+        </section>
+    </div>
+    <script>
+
+        //变量初始化
+
+        const data = 
+            [
+                {
+                    stem: "1.党的二十大提出的（   ），是习近平新时代中国特色社会主义思想的世界观、方法论和贯穿其中的立场观点方法的重要体现。",
+                    options: {
+                        A: "“三个务必”",
+                        B: "“六个必须坚持”",
+                        C: "“五个必由之路”",
+                        D: "中国式现代化"
+                    }
+                },
+                {
+                    stem: "2.（   ）是中国共产党人的境界格局，体现了马克思主义追求人类进步和解放的崇高理想。",
+                    options: {
+                        A: "坚持胸怀天下",
+                        B: "坚持守正创新",
+                        C: "坚持问题导向",
+                        D: "坚持系统观念"
+                    }
+                },
+                {
+                    stem: "3.习近平新时代中国特色社会主义思想内容十分丰富，涵盖改革发展稳定、内政外交国防、治党治国治军等各个领域、各个方面，构成了一个系统完整、逻辑严密、相互贯通的思想理论体系。习近平新时代中国特色社会主义思想的主体内容是（   ）。",
+                    options: {
+                        A: "“四个全面”",
+                        B: "“十四个坚持”",
+                        C: "“十个明确”",
+                        D: "“四个伟大”"
+                    }
+                },
+                {
+                    stem: "4.中国特色社会主义的战略布局是（   ）。",
+                    options: {
+                        A: "“十个明确”",
+                        B: "“十四个坚持”",
+                        C: "“四个全面”",
+                        D: "“五位一体”"
+                    }
+                },
+                {
+                    stem: "5.世界未有之大变局正在加速演变。（   ）仍然是时代主题，但是不稳定不确定性更加突出。",
+                    options: {
+                        A: "发展与共享",
+                        B: "和平与融合",
+                        C: "开放与包容",
+                        D: "和平与发展"
+                    }
+                },
+                {
+                    stem: "6.马克思主义中国化时代化的最新成果是（   ）。",
+                    options: {
+                        A: "习近平新时代中国特色社会主义思想",
+                        B: "毛泽东思想",
+                        C: "邓小平理论",
+                        D: "“三个代表”重要思想"
+                    }
+                },
+                {
+                    stem: "7.进入新时代的重要依据是（   ）。",
+                    options: {
+                        A: "发展不平衡",
+                        B: "社会主要矛盾变化",
+                        C: "发展不充分",
+                        D: "社会基本矛盾变化"
+                    }
+                },
+                {
+                    stem: "8.提出人与自然和谐共生的生命共同体，绿水青山就是金山银山，是对（   ）的新发展。",
+                    options: {
+                        A: "马克思主义自然观",
+                        B: "马克思主义社会矛盾学说",
+                        C: "马克思主义认识论",
+                        D: "马克思主义国家学说"
+                    }
+                },
+                {
+                    stem: "9.新时代十年的伟大变革，在党史、新中国史、改革开放史、社会主义发展史、（   ）上具有里程碑意义。",
+                    options: {
+                        A: "共和国史",
+                        B: "中华民族发展史",
+                        C: "人类文明发展史",
+                        D: "社会主义建设史"
+                    }
+                },
+                {
+                    stem: "10.三大时代课题是理解习近平新时代中国特色社会主义思想的“理论之眼”，其中（   ）回答的是方向性问题。",
+                    options: {
+                        A: "新时代坚持和发展什么样的社会主义、怎样坚持和发展社会主义",
+                        B: "新时代坚持和发展什么样的中国特色社会主义、怎样坚持和发展中国特色社会主义",
+                        C: "建设什么样的社会主义现代化强国、怎样建设社会主义现代化强国",
+                        D: "建设什么样的长期执政的马克思主义政党、怎样建设长期执政的马克思主义政党"
+                    }
+                },
+                {
+                    stem: "11.改革开放以来我们取得一切成绩和进步的根本原因，归结起来就是：开辟了中国特色社会主义道路，形成了中国特色社会主义理论体系，确立了中国特色社会主义制度，发展了中国特色社会主义文化。其中，中国特色社会主义道路是（ ）。",
+                    options: {
+                        A: "根本保障",
+                        B: "行动指南",
+                        C: "实现途径",
+                        D: "精神力量"
+                    }
+                },
+                {
+                    stem: "12.（   ）吸收了“协和万邦”“天下一家”的和合智慧。",
+                    options: {
+                        A: "坚持以人民为中心",
+                        B: "全面深化改革",
+                        C: "人与自然和谐共生",
+                        D: "推动构建人类命运共同体"
+                    }
+                },
+                {
+                    stem: "13.中国特色社会主义进入新时代，我国社会主要矛盾已经转化为人民日益增长的____需要和____的发展之间的矛盾。",
+                    options: {
+                        A: "美好生活、不充分不平衡",
+                        B: "幸福生活、不平衡不充分",
+                        C: "幸福生活、不充分不平衡",
+                        D: "美好生活、不平衡不充分"
+                    }
+                },
+                {
+                    stem: "14.必须认识到，我国社会主要矛盾的变化，没有改变我们对我国社会主义所处历史阶段的判断，我国仍处于并将长期处于（   ）的基本国情没有变，我国是世界最大发展中国家的国际地位没有变。",
+                    options: {
+                        A: "社会主义阶段",
+                        B: "社会主义初级阶段",
+                        C: "社会主义中级阶段",
+                        D: "社会主义高级阶段"
+                    }
+                },
+                {
+                    stem: "15.（   ）是更基础、更广泛、更深厚的自信，是一个国家、一个民族发展中最基本、最深沉、最持久的力量。",
+                    options: {
+                        A: "道路自信",
+                        B: "理论自信",
+                        C: "制度自信",
+                        D: "文化自信"
+                    }
+                },
+                {
+                    stem: "16.（   ）是我国发展新的历史方位，标志着中国特色社会主义事业进入了新的发展阶段。",
+                    options: {
+                        A: "新时代",
+                        B: "新阶段",
+                        C: "新发展",
+                        D: "新时期"
+                    }
+                },
+                {
+                    stem: "17.（   ）是国家的生命线、人民的幸福线。",
+                    options: {
+                        A: "党的基本路线",
+                        B: "党的基本方略",
+                        C: "党的基本理论",
+                        D: "党的群众路线"
+                    }
+                },
+                {
+                    stem: "18.新时代新征程中国共产党的中心任务，就是团结带领全国各族人民（   ）、实现第二个百年奋斗目标，以中国式现代化全面推进中华民族伟大复兴。",
+                    options: {
+                        A: "全面建成小康社会",
+                        B: "全面建设现代化强国",
+                        C: "全面建成社会主义现代化强国",
+                        D: "基本实现现代化"
+                    }
+                },
+                {
+                    stem: "19.（   ）是近代以来中国人民的共同梦想，是中国共产党矢志不渝的奋斗目标。",
+                    options: {
+                        A: "社会主义现代化建设",
+                        B: "中国特色社会主义",
+                        C: "国家富强民族振兴",
+                        D: "实现中华民族伟大复兴"
+                    }
+                },
+                {
+                    stem: "20.中国式现代化既基于自身国情、又借鉴各国经验，既传承历史文化、又融合现代文明，是具有中国特色、符合中国实际的现代化，是强国建设、民族复兴的唯一正确道路。中国式现代化区别于西方现代化的显著标志是（   ）。",
+                    options: {
+                        A: "全体人民共同富裕",
+                        B: "人口规模巨大",
+                        C: "物质文明和精神文明相协调",
+                        D: "人与自然和谐共生"
+                    }
+                },
+                {
+                    stem: "21.中国特色社会主义最本质的特征是（   ）。",
+                    options: {
+                        A: "中国共产党的领导",
+                        C: "中国特色社会主义",
+                        B: "社会主义初级阶段",
+                        D: "人民为中心"
+                    }
+                },
+                {
+                    stem: "22.共同富裕是社会主义的本质要求，是中国式现代化的重要特征。党的十九届五中全会对扎实推动共同富裕作出了重大战略部署，明确提出了推动共同富裕的2035年远景目标，这一目标是（   ）。",
+                    options: {
+                        A: "全体人民共同富裕基本实现",
+                        B: "全体人民共同富裕取得更为明显的实质性进展",
+                        C: "全体人民共同富裕全面实现",
+                        D: "全体人民共同富裕同步实现"
+                    }
+                },
+                {
+                    stem: "23.习近平总书记在中国共产党与世界政党高层对话会上的主旨讲话指出：一个国家走向现代化，既要（   ），更要立足本国国情，具有本国特色。",
+                    options: {
+                        A: "促进物质文明与精神文明协调发展",
+                        B: "实现人与自然和谐共生",
+                        C: "推动全体人民共同富裕",
+                        D: "遵循现代化一般规律"
+                    }
+                },
+                {
+                    stem: "24.中国的现代化建设不能完全照搬西方国家的现代化模式。这是因为独特的（   ）共同决定中国必然走适合自己特点的现代化道路。",
+                    options: {
+                        A: "伦理、道德、习俗",
+                        B: "法律、哲学、文明",
+                        C: "习俗、文化、制度",
+                        D: "文化传统、历史命运、基本国情"
+                    }
+                },
+                {
+                    stem: "25.（   ）把我国建成富强民主文明和谐美丽的社会主义现代化强国。",
+                    options: {
+                        A: "从2020年到2035年",
+                        B: "从2020年到2045年",
+                        C: "从2035年到2050年",
+                        D: "从2035年到本世纪中叶"
+                    }
+                },
+                {
+                    stem: "26.（   ）是中国特色社会主义制度的最大优势，是党和国家各项事业发展的根本政治保证。",
+                    options: {
+                        A: "党的作用",
+                        B: "党的地位",
+                        C: "党的形象",
+                        D: "党的领导"
+                    }
+                },
+                {
+                    stem: "27.维护（   ），是一个成熟的马克思主义执政党的重大建党原则。",
+                    options: {
+                        A: "中国特色社会主义制度",
+                        B: "人民当家作主",
+                        C: "全面依法治国",
+                        D: "党中央权威和集中统一领导"
+                    }
+                },
+                {
+                    stem: "28.我国社会主义政治制度优越性的一个突出特点是党总揽全局、协调各方的领导核心作用，形象地说是“众星捧月”，这个“月”就是（   ）。",
+                    options: {
+                        A: "人民",
+                        B: "工人",
+                        C: "知识分子",
+                        D: "中国共产党"
+                    }
+                },
+                {
+                    stem: "29.中国共产党是以（   ）为党的根本组织原则和领导制度的马克思主义政党。",
+                    options: {
+                        A: "社会主义",
+                        B: "民主集中制",
+                        C: "政治协商制度",
+                        D: "党内监督"
+                    }
+                },
+                {
+                    stem: "30.习近平指出：“一定要认清，中国最大的国情就是（   ）。什么是中国特色？这就是中国特色。”",
+                    options: {
+                        A: "人口14亿",
+                        B: "中国共产党的领导",
+                        C: "人均GDP世界第二",
+                        D: "吃饭是个山大的问题"
+                    }
+                },
+                {
+                    stem: "31.（   ）是马克思主义政党第一位的能力。",
+                    options: {
+                        A: "政治领导力",
+                        B: "思想引领力",
+                        C: "群众组织力",
+                        D: "社会号召力"
+                    }
+                },
+                {
+                    stem: "32.（   ）是中国特色社会主义制度优势的主要来源。",
+                    options: {
+                        A: "中国共产党的自身优势",
+                        B: "科学社会主义",
+                        C: "社会主义改革开放",
+                        D: "“两个一百年”"
+                    }
+                },
+                {
+                    stem: "33.（   ）是中国特色社会主义最本质的特征。",
+                    options: {
+                        A: "以经济建设为中心",
+                        B: "以人为本",
+                        C: "“五位一体”总体布局",
+                        D: "中国共产党的领导"
+                    }
+                },
+                {
+                    stem: "34.（   ）是马克思主义的本质属性和鲜明品格。",
+                    options: {
+                        A: "实事求是",
+                        B: "科学社会主义",
+                        C: "实践",
+                        D: "人民性"
+                    }
+                },
+                {
+                    stem: "35.坚持以人民为中心，体现了（   ）基本原理，是我们党总结历史经验、把握历史规律得出的重要结论。",
+                    options: {
+                        A: "历史唯物主义",
+                        B: "辩证唯物主义",
+                        C: "科学社会主义",
+                        D: "人类社会发展规律"
+                    }
+                },
+                {
+                    stem: "36.（   ）是中国共产党的根本政治立场，是我们党区别于其他政党的显著标志。",
+                    options: {
+                        A: "人民代表大会制度",
+                        B: "人民立场",
+                        C: "人民当家作主",
+                        D: "民主集中制"
+                    }
+                },
+                {
+                    stem: "37.依靠人民创造历史伟业，必须尊重（   ）地位。",
+                    options: {
+                        A: "人民主体",
+                        B: "党的领导",
+                        C: "法治中国",
+                        D: "人民群众"
+                    }
+                },
+                {
+                    stem: "38.习近平指出：“（   ）是我们党的生命线和根本工作路线，是我们党永葆青春活力和战斗力的重要传家宝。”",
+                    options: {
+                        A: "群众路线",
+                        B: "思想路线",
+                        C: "组织路线",
+                        D: "政治路线"
+                    }
+                },
+                {
+                    stem: "39.江山就是人民，人民就是江山深刻揭示了（   ）。",
+                    options: {
+                        A: "人民与政权之间的辩证关系",
+                        B: "人民与政府之间的辩证关系",
+                        C: "人民与中国共产党之间的辩证关系",
+                        D: "人民与国家主权之间的辩证关系"
+                    }
+                },
+                {
+                    stem: "40.下面关于“在中国共产党领导的社会主义中国，党性与人民性”的观点表述错误的是（   ）。",
+                    options: {
+                        A: "党性寓于人民性之中",
+                        B: "党性和人民性是一致的、统一的",
+                        C: "党性高于人民性",
+                        D: "没有脱离人民性的党性，也没有脱离党性的人民性"
+                    }
+                },
+                {
+                    stem: "41.把人民对美好生活的向往作为奋斗目标，从根本上回答了（   ）的问题，是立党为公、执政为民的生动体现，是共产党人始终坚守的政治灵魂和精神支柱。",
+                    options: {
+                        A: "“满足谁”",
+                        B: "“为了谁”",
+                        C: "“需要谁”",
+                        D: "“依靠谁”"
+                    }
+                },
+                {
+                    stem: "42.（   ）是新时代坚持和发展中国特色社会主义的根本立场，是贯穿党治国理政全部活动的一条红线。",
+                    options: {
+                        A: "把马克思主义基本原理与中国国情相结合",
+                        B: "坚持以人民为中心",
+                        C: "坚持和发展中国特色社会主义",
+                        D: "“五位一体”总体布局"
+                    }
+                },
+                {
+                    stem: "43.（  ）是决定当代中国命运的关键一招，也是决定实现“两个一百年”奋斗目标、实现中华民族伟大复兴的关键一招。",
+                    options: {
+                        A: "中国式现代化",
+                        B: "中国特色社会主义",
+                        C: "改革开放",
+                        D: "小康社会"
+                    }
+                },
+                {
+                    stem: "44.我国全面深化改革的总目标是（   ）。",
+                    options: {
+                        A: "完善和发展中国特色社会主义制度、推进国家治理体系和治理能力现代化",
+                        B: "坚持和完善党的领导、坚持和完善中国特色社会主义制度",
+                        C: "坚持和完善党的领导、推进国家治理体系和治理能力现代化",
+                        D: "坚持党的领导、发展全过程人民民主"
+                    }
+                },
+                {
+                    stem: "45.（   ）是开启改革开放事业的思想前提，也是新时代全面深化改革开放的思想前提。",
+                    options: {
+                        A: "解放思想",
+                        B: "实事求是",
+                        C: "与时俱进",
+                        D: "开拓创新"
+                    }
+                },
+                {
+                    stem: "46.（ ）是一个国家现代化的重要标志。",
+                    options: {
+                        A: "国家治理体系和治理能力现代化",
+                        B: "实现全体人民共同富裕",
+                        C: "社会主义大繁荣大发展",
+                        D: "进入世界发达国家行列"
+                    }
+                },
+                {
+                    stem: "47.（   ）是新时代坚持和发展中国特色社会主义的根本动力。",
+                    options: {
+                        A: "全面深化改革开放",
+                        B: "共同富裕",
+                        C: "中华民族伟大复兴",
+                        D: "社会主义现代化强国"
+                    }
+                },
+                {
+                    stem: "48.历史唯物主义认为，（  ）是推动人类社会发展最活跃最具有革命性的因素。",
+                    options: {
+                        A: "生产力",
+                        B: "党的领导",
+                        C: "社会变革",
+                        D: "人民群众"
+                    }
+                },
+                {
+                    stem: "49.坚持和完善社会主义基本经济制度，充分发挥（  ）在资源配置中的决定性作用，更好发挥政府作用。",
+                    options: {
+                        A: "市场",
+                        B: "社会",
+                        C: "政府",
+                        D: "组织"
+                    }
+                },
+                {
+                    stem: "50.中国坚持对外开放的基本国策，坚定奉行（   ）的开放战略。",
+                    options: {
+                        A: "互利共赢",
+                        B: "不结盟",
+                        C: "“一带一路”倡议",
+                        D: "构建人类命运共同体"
+                    }
+                },
+                {
+                    stem: "51.坚持和完善中国特色社会主义制度、推进国家治理体系和治理能力现代化，不仅要建立完善的制度体系，还要在不断提高（   ）上狠下功夫。",
+                    options: {
+                        A: "民主与法治",
+                        B: "制度创新和社会和谐",
+                        C: "社会发展和经济增速",
+                        D: "制度执行力和治理能力"
+                    }
+                },
+                {
+                    stem: "52.党的十九大提出，到（   ）“各方面制度更加完善，国家治理体系和治理能力现代化基本实现”。",
+                    options: {
+                        A: "2035年",
+                        B: "2030年",
+                        C: "2025年",
+                        D: "2020年"
+                    }
+                },
+                {
+                    stem: "53.（   ）是新时代我国经济社会发展的鲜明主题，是全面建设社会主义现代化国家的首要任务。",
+                    options: {
+                        A: "改革开放",
+                        B: "法治中国建设",
+                        C: "高质量发展",
+                        D: "新发展格局"
+                    }
+                },
+                {
+                    stem: "54.（   ）是中国特色社会主义制度的重要支柱，是新时代推动实现高质量发展的制度基础。",
+                    options: {
+                        A: "社会主义基本经济制度",
+                        B: "社会主义分配制度",
+                        C: "社会主义市场经济体制",
+                        D: "社会主义所有制"
+                    }
+                },
+                {
+                    stem: "55.（   ）是一国经济的立身之本、财富之源，是构筑未来发展战略优势的重要支撑。",
+                    options: {
+                        A: "实体经济",
+                        B: "虚拟经济",
+                        C: "数字经济",
+                        D: "集体经济"
+                    }
+                },
+                {
+                    stem: "56.构建新发展格局，是以习近平同志为核心的党中央积极应对国际国内环境变化、与时俱进提升我国经济发展水平、塑造国际经济合作和竞争新优势作出的战略抉择。这一新发展格局是（   ）。",
+                    options: {
+                        A: "以国内大循环为主体、国内国际双循环相互促进",
+                        B: "以体制机制创新为主体、利用好国际国内两个市场",
+                        C: "以维护产业链、供应链稳定为主体、促进国内经济复苏",
+                        D: "以发展先进制造业为主体、促进产业结构优化升级"
+                    }
+                },
+                {
+                    stem: "57.实体经济是一国经济的立身之本和财富之源，是国家强盛的重要支柱。党的十九大报告指出：建设现代化经济体系必须着力发展实体经济，全面提升实体经济发展水平。我国全面提升实体经济的重点是（   ）。",
+                    options: {
+                        A: "加快发展先进制造业",
+                        B: "深化要素市场化配置改革",
+                        C: "加快人力资本培养力度",
+                        D: "持续推进“三去一降一补”"
+                    }
+                },
+                {
+                    stem: "58.（   ）的新发展理念，相互贯通、相互促进，是具有内在联系的集合体，要统一贯彻，不能顾此失彼，也不能互相代替。",
+                    options: {
+                        A: "创新、合作、绿色、发展、共赢",
+                        B: "创新、合作、绿色、发展、共享",
+                        C: "创新、协调、合作、开放、共赢",
+                        D: "创新、协调、绿色、开放、共享"
+                    }
+                },
+                {
+                    stem: "59.（   ）是我国发展的战略目标，是推动高质量发展、全面提高经济整体竞争力的必然要求。",
+                    options: {
+                        A: "坚持中国特色社会主义经济",
+                        B: "全面深化改革",
+                        C: "供给侧结构性改革",
+                        D: "建设现代化经济体系"
+                    }
+                },
+                {
+                    stem: "60.在新发展理念中，（   ）注重解决的是社会公平正义问题。",
+                    options: {
+                        A: "创新发展",
+                        B: "协同发展",
+                        C: "开放发展",
+                        D: "共享发展"
+                    }
+                },
+                {
+                    stem: "61.坚持教育强国、科技强国、人才强国一体推进，就能为全面推进中国式现代化开辟发展新领域新赛道、塑造发展新动能新优势，为全面建设社会主义现代化强国奠定更为坚实的基础。实施科教兴国战略，要摆在优先发展的战略地位的是（   ）。",
+                    options: {
+                        A: "科技",
+                        B: "教育",
+                        C: "人才",
+                        D: "技术"
+                    }
+                },
+                {
+                    stem: "62.经过长期努力，我国已建成世界上规模最大的教育体系，教育现代化发展总体水平跨入世界中上国家行列。发展教育的根本尺度是（   ）。",
+                    options: {
+                        A: "政府满意",
+                        B: "教师满意",
+                        C: "人民满意",
+                        D: "学生满意"
+                    }
+                },
+                {
+                    stem: "63.教育兴则国家兴，教育强则国家强，只有把教育搞上去，才能培养高素质人才，才能从根本上增强国家的综合国力。教育的根本任务是（   ）。",
+                    options: {
+                        A: "重视心智",
+                        B: "重视成绩",
+                        C: "重视特长",
+                        D: "立德树人"
+                    }
+                },
+                {
+                    stem: "64.（   ）是国家强盛和民族复兴的战略基石，也是构建新发展格局、推动高质量发展、满足人民美好生活需要的内在要求。",
+                    options: {
+                        A: "建立强大的人民军队",
+                        B: "建立高水平人才队伍",
+                        C: "实现高质量教育",
+                        D: "实现高水平科技自立自强"
+                    }
+                },
+                {
+                    stem: "65.2021年9月27日至28日，中央人才工作会议在北京举行。中共中央总书记习近平出席会议并发表重要讲话，强调要坚持党管人才，坚持面向世界科技前沿、面向经济主战场、面向国家重大需求、面向人民生命健康，深入实施新时代人才强国战略，全方位培养、引进、用好人才，加快建设（   ）。",
+                    options: {
+                        A: "世界重要人才中心和创新高地",
+                        B: "北京、上海、粤港澳大湾区高水平人才高地",
+                        C: "一批国家实验室和新型研发机构",
+                        D: "中心城市吸引和聚集人才的平台"
+                    }
+                },
+                {
+                    stem: "66.创新是引领发展的第一动力，必须把创新摆在我国现代化建设全局的核心地位。2020年9 月11日，习近平在《在科学家座谈会上的讲话》中指出，我国经济社会发展和民生改善比过去任何时候都更加需要增强创新这个第一动力，努力实现更多“从0到1”的突破。实现这一突破需要摆在更加突出位置的是（   ）。",
+                    options: {
+                        A: "强化企业创新主体地位",
+                        B: "加快推进引进消化吸收再创新",
+                        C: "提升原始创新能力",
+                        D: "改善科技创新生态"
+                    }
+                },
+                {
+                    stem: "67.全面建设社会主义现代化国家，教育是根本，科技是（   ），人才是基础。",
+                    options: {
+                        A: "核心",
+                        B: "动力",
+                        C: "前提",
+                        D: "关键"
+                    }
+                },
+                {
+                    stem: "68.落实立德树人根本任务，必须着力解决好培养什么人、怎样培养人、为谁培养人的问题。因为育人的根本在于（   ）。",
+                    options: {
+                        A: "立志",
+                        B: "修心",
+                        C: "齐家",
+                        D: "立德"
+                    }
+                },
+                {
+                    stem: "69.在着力解决好培养什么人的问题上，习近平总书记指出：“社会主义建设者和接班人的定语是‘社会主义’，这是对培养什么人的（   ）规定。”",
+                    options: {
+                        A: "关键",
+                        B: "本质",
+                        C: "精髓",
+                        D: "内核"
+                    }
+                },
+                {
+                    stem: "70.中国特色社会主义政治制度是由根本政治制度、基本政治制度、重要政治制度等组成的制度体系。下列选项中，属于根本政治制度的是（   ）。",
+                    options: {
+                        A: "中国共产党领导的多党合作和政治协商制度",
+                        B: "民族区域自治制度",
+                        C: "基层群众自治制度",
+                        D: "人民代表大会制度"
+                    }
+                },
+                {
+                    stem: "71.全过程人民民主是社会主义民主政治的本质属性，下列对全过程人民民主本质表述正确的是（   ）。",
+                    options: {
+                        A: "过程民主与成果民主的统一",
+                        B: "程序民主与形式民主的统一",
+                        C: "直接民主与间接民主的分制",
+                        D: "人民民主与国家意志的背离"
+                    }
+                },
+                {
+                    stem: "72.全过程人民民主是最广泛、最真实、最管用的民主。下列关于全过程人民民主的说法正确的是（   ）",
+                    options: {
+                        A: "全过程人民民主只是程序民主，不注重实质",
+                        B: "全过程人民民主只是间接民主，没有直接民主",
+                        C: "全过程人民民主是全链条、全方位、全覆盖的民主",
+                        D: "全过程人民民主只适用于特定领域，不是全方位的"
+                    }
+                },
+                {
+                    stem: "73.统一战线是凝聚人心、汇聚力量的强大法宝。关于统一战线，下列说法正确的是（   ）。",
+                    options: {
+                        A: "统一战线是中国共产党夺取革命胜利的唯一法宝",
+                        B: "统一战线工作范围不包括宗教界人士",
+                        C: "统一战线工作的本质要求是大团结大联合",
+                        D: "统一战线工作对象不包括党外人士"
+                    }
+                },
+                {
+                    stem: "74.2019年9月20日，习近平在中央政协工作会议暨庆祝中国人民政治协商会议成立70周年大会上的讲话中，提出了新时代加强和改进人民政协工作的总体要求，指出新时代做好人民政协工作的中心环节是（   ）。",
+                    options: {
+                        A: "提高政治协商、民主监督、参政议政水平",
+                        B: "加强思想政治引领，广泛凝聚共识",
+                        C: "发挥人民政协专门协商机构作用",
+                        D: "强化政协委员责任担当"
+                    }
+                },
+                {
+                    stem: "75.实行人民民主，保证人民当家作主，实现形式是丰富多样的。经过长期探索，我国在通过依法选举让人民的代表来参与国家生活和社会生活管理的同时，找到了一种保证人民在日常政治生活中有广泛持续深入参与权利的特有民主形式，这一特有民主形式是（   ）。",
+                    options: {
+                        A: "谈判民主",
+                        B: "协商民主",
+                        C: "票决民主",
+                        D: "竞争性民主"
+                    }
+                },
+                {
+                    stem: "76.我国的全过程人民民主是全链条、全方位、（   ）的民主。",
+                    options: {
+                        A: "全监督",
+                        C: "全参与",
+                        B: "全覆盖",
+                        D: "全贯通"
+                    }
+                },
+                {
+                    stem: "77.（   ）是社会主义的生命，没有民主就没有社会主义。",
+                    options: {
+                        A: "人民民主",
+                        B: "人民当家作主",
+                        C: "以人民为中心",
+                        D: "坚持人民主体地位"
+                    }
+                },
+                {
+                    stem: "78.社会主义民主的实质是（   ）。",
+                    options: {
+                        A: "民主集中制",
+                        B: "人民当家作主",
+                        C: "人民代表大会制度",
+                        D: "中华民族大团结"
+                    }
+                },
+                {
+                    stem: "79.（   ）是坚持和发展中国特色社会主义的本质要求和重要保障，必须坚持党的领导，坚持中国特色社会主义制度，贯彻中国特色社会主义法治理论。",
+                    options: {
+                        A: "全面依法治国",
+                        B: "全过程人民民主",
+                        C: "共享发展理念",
+                        D: "全面深化改革"
+                    }
+                },
+                {
+                    stem: "80.中国特色社会主义法治体系，本质上是（   ）。",
+                    options: {
+                        A: "全面依法治国的总目标",
+                        B: "中国特色社会主义制度的法律表现形式",
+                        C: "中国特色社会主义治理体系",
+                        D: "中国特色社会主义治理能力"
+                    }
+                },
+                {
+                    stem: "81.全面推进依法治国，涉及立法、执法、司法、守法等各个方面，涉及中国特色社会主义事业“五位一体”总体布局的各个领域，必须加强顶层设计、统筹谋划，在实际工作中必须有一个总揽全局、牵引各方的总抓手。全面依法治国的总抓手是（   ）。",
+                    options: {
+                        A: "坚持依法治国和以德治国相结合",
+                        B: "建设中国特色社会主义法治体系",
+                        C: "坚持有法可依、有法必依、执法必严、违法必究",
+                        D: "坚持科学立法、严格执法、公正司法、全民守法"
+                    }
+                },
+                {
+                    stem: "82. 党的十八大以来，以习近平同志为核心的党中央从坚持和发展中国特色社会主义的全局和战略高度（   ），把全面依法治国纳入“四个全面”战略布局，推动建设社会主义法治国家取得历史性成就。",
+                    options: {
+                        A: "系统法治、集成法治、定位法治",
+                        B: "布局法治、提升法治、完善法治",
+                        C: "定位法治、布局法治、厉行法治",
+                        D: "强化法治、厉行法治、提升法治"
+                    }
+                },
+                {
+                    stem: "83.完善中国特色社会主义法律体系，要抓住立法质量这个关键，深入推进（   ）。",
+                    options: {
+                        A: "科学立法、民主立法、依法立法",
+                        B: "系统立法、科学立法、道德立法",
+                        C: "民主立法、专业立法、快速立法",
+                        D: "组织立法、依法立法、部门立法"
+                    }
+                },
+                {
+                    stem: "84.中国特色社会主义法治理论是中国特色社会主义法治体系的理论指导和学理支撑，是全面推进依法治国的（   ）。",
+                    options: {
+                        A: "行动指南",
+                        B: "科学指导",
+                        C: "规律认识",
+                        D: "根本保障"
+                    }
+                },
+                {
+                    stem: "85.（   ）是国家的根本法，是治国安邦的总章程，是党和人民意志的集中体现，是国家各种规章制度和法律法规的总依据。",
+                    options: {
+                        A: "刑法",
+                        B: "民法",
+                        C: "行政法",
+                        D: "宪法"
+                    }
+                },
+                {
+                    stem: "86.（   ）是中国特色社会主义法治之魂，是我们的法治同西方资本主义国家的法治最大的区别。",
+                    options: {
+                        A: "坚持从中国实际出发",
+                        B: "坚持法律面前人人平等",
+                        C: "坚持中国共产党的领导",
+                        D: "坚持法律和道德相辅相成"
+                    }
+                },
+                {
+                    stem: "87.（   ）把涉及国家、社会、公民的价值要求融为一体，回答了我们要建设什么样的国家、建设什么样的社会、培育什么样的公民的重大问题。",
+                    options: {
+                        A: "社会主义文化发展道路",
+                        B: "社会主义核心价值观",
+                        C: "社会主义文化自信",
+                        D: "文化体制机制改革"
+                    }
+                },
+                {
+                    stem: "88.文艺是民族精神的火炬，是时代前进的号角。社会主义文艺是人民的文艺，文艺和文艺工作的出发点和落脚点是（   ）。",
+                    options: {
+                        A: "满足人民物质生活需求",
+                        B: "满足人民精神文化需求",
+                        C: "满足人民政治生活需求",
+                        D: "满足人民生态文明需求"
+                    }
+                },
+                {
+                    stem: "89.（   ）是文化的生命所在，是文化的本质特征。",
+                    options: {
+                        A: "创新创造",
+                        B: "统一性",
+                        C: "包容性",
+                        D: "互鉴性"
+                    }
+                },
+                {
+                    stem: "90.建设社会主义文化强国、推动社会主义文化繁荣兴盛，关键在于（   ）。",
+                    options: {
+                        A: "坚持社会主义文化发展道路",
+                        B: "积极践行社会主义核心价值观",
+                        C: "坚定中国特色社会主义文化自信",
+                        D: "深化文化体制机制改革"
+                    }
+                },
+                {
+                    stem: "91.新闻舆论工作有鲜明的意识形态属性，（   ）是做好新闻舆论工作的第一位要求。",
+                    options: {
+                        A: "坚持正确的政治方向",
+                        B: "坚持及时准确性",
+                        C: "坚持中国特色社会主义",
+                        D: "坚持实事求是原则"
+                    }
+                },
+                {
+                    stem: "92.文化软实力集中体现了一个国家基于文化而具有的凝聚力和生命力，以及由此产生的吸引力和影响力。提高国家文化软实力需要强大的国际传播能力。我国加强国际传播能力建设的重要任务是（   ）。",
+                    options: {
+                        A: "加快发展新型文化业态",
+                        B: "推进中华传统文化创造性转化、创新性发展",
+                        C: "推进社会主义先进文化深入人心，激发全民族文化创造活力",
+                        D: "讲好中国故事，传播好中国声音，展示真实、立体、全面的中国"
+                    }
+                },
+                {
+                    stem: "93.习近平在纪念五四运动100周年大会上的讲话中指出：“爱国主义是我们民族精神的核心，是中华民族团结奋斗、自强不息的精神纽带。”对每一个中国人来说，爱国是本分，也是职责，是心之所系、情之所归。对新时代中国青年来说，热爱祖国是立身之本、成才之基。当代中国爱国主义的本质就是（   ）。",
+                    options: {
+                        A: "坚持爱国和爱党、爱社会主义高度统一",
+                        B: "维护社会和谐和民族平等的统一",
+                        C: "对民族和文化的归属感、认同感的统一",
+                        D: "坚持立足民族和面向世界的统一"
+                    }
+                },
+                {
+                    stem: "94.2019年11月，中共中央、国务院印发的《新时代爱国主义教育实施纲要》指出，爱国主义是中华民族的民族心、民族魂，是中华民族最重要的精神财富，是中国人民和中华民族维护民族独立和民族尊严的强大精神动力。青少年进行爱国主义教育的主阵地是（   ）。",
+                    options: {
+                        A: "手机和互联网",
+                        B: "精品读物",
+                        C: "思想政治理论课",
+                        D: "传统节日纪念活动"
+                    }
+                },
+                {
+                    stem: "95.中华优秀传统文化是中华文明的智慧结晶和精华所在，是中华民族的根和魂。要坚持把马克思主义基本原理同中华优秀传统文化相结合，推动中华优秀传统文化创造性转化、（   ）。",
+                    options: {
+                        A: "创新性发展",
+                        B: "科学性发展",
+                        C: "根本性发展",
+                        D: "全面性发展"
+                    }
+                },
+                {
+                    stem: "96.社会保障是保障和改善民生、维护社会公平、增进人民福祉的基本制度保障，是促进经济社会发展、实现广大人民群众共享改革发展成果的重要制度安排，（   ）是新时代加强社会建设的重要着力点。",
+                    options: {
+                        A: "健全和完善社会保障体系",
+                        B: "保障和改善民生",
+                        C: "坚持以人民为中心",
+                        D: "人民健康"
+                    }
+                },
+                {
+                    stem: "97.发展是解决民生问题的“总钥匙”，民生是发展的“指南针”。要在发展过程中始终注重民生、保障民生、改善民生，根据经济发展和财力状况，逐步提高人民生活水平，让群众得到更多看得见、摸得着的实惠，不断厚植民生福祉。保障和改善民生的重要前提是（   ）。",
+                    options: {
+                        A: "正确把握民生和发展的关系",
+                        B: "坚守底线、突出重点、完善制度、引导预期",
+                        C: "解决人民群众最关心最直接最现实的利益问题",
+                        D: "坚持尽力而为、量力而行"
+                    }
+                },
+                {
+                    stem: "98.近年来，为了缩小我国居民在收入分配方面存在的差距，党和政府做出了巨大的努力，如提高个税起征点、提高企业退休人员基本养老金、提高国家扶贫标准和城乡低保补助水平等，这些举措体现了（   ）。",
+                    options: {
+                        A: "初次分配注重效率",
+                        B: "再次分配更加注重公平",
+                        C: "劳动报酬在初次分配中比重提高",
+                        D: "各种生产要素都能按贡献参与分配"
+                    }
+                },
+                {
+                    stem: "99.我国的社会主义建设坚持在发展中增进民生福祉，表现为在经济社会发展过程中注重民生、保障民生和改善民生。关于保障和改善民生需要坚持的重要方针表述准确的是（   ）。",
+                    options: {
+                        A: "全力而为、急功近利",
+                        B: "不顾实际、拼命干",
+                        C: "尽力而为、量力而行",
+                        D: "埋头苦干、实干巧干"
+                    }
+                },
+                {
+                    stem: "100.加强和创新社会治理，就是要在党的领导下，以政府为主导，以（   ）参与为基础，以维护人民群众根本利益为核心，推动社会稳定有序发展。",
+                    options: {
+                        A: "个体",
+                        B: "社会多元主体",
+                        C: "企业",
+                        D: "社会组织"
+                    }
+                },
+                {
+                    stem: "101.新时代加强和创新社会治理，探索符合中国社会发展实际、更可持续的中国特色社会主义治理之路，要坚持（   ）相结合。",
+                    options: {
+                        A: "系统治理、依法治理、综合治理、源头治理",
+                        B: "单一治理、依法治理、综合治理、源头治理",
+                        C: "系统治理、依法治理、分散治理、源头治理",
+                        D: "单一治理、依法治理、综合治理、重点治理"
+                    }
+                },
+                {
+                    stem: "102.社会治理是国家治理的重要领域，社会治理现代化是推进国家治理体系和治理能力现代化的重要内容。我国所要打造的社会治理新格局是（   ）。",
+                    options: {
+                        A: "党委领导、政府负责、社会协同、公众参与、法治保障",
+                        B: "政府治理和社会调节、居民自治良性互动",
+                        C: "共建共治共享",
+                        D: "社会化、法治化、智能化、专业化"
+                    }
+                },
+                {
+                    stem: "103.（   ）是关系中华民族永续发展的根本大计。",
+                    options: {
+                        A: "生态文明建设",
+                        B: "保护环境",
+                        C: "绿色低碳",
+                        D: "生物多样性"
+                    }
+                },
+                {
+                    stem: "104.应对生态环境挑战，必须摒弃“单边主义”“极端利己主义”“甩锅推责”，打造（   ）的全球生态治理体系。",
+                    options: {
+                        A: "命运与共",
+                        B: "携手合作",
+                        C: "多元共治",
+                        D: "美丽世界"
+                    }
+                },
+                {
+                    stem: "105.习近平指出：“绿色发展，就其要义来讲，是要解决好（   ）问题。”",
+                    options: {
+                        A: "生态环境保护",
+                        B: "人与自然和谐共生",
+                        C: "生物多样性",
+                        D: "美丽中国建设"
+                    }
+                },
+                {
+                    stem: "106.生态文明建设是重大经济问题，也是关系党的使命宗旨的重大政治问题、关系民生福祉的重大社会问题。在下列选项中，对高度重视生态文明建设表述最为准确的是（   ）。",
+                    options: {
+                        A: "把生态文明建设摆在经济建设的首位",
+                        B: "把生态文明建设摆在政治建设的首位",
+                        C: "把生态文明建设摆在全局工作的突出位置",
+                        D: "把生态文明建设摆在社会建设的首位"
+                    }
+                },
+                {
+                    stem: "107.习近平指出：“（   ）是最公平的公共产品，是最普惠的民生福祉。”",
+                    options: {
+                        A: "生活环境",
+                        B: "社会福利",
+                        C: "土地",
+                        D: "良好的生态环境"
+                    }
+                },
+                {
+                    stem: "108.（  ），是全面建设社会主义现代化国家的重要目标，也是满足人民日益增长的优美生态环境需要的必然要求。",
+                    options: {
+                        A: "建设美丽中国",
+                        B: "推进碳达峰碳中和",
+                        C: "推动产业结构优化调整",
+                        D: "推动各类资源节约集约利用"
+                    }
+                },
+                {
+                    stem: "109.大自然是人类赖以生存发展的基本条件，（   ）是全面建设社会主义现代化国家的内在要求。",
+                    options: {
+                        A: "尊重自然、融入自然、改造自然",
+                        B: "尊重自然、顺应自然、保护自然",
+                        C: "顺应自然、改造自然、融入自然",
+                        D: "融入自然、保护自然、尊重自然"
+                    }
+                },
+                {
+                    stem: "110.发达国家和发展中国家处于不同发展阶段，在环境问题上的历史责任和现实能力存在差异，因此要坚持（   ）的责任原则。",
+                    options: {
+                        A: "完全一致的",
+                        B: "有区别的",
+                        C: "共同但有区别的",
+                        D: "完全不一样的"
+                    }
+                },
+                {
+                    stem: "111.2014年4月15日，习近平总书记在中央国家安全委员会第一次会议上提出，要坚持总体国家安全观，走出一条中国特色国家安全道路。总体国家安全观是新时代国家安全工作的基本遵循。国家安全的根本是（   ）。",
+                    options: {
+                        A: "经济安全",
+                        B: "人民安全",
+                        C: "政治安全",
+                        D: "军事安全"
+                    }
+                },
+                {
+                    stem: "112.（   ）是应对国家安全形势新变化新趋势的战略选择，是全面贯彻落实总体国家安全观的重大举措。",
+                    options: {
+                        A: "统筹稳定和发展",
+                        B: "构建新发展格局",
+                        C: "构建新安全格局",
+                        D: "建立强大的军队"
+                    }
+                },
+                {
+                    stem: "113.坚定不移走中国特色国家安全道路，加快构建统筹各领域安全的新安全格局，统筹发展和安全，把维护（   ）放在首要位置，守好重点领域国家安全的主阵地、主战场。",
+                    options: {
+                        A: "政治安全",
+                        B: "军事安全",
+                        C: "文化安全",
+                        D: "经济安全"
+                    }
+                },
+                {
+                    stem: "114.构建统筹各领域安全的新安全格局，要聚焦重点、抓纲带目，统筹推进各重点领域国家安全工作。人民群众安全感的晴雨表是（   ）。",
+                    options: {
+                        A: "国土安全",
+                        B: "经济安全",
+                        C: "社会安全",
+                        D: "生物安全"
+                    }
+                },
+                {
+                    stem: "115.党的十八大以来，为了更好地适应我国国家安全面临的新形势新任务实现国家长治久安，我们党明确提出了总体国家安全观。总体国家安全观的宗旨是（   ）。",
+                    options: {
+                        A: "政治安全",
+                        B: "经济安全",
+                        C: "人民安全",
+                        D: "军事、文化、社会安全"
+                    }
+                },
+                {
+                    stem: "116.意识形态事关举什么旗、走什么路的重大问题，维护意识形态安全，就是要（   ）。",
+                    options: {
+                        A: "落实意识形态工作责任制",
+                        B: "及时掌握意识形态形势和动态",
+                        C: "毫不动摇坚持和巩固马克思主义在意识形态领域的指导地位",
+                        D: "毫不动摇坚持和完善人民代表大会制度"
+                    }
+                },
+                {
+                    stem: "117.制度稳则国家稳，维护制度安全，就是要（   ）。",
+                    options: {
+                        A: "毫不动摇坚持和巩固马克思主义在意识形态领域的指导地位",
+                        B: "毫不动摇坚持和完善人民代表大会制度",
+                        C: "推进国家治理体系和治理能力现代化",
+                        D: "毫不动摇坚持和完善中国特色社会主义制度"
+                    }
+                },
+                {
+                    stem: "118.（   ）是保障国家安全的治本之策。",
+                    options: {
+                        A: "健全国家安全体系、加强国家安全制度建设",
+                        B: "增强维护国家安全能力",
+                        C: "增加经费投入",
+                        D: "维护我国海外利益安全"
+                    }
+                },
+                {
+                    stem: "119.（  ）是保证，关系军队的性质、宗旨、本色。",
+                    options: {
+                        A: "听党指挥",
+                        B: "能打胜仗",
+                        C: "作风优良",
+                        D: "纪律严明"
+                    }
+                },
+                {
+                    stem: "120.如期实现建军一百年奋斗目标，加快把人民军队建成世界一流军队，是全面建设社会主义现代化国家的战略要求。作为建军之本、强军之魂的是（   ）。",
+                    options: {
+                        A: "全面加强练兵备战",
+                        B: "党对人民军队的绝对领导",
+                        C: "建设强大军队",
+                        D: "军委主席负责制"
+                    }
+                },
+                {
+                    stem: "121.新的征程上，开创国防和军队现代化新局面，必须全面推进政治建军、改革强军、科技强军、人才强军依法治军，加快把人民军队建设成为世界一流军队，以更强大的能力、更可靠的手段捍卫国家主权、安全、发展利益。其中，作为人民军队立军之本的是（   ）。",
+                    options: {
+                        A: "政治建军",
+                        B: "改革强军",
+                        C: "科技强军",
+                        D: "人才强军"
+                    }
+                },
+                {
+                    stem: "122.加快推进国防和军队现代化，既需要坚持党对人民军队的绝对领导，也需要坚持政治建军、改革强军、科技强军、人才强军、（   ）。",
+                    options: {
+                        A: "依规治军",
+                        B: "以德治军",
+                        C: "依法治军",
+                        D: "以严治军"
+                    }
+                },
+                {
+                    stem: "123.（   ）是核心战斗力，是军事发展中最活跃、最具革命性的因素。",
+                    options: {
+                        A: "政治",
+                        B: "思想",
+                        C: "理念",
+                        D: "科技"
+                    }
+                },
+                {
+                    stem: "124.（   ）是核心，反映军队的根本职能和军队建设的根本指向。",
+                    options: {
+                        A: "听党指挥",
+                        B: "能打胜仗",
+                        C: "作风优良",
+                        D: "纪律严明"
+                    }
+                },
+                {
+                    stem: "125.坚持党对人民军队的绝对领导必须有一套制度作保证，其中（   ）是坚持党对人民军队绝对领导的根本制度和根本实现形式，在党领导军队的一整套制度体系中处于最高层次、居于统领地位。",
+                    options: {
+                        A: "军委主席负责制",
+                        B: "党委（支部）统一的集体领导",
+                        C: "政治委员制",
+                        D: "政治机关制"
+                    }
+                },
+                {
+                    stem: "126.（   ）是香港、澳门回归后保持长期繁荣稳定的最佳制度安排。",
+                    options: {
+                        A: "“和平统一”",
+                        B: "“一国两制”",
+                        C: "高度自治",
+                        D: "资本主义制度"
+                    }
+                },
+                {
+                    stem: "127.准确把握“一国两制”的科学内涵，需要准确理解坚持中央全面管治权和保障特别行政区高度自治权相统一的含义。下列关于中央全面管治权和保障特别行政区高度自治权的关系说法错误的是（   ）。",
+                    options: {
+                        A: "全面管治权和高度自治权在本质上是统一的",
+                        B: "高度自治权就是完全自治权",
+                        C: "高度自治权是中央行使全面管治权的体现",
+                        D: "全面管治权是授权高度自治的基础"
+                    }
+                },
+                {
+                    stem: "128.“一国两制”伟大构想，最早是针对（   ）提出来的。",
+                    options: {
+                        A: "台湾问题",
+                        B: "香港问题",
+                        C: "澳门问题",
+                        D: "南海问题"
+                    }
+                },
+                {
+                    stem: "129.“一国两制”是中国共产党领导人民实现祖国和平统一的一项重要制度，是国家的一项基本国策。“一国两制”的根本宗旨是（   ）。",
+                    options: {
+                        A: "依法治港治澳",
+                        B: "保证香港澳门的资本主义制度长期不变",
+                        C: "保证“爱国者治港”“爱国者治澳”",
+                        D: "维护国家主权、安全、发展利益"
+                    }
+                },
+                {
+                    stem: "130.依法治港治澳，是全面依法治国的应有之义，是全面准确贯彻“一国两制”方针的自由之路。（   ）是国家根本大法，是特别行政区制度的法律渊源。",
+                    options: {
+                        A: "宪法",
+                        B: "选举法",
+                        C: "立法法",
+                        D: "基本法"
+                    }
+                },
+                {
+                    stem: "131.解决台湾问题、实现祖国完全统一，是全体中华儿女共同愿望，是中华民族根本利益所在。党的十八大以来，在以习近平同志为核心的党中央坚强领导下，在两岸同胞共同努力下，两岸关系取得重要积极成果。两岸关系和平发展的政治基础是（   ）。",
+                    options: {
+                        A: "坚持“九二共识”，反对台独",
+                        B: "相互尊重，求同存异",
+                        C: "增强两岸同胞的民族认同、文化认同、国家认同",
+                        D: "深化两岸利益融合，共创两岸互利双赢，增进两岸同胞福祉"
+                    }
+                },
+                {
+                    stem: "132.1997年7月1日，中国政府对香港恢复行使主权，香港特别行政区成立，香港特别行政区基本法开始实施。香港进入“一国两制”“港人治港”高度自治的历史新纪元。香港特别行政区的高度自治权是（   ）。",
+                    options: {
+                        A: "特别行政区的完全自治",
+                        B: "中央授权之外的剩余权力",
+                        C: "特别行政区本身固有的权力",
+                        D: "中央授予的地方事务管理权"
+                    }
+                },
+                {
+                    stem: "133.进入新时代，我国面临的国际环境和外交工作担负的使命任务发生新变化，我国对外工作需要呈现新气象、实现新作为。我国对外工作的出发点和落脚点是（   ）。",
+                    options: {
+                        A: "构建人类命运共同体",
+                        B: "实现中华民族伟大复兴",
+                        C: "建立新的政治经济新秩序",
+                        D: "维护国家主权、安全、发展利益"
+                    }
+                },
+                {
+                    stem: "134.（   ），是我们党根据时代发展潮流和我国根本利益作出的战略抉择，是新时代中国外交的基本原则。",
+                    options: {
+                        A: "维护世界和平",
+                        B: "坚持合作共赢",
+                        C: "构建人类命运共同体",
+                        D: "坚持走和平发展道路"
+                    }
+                },
+                {
+                    stem: "135.（   ）是中国共产党的一个创举，也是中国外交的力量源泉。",
+                    options: {
+                        A: "经济外交",
+                        B: "人民外交",
+                        C: "军事外交",
+                        D: "大国外交"
+                    }
+                },
+                {
+                    stem: "136.（   ），是当代中国共产党人回答和解决关乎人类前途命运的时代之问的中国方案，是应对人类共同挑战、建设更加繁荣美好世界的人间正道，也是新时代对外工作的总目标。",
+                    options: {
+                        A: "“一带一路”",
+                        B: "推动构建人类命运共同体",
+                        C: "美丽世界",
+                        D: "合作共赢"
+                    }
+                },
+                {
+                    stem: "137.建设（   ）的世界，就要坚持交流互鉴，促进和而不同、兼收并蓄的文明交流，推动人类文明实现创造性发展。",
+                    options: {
+                        A: "美丽清洁",
+                        B: "共同繁荣",
+                        C: "开放包容",
+                        D: "普遍安全"
+                    }
+                },
+                {
+                    stem: "138.新时代党的建设的鲜明主题是（   ）。",
+                    options: {
+                        A: "加强政治建设",
+                        B: "加强思想建设",
+                        C: "全面从严治党",
+                        D: "加强制度建设"
+                    }
+                },
+                {
+                    stem: "139.党的作风就是党的形象，关系人心向背，关系党的生死存亡。作风问题的核心是（   ）。",
+                    options: {
+                        A: "严明党的政治纪律",
+                        B: "反腐败",
+                        C: "党同人民群众的关系问题",
+                        D: "反对官僚主义"
+                    }
+                },
+                {
+                    stem: "140.把（   ）作为一项伟大工程来推进，是我们党的一大创举，是我们党领导人民进行伟大社会革命的重要法宝。",
+                    options: {
+                        A: "党的建设",
+                        B: "统一战线",
+                        C: "武装斗争",
+                        D: "伟大斗争"
+                    }
+                },
+                {
+                    stem: "141.（   ）是新时代推进反腐败斗争的鲜明特征，既以治标遏制腐败势头，更注重治本夯实防腐的基础。",
+                    options: {
+                        A: "软硬兼施",
+                        B: "批评和自我批评",
+                        C: "标本兼治",
+                        D: "自我革命"
+                    }
+                },
+                {
+                    stem: "142.高度重视和不断加强党的自身建设，是中国共产党从小到大、由弱变强，从挫折中奋起，在战胜困难中不断成熟的一大法宝，也是党领导的伟大事业不断取得胜利的根本保证。中国特色社会主义进入新时代，党的建设的根本方针是（   ）。",
+                    options: {
+                        A: "全面加强党的执政本领",
+                        B: "坚持党要管党、全面从严治党",
+                        C: "坚持解放思想、改革创新",
+                        D: "全面推进党的政治建设"
+                    }
+                },
+                {
+                    stem: "143.坚持反腐败无禁区、全覆盖、零容忍，坚定不移“打虎”“拍蝇”“猎狐”，____的目标初步实现，____的笼子越扎越牢，____的堤坝正在构筑，反腐败斗争压倒性态势已经形成并巩固发展。",
+                    options: {
+                        A: "不敢腐、不能腐、不想腐",
+                        B: "不能腐、不敢腐、不想腐",
+                        C: "不想腐、不敢腐、不能腐",
+                        D: "不敢腐、不想腐、不能腐"
+                    }
+                },
+                {
+                    stem: "144.为实现永葆党的先进性和纯洁性，毛泽东同志找到的道路是____，其内涵是____。",
+                    options: {
+                        A: "自律；自我约束",
+                        B: "民主；让人民监督政府",
+                        C: "自省；批评和自我批评",
+                        D: "监督；建立纪委监督机制"
+                    }
+                },
+                {
+                    stem: "145.新形势下党面临“四大考验”是（   ）。",
+                    options: {
+                        A: "廉政建设考验、经济改革考验、社会治理考验、社会转型考验",
+                        B: "执政考验、改革开放考验、市场经济考验、外部环境考验",
+                        C: "政治建设的考验、经济建设的考验、文化建设的考验、生态建设的考验",
+                        D: "道路自信、理论自信、制度自信、文化自信"
+                    }
+                },
+                {
+                    stem: "146.深入推进新时代党的建设新的伟大工程，必须注重系统性整体性协同性，以（   ）为统领持续抓好党的各方面建设。",
+                    options: {
+                        A: "作风建设",
+                        B: "思想建设",
+                        C: "组织建设",
+                        D: "政治建设"
+                    }
+                },
+                {
+                    stem: "147.把（   ）纳入党的建设总体布局并摆在首位，是新时代我们党对马克思主义党建理论的重大创新，体现了我们党对共产党执政规律的深刻认识，有着充分的理论和实践依据。",
+                    options: {
+                        A: "组织建设",
+                        B: "思想建设",
+                        C: "作风建设",
+                        D: "政治建设"
+                    }
+                },
+                {
+                    stem: "148.经过百年奋斗特别是党的十八大以来新的实践，党找到了跳出历史周期率的第二个答案，这就是（   ）。",
+                    options: {
+                        A: "自我革命",
+                        B: "社会革命",
+                        C: "新发展理念",
+                        D: "总体国家安全观"
+                    }
+                },
+                {
+                    stem: "149.（   ），是党的政治建设的首要任务。",
+                    options: {
+                        A: "增强“四个意识”",
+                        B: "贯彻“四个全面”",
+                        C: "坚定“四个自信”",
+                        D: "保证全党服从中央，维护党中央权威和集中统一领导"
+                    }
+                },
+                {
+                    stem: "150.勇于自我革命就是要同一切影响党的先进性、弱化党的纯洁性的问题坚决斗争，实现自我净化、自我完善、自我革新、自我提高。其中（   ）就是要善于调动全党积极性、主动性、创造性，坚决破除一切不合时宜的思想观念和体制机制弊端，通过改革和制度创新压缩腐败现象生存空间和滋生土壤，营造风清气正的政治生态。",
+                    options: {
+                        A: "自我净化",
+                        B: "自我完善",
+                        C: "自我革新",
+                        D: "自我提高"
+                    }
+                },
+                {
+                    stem: "151.习近平强调，要“树立大农业观、大食物观，向耕地草原森林海洋、向植物动物微生物要热量、要蛋白，全方位多途径开发食品资源”,“既向陆地要食物，也向海洋要食物，耕海牧渔，建设海上牧场、‘蓝色粮仓'”,构建多元化食物供给体系。“大农业观”“大食物观”突出体现的思维方式是（   ）",
+                    options: {
+                        A: "极限思维",
+                        B: "历史思维",
+                        C: "系统思维",
+                        D: "逆向思维"
+                    }
+                }
+            ]
+        const answerKeyString = "2133412122344241134112444444221144121113223111111141311114442344134424133222121223114322131413111232131323412333133341321342122141144422333132122441433";
+        const answerKey = Array.from(answerKeyString);
+        const totalQuestions = data.length;
+        const baseOrder = Array.from({ length: totalQuestions }, (_, index) => index);
+        let questionOrder = [...baseOrder];
+        let currentIndex = 0;
+        let selectedOptionIndex = null;
+        let isAnswered = false;
+        const wrongQuestions = new Map();
+
+        const questionText = document.getElementById('questionText');
+        const progressIndicator = document.getElementById('progress');
+        const modeHint = document.getElementById('modeHint');
+        const optionButtons = Array.from(document.querySelectorAll('.option'));
+        const nextBtn = document.getElementById('continue');
+        const prevBtn = document.getElementById('getBack');
+        const checkBtn = document.getElementById('checkAnswer');
+        const shuffleToggle = document.getElementById('shuffleToggle');
+        const resetBtn = document.getElementById('resetProgress');
+        const wrongToggleBtn = document.getElementById('toggleWrongPanel');
+        const wrongPanel = document.getElementById('wrongPanel');
+        const wrongList = document.getElementById('wrongList');
+        const wrongEmpty = document.getElementById('wrongEmpty');
+        const clearWrongBtn = document.getElementById('clearWrongRecords');
+
+        function clearOptionStyles() {
+            optionButtons.forEach((button) => {
+                button.classList.remove('is-selected', 'is-correct', 'is-wrong');
+            });
+        }
+
+        function resetSelectionState() {
+            selectedOptionIndex = null;
+            isAnswered = false;
+            clearOptionStyles();
+        }
+
+        function updateStatusLine() {
+            const effectiveIndex = questionOrder[currentIndex];
+            const messages = [];
+            if (shuffleToggle.checked) {
+                messages.push('随机模式开启');
+            }
+            if (wrongQuestions.has(effectiveIndex)) {
+                messages.push('本题在错题集中');
+            }
+            modeHint.textContent = messages.join(' · ');
+        }
+
+        function renderQuestion() {
+            const effectiveIndex = questionOrder[currentIndex];
+            const current = data[effectiveIndex];
+            questionText.innerText = current.stem;
+            optionButtons.forEach((button, idx) => {
+                const label = String.fromCharCode(65 + idx);
+                button.querySelector('.badge').innerText = label;
+                button.querySelector('.content').innerText = current.options[label];
+            });
+            resetSelectionState();
+            updateStatusLine();
+            updateNavigation();
+        }
+
+        function updateNavigation() {
+            progressIndicator.innerText = `第${currentIndex + 1} / ${totalQuestions} 题`;
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === totalQuestions - 1;
+        }
+
+        optionButtons.forEach((button, idx) => {
+            button.addEventListener('click', () => {
+                if (isAnswered) {
+                    return;
+                }
+                if (selectedOptionIndex === idx) {
+                    button.classList.remove('is-selected');
+                    selectedOptionIndex = null;
+                    return;
+                }
+                selectedOptionIndex = idx;
+                optionButtons.forEach((btn) => btn.classList.remove('is-selected'));
+                button.classList.add('is-selected');
+            });
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < totalQuestions - 1) {
+                currentIndex += 1;
+                renderQuestion();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex -= 1;
+                renderQuestion();
+            }
+        });
+
+        checkBtn.addEventListener('click', () => {
+            const effectiveIndex = questionOrder[currentIndex];
+            const current = data[effectiveIndex];
+            const answerValue = answerKey[effectiveIndex];
+            if (!answerValue) {
+                return;
+            }
+            const correctIndex = Number(answerValue) - 1;
+            optionButtons.forEach((button) => button.classList.remove('is-correct', 'is-wrong'));
+            if (selectedOptionIndex === null) {
+                optionButtons[correctIndex].classList.add('is-correct');
+                isAnswered = true;
+                return;
+            }
+            const selectedLabel = String.fromCharCode(65 + selectedOptionIndex);
+            const correctLabel = String.fromCharCode(65 + correctIndex);
+            if (selectedOptionIndex === correctIndex) {
+                optionButtons[correctIndex].classList.add('is-correct');
+                wrongQuestions.delete(effectiveIndex);
+            } else {
+                optionButtons[selectedOptionIndex].classList.add('is-wrong');
+                optionButtons[correctIndex].classList.add('is-correct');
+                wrongQuestions.set(effectiveIndex, {
+                    questionIndex: effectiveIndex,
+                    questionNumber: effectiveIndex + 1,
+                    stem: current.stem,
+                    selected: selectedLabel,
+                    correct: correctLabel
+                });
+            }
+            isAnswered = true;
+            updateStatusLine();
+            updateWrongPanel();
+        });
+
+        shuffleToggle.addEventListener('change', () => {
+            questionOrder = shuffleToggle.checked ? shuffleArray(baseOrder) : [...baseOrder];
+            currentIndex = 0;
+            renderQuestion();
+            updateWrongPanel();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            resetSelectionState();
+        });
+
+        wrongToggleBtn.addEventListener('click', () => {
+            if (wrongQuestions.size === 0) {
+                return;
+            }
+            wrongPanel.classList.toggle('is-hidden');
+        });
+
+        clearWrongBtn.addEventListener('click', () => {
+            wrongQuestions.clear();
+            wrongPanel.classList.add('is-hidden');
+            updateWrongPanel();
+            updateStatusLine();
+        });
+
+        function updateWrongPanel() {
+            const count = wrongQuestions.size;
+            wrongToggleBtn.textContent = `错题记录 (${count})`;
+            wrongToggleBtn.disabled = count === 0;
+            if (count === 0) {
+                wrongPanel.classList.add('is-hidden');
+                wrongEmpty.classList.remove('is-hidden');
+                wrongList.innerHTML = '';
+                return;
+            }
+            wrongEmpty.classList.add('is-hidden');
+            const fragment = document.createDocumentFragment();
+            const ordered = Array.from(wrongQuestions.values()).sort((a, b) => a.questionNumber - b.questionNumber);
+            ordered.forEach((item) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'wrong-item';
+
+                const info = document.createElement('div');
+                info.className = 'wrong-item__info';
+
+                const title = document.createElement('p');
+                title.className = 'wrong-item__title';
+                title.textContent = `第 ${item.questionNumber} 题`;
+
+                const desc = document.createElement('p');
+                desc.className = 'wrong-item__desc';
+                desc.textContent = `你的选择：${item.selected} ，正确答案：${item.correct}`;
+
+                info.appendChild(title);
+                info.appendChild(desc);
+
+                const reviewButton = document.createElement('button');
+                reviewButton.type = 'button';
+                reviewButton.className = 'review-btn';
+                reviewButton.textContent = '前往复习';
+                reviewButton.addEventListener('click', () => {
+                    const targetIndex = questionOrder.indexOf(item.questionIndex);
+                    if (targetIndex !== -1) {
+                        currentIndex = targetIndex;
+                        renderQuestion();
+                        wrongPanel.classList.add('is-hidden');
+                    }
+                });
+
+                listItem.appendChild(info);
+                listItem.appendChild(reviewButton);
+                fragment.appendChild(listItem);
+            });
+            wrongList.innerHTML = '';
+            wrongList.appendChild(fragment);
+        }
+
+        function shuffleArray(source) {
+            const result = [...source];
+            for (let i = result.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [result[i], result[j]] = [result[j], result[i]];
+            }
+            return result;
+        }
+
+        renderQuestion();
+        updateWrongPanel();
+    </script>
+
+</body>
+
+</html>
