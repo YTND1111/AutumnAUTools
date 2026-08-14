@@ -1,6 +1,18 @@
 /**
- * 应用级常量配置。
+ * 应用级常量配置（版本号单一事实来源）。
+ *
+ * 版本管理约定（React 迁移后替代旧站 version-*.json + bump 脚本）：
+ * - 首页 / 排课表工具版本号在此修改后随下次构建生效，页面自动展示；
+ * - Vite 产物自带内容指纹（assets/index-<hash>.js|css），业务代码无需手动版本戳；
+ * - 课程数据 JSON 属 public/ 原样静态资源，仍用 COURSE_DATA_VERSION 做缓存破坏，
+ *   已派生自排课表工具版本号，无需单独维护。
  */
+
+/** 首页（全局框架）版本号，展示于首页页脚 */
+export const APP_VERSION_HOME = "2.0.0";
+
+/** 排课表工具版本号，展示于排课表页顶栏右上角 */
+export const APP_VERSION_CA = "2.0.0";
 
 /**
  * 课程数据 JSON 路径（public/src/py/ 下，与原静态站点保持一致）。
@@ -9,8 +21,27 @@
 export const COURSE_DATA_PATH = "/src/py/中国农业大学2026-2027学年秋季学期通知单课表.json";
 
 /**
- * 课程数据缓存破坏版本戳。
- * 与仓库根目录 version-ca.json 保持同步（原站由 js/version-ca.js 提供，
- * 原生 React 代码不加载该脚本，故在此显式声明）。
+ * 课程数据缓存破坏版本戳（fetch 时以 ?v= 附加）。
+ * 派生自排课表工具版本号：排课表发版即刷新课程数据缓存。
  */
-export const COURSE_DATA_VERSION = "1.2.3";
+export const COURSE_DATA_VERSION = APP_VERSION_CA;
+
+/** 首页公告条目 */
+export interface Announcement {
+  date: string;
+  title: string;
+  content: string;
+}
+
+/**
+ * 首页公告列表（仅在首页展示；空数组 = 不渲染公告区）。
+ * 新公告加在数组开头。
+ */
+export const ANNOUNCEMENTS: Announcement[] = [
+  {
+    date: "2026-08-10",
+    title: "秋功 v2.0.0 全新上线",
+    content:
+      "本站已迁移至 React 框架：首页与排课表工具全面重构（排课表工具同步升级 v2.0.0），界面与功能与原站保持一致。如遇显示异常，请刷新页面。",
+  },
+];

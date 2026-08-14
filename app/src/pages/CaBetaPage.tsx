@@ -12,6 +12,7 @@ import { usePlanGenerator } from "../hooks/usePlanGenerator";
 import { useClassGroups } from "../hooks/useClassGroups";
 import { usePlans } from "../plans/PlansContext";
 import { useSettings } from "../settings/SettingsContext";
+import { APP_VERSION_CA } from "../config";
 import type { CourseCandidate } from "../services/courseData";
 import { findClassTimetableCandidates, findCourseCandidates } from "../services/courseData";
 import "./CaBetaPage.css";
@@ -161,6 +162,7 @@ export default function CaBetaPage() {
       <div className="ca-beta-page">
         {/* 顶栏：搜索区 + 模式切换 */}
         <div className="beta-topbar ca-gradient-surface">
+          <div className="beta-version-label">排课表工具 v{APP_VERSION_CA}</div>
           <div className="search-row">
             <div className="search-boxes">
               {isPlanMode ? (

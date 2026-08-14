@@ -97,6 +97,15 @@ pnpm run build       # 生产构建 → app/dist/
 
 后续重写排课表页时遵循同一模式：页面内容 → `pages/XxxPage.tsx` + 作用域 CSS，公共框架复用 `FloatingChrome`，业务脚本按 `useFloatingBall` 的方式逐步 Hook 化（排课表页的 `CourseArrangement.js` 约 2400 行，建议按「课程搜索 / 候选池 / 方案生成 / 课表渲染」分模块拆解，而非一次性移植）。
 
+### 版本号与公告（React 版）
+
+React 迁移后，旧站 `version-*.json` + bump 脚本的版本管理体系**不再适用于 `app/`**（旧体系已随旧站归档至 `legacy/`）。新约定：
+
+- **版本号单一事实来源：`app/src/config.ts`**。`APP_VERSION_HOME`（首页/全局，展示于首页页脚「秋功 vX.Y.Z」）、`APP_VERSION_CA`（排课表工具，展示于排课表页顶栏右上角「排课表工具 vX.Y.Z」，位置/样式对齐原站 `#VersionLabel`）。发版时改这两个常量即可，随构建生效。
+- **业务代码无需手动版本戳**：Vite 产物自带内容指纹（`assets/index-<hash>.js|css`），缓存破坏免费获得。
+- **课程数据缓存戳**：`COURSE_DATA_VERSION` 派生自 `APP_VERSION_CA`（fetch 课程 JSON 时以 `?v=` 附加），排课表发版即自动刷新课程数据缓存，无需单独维护。
+- **首页公告**：`config.ts` 的 `ANNOUNCEMENTS` 数组（`{date, title, content}`），仅在首页顶栏下方渲染公告条（`.announcement-bar`），空数组则不渲染；新公告加在数组开头。首页「最新更新」列表（`HomePage.tsx` 的 `NEWS_ITEMS`）发版时手动同步一条。
+
 ### 用户设置接口层（后端就绪）
 
 为后续接入后端准备，设置读写统一走 **`app/src/settings/`** 的 Provider 抽象：

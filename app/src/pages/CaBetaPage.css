@@ -37,7 +37,20 @@
 
 /* 顶栏（沿用全站渐变） */
 .ca-beta-page .beta-topbar {
+    position: relative;
     padding: 14px 16px 18px;
+}
+
+/* 版本标签（对应原站 #VersionLabel：顶栏右上角白色小字，不响应点击） */
+.ca-beta-page .beta-version-label {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    z-index: 60;
+    pointer-events: none;
 }
 
 .ca-beta-page .search-row {

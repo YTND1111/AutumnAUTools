@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import FloatingChrome from "../components/FloatingChrome";
 import FunTabs from "../components/FunTabs";
 import FeeCalendar from "../components/FeeCalendar";
+import { ANNOUNCEMENTS, APP_VERSION_HOME } from "../config";
 import "./HomePage.css";
 
 /**
@@ -27,6 +28,8 @@ const SIDEBAR_LINKS = [
 ];
 
 const NEWS_ITEMS = [
+  { title: "秋功v2.0.0 React 重构上线", date: "2026-08-10" },
+  { title: "排课表工具v2.0.0版本更新", date: "2026-08-10" },
   { title: "排课表工具v1.2.3版本更新", date: "2026-07-19" },
   { title: "题库v1.0.0版本更新", date: "2026-07-07" },
   { title: "OJ外包", date: "2026-07-22" },
@@ -57,6 +60,20 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* 公告通知（数据来自 config.ts 的 ANNOUNCEMENTS，空数组则不渲染） */}
+        {ANNOUNCEMENTS.length > 0 && (
+          <div className="announcement-area container">
+            {ANNOUNCEMENTS.map((item) => (
+              <div className="announcement-bar" key={`${item.date}-${item.title}`}>
+                <span className="announcement-badge">公告</span>
+                <span className="announcement-title">{item.title}</span>
+                <span className="announcement-content">{item.content}</span>
+                <span className="announcement-date">{item.date}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* 主体内容区域 */}
         <div className="main container">
@@ -143,6 +160,7 @@ export default function HomePage() {
         {/* 页脚 */}
         <div className="footer primary-bg text-white text-center">
           <div className="container">
+            <p className="home-version">秋功 v{APP_VERSION_HOME}</p>
             <p>
               <a href="https://github.com/YTND1111/AutumnAUTools">秋功</a>-本项目采用{" "}
               <a href="http://www.apache.org/licenses/LICENSE-2.0">[Apache License 2.0](LICENSE) 开源许可证</a>
