@@ -44,7 +44,7 @@ export default function AdPopup() {
           href="https://jwzs.cau.edu.cn/index.html"
           target="_blank"
           rel="noopener noreferrer"
-          title="点击访问教务系统"
+          title="点击了解详情"
         >
           <img className="ad-popup-img" src={AD_IMAGE} alt="趣味广告" />
         </a>
