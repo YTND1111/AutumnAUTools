@@ -163,6 +163,50 @@
     padding: 16px 0;
 }
 
+/* 胶囊分段式按钮（OJ 入口：本地刷题 / 机考模拟并列） */
+.home-page .dial-segmented {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 999px;
+    gap: 0;
+}
+
+.home-page .dial-segment {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px 6px;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.home-page .dial-segment + .dial-segment {
+    border-left: 1px solid var(--surface-border, #E5E7EB);
+}
+
+.home-page .dial-segment:hover {
+    background: #e8f8ef;
+}
+
+.home-page .dial-segmented:hover {
+    background: #ffffff;
+}
+
+.home-page .dial-segment-title {
+    font-weight: bold;
+}
+
+.home-page .dial-segment-sub {
+    font-size: 12px;
+    font-weight: normal;
+    color: #6b8a7c;
+}
+
 .home-page .footer .home-version {
     font-weight: bold;
     margin-bottom: 6px;
@@ -382,4 +426,57 @@
     background: var(--joint-color);
     color: #ffffff !important;
     font-weight: bold;
+}
+
+/* ========================
+   右下角趣味广告弹窗（AdPopup）
+   ======================== */
+.ad-popup {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 9999;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.ad-popup-body {
+    position: relative;
+    width: 240px;
+}
+.ad-popup-link {
+    display: block;
+}
+.ad-popup-img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+/* 白色闪烁遮罩：opacity 由组件状态突变切换，无 transition → 突跳闪烁 */
+.ad-popup-flash {
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    pointer-events: none;
+}
+.ad-popup-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 10;
+    width: 26px;
+    height: 26px;
+    line-height: 24px;
+    text-align: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.ad-popup-close:hover {
+    background: rgba(200, 0, 0, 0.85);
 }

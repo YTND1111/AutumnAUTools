@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import FloatingChrome from "../components/FloatingChrome";
 import FunTabs from "../components/FunTabs";
 import FeeCalendar from "../components/FeeCalendar";
+import AdPopup from "../components/AdPopup";
 import { ANNOUNCEMENTS, APP_VERSION_HOME } from "../config";
 import "./HomePage.css";
 
@@ -43,6 +44,9 @@ export default function HomePage() {
   return (
     <>
       <FloatingChrome links={SIDEBAR_LINKS} />
+
+      {/* 右下角趣味广告弹窗（白色遮罩闪烁 + X 关闭） */}
+      <AdPopup />
 
       <div className="home-page">
         {/* 顶部导航栏 */}
@@ -104,15 +108,17 @@ export default function HomePage() {
               <Link to="/qbn" className="dial-btn">
                 题库
               </Link>
-              <a href="http://vm.cau.edu.cn/s2025321070110/oj/index.jsp" className="dial-btn">
-                <div>
-                  <p>
-                    信电机考模拟
-                    <br />
-                    <span style={{ fontSize: "small" }}>由@计算姬珂学家 提供</span>
-                  </p>
-                </div>
-              </a>
+              {/* OJ 入口：胶囊分段式——本地刷题（cpp.html）与外包机考模拟并列 */}
+              <div className="dial-btn dial-segmented" role="group" aria-label="OJ 刷题入口">
+                <a href="/cpp.html" className="dial-segment">
+                  <span className="dial-segment-title">本地刷题</span>
+                  <span className="dial-segment-sub">C++ 在线判题</span>
+                </a>
+                <a href="http://vm.cau.edu.cn/s2025321070110/oj/index.jsp" className="dial-segment">
+                  <span className="dial-segment-title">机考模拟</span>
+                  <span className="dial-segment-sub">由@计算姬珂学家 提供</span>
+                </a>
+              </div>
               <a href="/src/py/中国农业大学本科生培养方案.pdf" download className="dial-btn">
                 培养方案（2023版）
               </a>

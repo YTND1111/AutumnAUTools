@@ -1,0 +1,9 @@
+# 临时工作目录（题库整理脚本与中间产物，勿提交）
+work/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# pnpm 包存储（若 store-dir 指向项目内）
+.pnpm-store/

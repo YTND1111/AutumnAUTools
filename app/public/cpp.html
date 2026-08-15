@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信电机考模拟在线编译器 - 秋功</title>
+
+    <!-- CodeMirror 5（cdnjs 直引脚本，全局变量 CodeMirror，无模块解析问题） -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/eclipse.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+
+    <style>
+        /* ========================
+           主题变量（默认浅色，仿力扣官网）
+           ======================== */
+        :root {
+            --bg: #ffffff;
+            --bg-panel: #f7f7f8;
+            --bg-input: #f2f3f4;
+            --border: #e5e5e5;
+            --text: #262626;
+            --text-muted: #8a8a8a;
+            --brand: #ffa116;
+            --accent: #2cbb5d;
+            --accent-hover: #31a355;
+            --btn-bg: #f0f0f1;
+            --btn-hover: #e5e5e6;
+            --error-bg: rgba(239, 71, 67, 0.08);
+            --error-text: #ef4743;
+            --status-ok: #2cbb5d;
+        }
+        [data-theme="dark"] {
+            --bg: #1a1a1a;
+            --bg-panel: #262626;
+            --bg-input: #333333;
+            --border: #3c3c3c;
+            --text: #eff1f6;
+            --text-muted: #8a8a8a;
+            --btn-bg: #333333;
+            --btn-hover: #404040;
+            --error-bg: rgba(239, 71, 67, 0.15);
+            --error-text: #f36c69;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ========================
+           顶栏（约 48px，品牌橙标识）
+           ======================== */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 0 16px;
+            height: 48px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+        }
+        .toolbar .brand {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--brand);
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+        .toolbar select,
+        .toolbar button {
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: none;
+            background: var(--btn-bg);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .toolbar select:hover,
+        .toolbar button:hover { background: var(--btn-hover); }
+        .toolbar .spacer { flex: 1; }
+        #VersionLabel {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        .progress-label {
+            font-size: 12px;
+            color: var(--accent, #2e9e44);
+            font-weight: 600;
+            white-space: nowrap;
+            background: var(--btn-bg);
+            padding: 4px 10px;
+            border-radius: 999px;
+        }
+
+        /* ========================
+           主区域：左题目描述 / 右代码+测试用例
+           ======================== */
+        .main {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+        .pane-desc {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            border-right: 1px solid var(--border);
+        }
+        .pane-code {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+        }
+        .pane-header {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* 题目描述区（只读展示，占左栏全高） */
+        #problemDesc {
+            flex: 1;
+            overflow: auto;
+            padding: 14px 16px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* 代码编辑器容器 */
+        .editor-block {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        #editor {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #editor .CodeMirror {
+            height: 100%;
+            font-size: 14px;
+            font-family: Consolas, Menlo, "Courier New", monospace;
+            line-height: 1.5;
+        }
+
+        /* ========================
+           测试用例面板（判题样例 + 判题结果）
+           ======================== */
+        .console-block {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            border-top: 1px solid var(--border);
+        }
+        .judge-panel {
+            flex: 1;
+            overflow: auto;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .judge-summary {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: none;
+        }
+        .judge-summary.visible { display: block; }
+        .judge-summary.ac {
+            background: rgba(44, 187, 93, 0.12);
+            color: var(--status-ok);
+        }
+        .judge-summary.wa {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+        .case-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-panel);
+        }
+        .case-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .case-head .case-title { font-weight: 600; }
+        .case-head .case-result { font-weight: 600; }
+        .case-head .case-result.ac { color: var(--status-ok); }
+        .case-head .case-result.wa { color: var(--error-text); }
+        .case-head .case-result.re { color: #e5c07b; }
+        .case-body {
+            display: flex;
+        }
+        .case-body .case-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .case-body .case-col + .case-col { border-left: 1px solid var(--border); }
+        .case-col .case-col-title {
+            padding: 3px 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-input);
+        }
+        .case-col pre {
+            margin: 0;
+            padding: 6px 10px;
+            background: var(--bg-input);
+            color: var(--text);
+            font-family: Consolas, Menlo, "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .case-actual {
+            display: none;
+            border-top: 1px solid var(--border);
+            padding: 6px 10px;
+            font-family: Consolas, Menlo, "Courier New", monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: var(--bg-input);
+        }
+        .case-actual.visible { display: block; }
+        .case-actual .actual-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+        .case-actual.wa { color: var(--error-text); }
+
+        /* 底部操作栏：状态信息 + 提交按钮 */
+        .console-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+        }
+        .status-bar {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .status-bar.ok { color: var(--status-ok); }
+        .status-bar.err { color: var(--error-text); }
+        .console-footer button {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 7px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .console-footer .btn-submit {
+            background: var(--accent);
+            color: #fff;
+        }
+        .console-footer .btn-submit:hover { background: var(--accent-hover); }
+        .console-footer .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ========================
+           移动端：上下堆叠
+           ======================== */
+        @media (max-width: 900px) {
+            body { overflow: auto; }
+            .main { flex-direction: column; overflow: visible; }
+            .pane-desc {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                flex: none;
+                height: 25vh;
+            }
+            .editor-block { height: 40vh; flex: none; }
+            .console-block { flex: none; }
+            .judge-panel { height: 40vh; flex: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶栏 -->
+    <div class="toolbar">
+        <span class="brand">秋功·刷题</span>
+        <select id="problemSelect" title="选择题目"></select>
+        <span id="progressLabel" class="progress-label" title="已通过的题目数"></span>
+        <span class="spacer"></span>
+        <div id="VersionLabel">C/C++ 在线编译器 v1.2.0</div>
+        <button id="btnReset">重置代码</button>
+        <button id="btnTheme" title="切换主题">🌙 深色</button>
+    </div>
+
+    <!-- 主区域 -->
+    <div class="main">
+        <!-- 左栏：题目描述 -->
+        <div class="pane-desc">
+            <div class="pane-header">题目描述</div>
+            <div id="problemDesc">题目加载中…</div>
+        </div>
+
+        <!-- 右栏：代码编辑器 + 测试用例 -->
+        <div class="pane-code">
+            <div class="editor-block">
+                <div class="pane-header">代码</div>
+                <div id="editor"></div>
+            </div>
+            <div class="console-block">
+                <div class="pane-header">测试用例</div>
+                <div class="judge-panel">
+                    <div class="judge-summary" id="judgeSummary"></div>
+                    <div id="caseList"></div>
+                </div>
+
+                <!-- 底部操作栏 -->
+                <div class="console-footer">
+                    <div class="status-bar" id="statusBar">就绪</div>
+                    <button id="btnSubmit" class="btn-submit" title="按预设用例判题">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSCPP 解释器（本地文件，全局变量 JSCPP） -->
+    <script src="./js/lib/JSCPP.es5.min.js?v=1.2.0"></script>
+    <!-- 模块版本号（APP_VERSION_CPP） -->
+    <script src="./js/version-cpp.js?v=1.2.0"></script>
+
+    <script>
+        /* ========================
+           初始代码：统一使用 C 语言空模板；
+           仅内置 3 道示例题提供 C 语言参考解答（其余题目一律从空模板开始编写）
+           ======================== */
+        const EMPTY_STARTER = `#include <stdio.h>
+
+int main() {
+
+    return 0;
+}
+`;
+
+        // 示例题的 C 语言参考解答（key 为题目 id，其余题目统一空模板）
+        const EXAMPLE_ANSWERS = {
+            aplusb: `#include <stdio.h>
+
+int main() {
+    int a, b;
+    scanf("%d %d", &a, &b);
+    printf("%d\\n", a + b);
+    return 0;
+}
+`,
+            "array-sum": `#include <stdio.h>
+
+int main() {
+    int n, x, sum = 0;
+    scanf("%d", &n);
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &x);
+        sum += x;
+    }
+    printf("%d\\n", sum);
+    return 0;
+}
+`,
+            "string-reverse": `#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char s[101];
+    scanf("%s", s);
+    int len = (int)strlen(s);
+    printf("length: %d\\n", len);
+    for (int i = len - 1; i >= 0; i--) {
+        printf("%c", s[i]);
+    }
+    printf("\\n");
+    return 0;
+}
+`
+        };
+
+        // 获取题目初始代码：示例题给 C 参考解答，其余题目统一使用空模板
+        function getStarterCode(p) {
+            return EXAMPLE_ANSWERS[p.id] || EMPTY_STARTER;
+        }
+
+        // 题库加载失败时的兜底题目（保证页面可用）
+        const FALLBACK_PROBLEMS = [
+            {
+                id: "aplusb",
+                title: "A+B 问题",
+                description: "输入两个整数 a 和 b，输出它们的和。",
+                cases: [{ input: "1 2", expected: "3" }]
+            }
+        ];
+
+        /* ========================
+           localStorage 键
+           ======================== */
+        const LS = {
+            code: "cpp-code",
+            theme: "cpp-theme",
+            problemId: "cpp-problem-id",
+            solved: "cpp-solved"   // 已通过（AC）的题目 id 集合
+        };
+
+        /* ========================
+           DOM 引用
+           ======================== */
+        const problemSelect = document.getElementById("problemSelect");
+        const progressLabel = document.getElementById("progressLabel");
+        const btnSubmit = document.getElementById("btnSubmit");
+        const btnReset = document.getElementById("btnReset");
+        const btnTheme = document.getElementById("btnTheme");
+        const problemDescEl = document.getElementById("problemDesc");
+        const statusBar = document.getElementById("statusBar");
+        const judgeSummary = document.getElementById("judgeSummary");
+        const caseList = document.getElementById("caseList");
+
+        /* ========================
+           主题切换（浅色用 eclipse 主题，仿力扣浅色编辑器）
+           ======================== */
+        function applyTheme(theme) {
+            document.documentElement.dataset.theme = theme;
+            btnTheme.textContent = theme === "dark" ? "☀️ 浅色" : "🌙 深色";
+            editor.setOption("theme", theme === "dark" ? "monokai" : "eclipse");
+            localStorage.setItem(LS.theme, theme);
+        }
+
+        btnTheme.addEventListener("click", () => {
+            applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+        });
+
+        /* ========================
+           初始化编辑器（CodeMirror 5）
+           ======================== */
+        const savedTheme = localStorage.getItem(LS.theme) || "light";
+        const savedCode = localStorage.getItem(LS.code);
+
+        const editor = CodeMirror(document.getElementById("editor"), {
+            value: savedCode !== null ? savedCode : EMPTY_STARTER,
+            mode: "text/x-c++src",
+            theme: savedTheme === "dark" ? "monokai" : "eclipse",
+            lineNumbers: true,
+            indentUnit: 4,
+            tabSize: 4,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            extraKeys: {
+                // Tab：有选区则整体缩进，否则插入 4 个空格
+                "Tab": (cm) => {
+                    if (cm.somethingSelected()) cm.indentSelection("add");
+                    else cm.replaceSelection("    ", "end");
+                }
+            }
+        });
+
+        // 代码变更防抖 300ms 自动保存
+        let saveTimer = null;
+        editor.on("change", () => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                localStorage.setItem(LS.code, editor.getValue());
+            }, 300);
+        });
+
+        /* ========================
+           状态恢复
+           ======================== */
+        document.documentElement.dataset.theme = savedTheme;
+        btnTheme.textContent = savedTheme === "dark" ? "☀️ 浅色" : "🌙 深色";
+
+        function setStatus(text, kind) {
+            statusBar.textContent = text;
+            statusBar.className = "status-bar" + (kind ? " " + kind : "");
+        }
+
+        /* ========================
+           题库加载与题目切换
+           ======================== */
+        let problems = [];
+        let currentProblem = null;
+
+        /* ========================
+           做题进度：已通过（AC）的题目在刷题下拉框显示绿钩
+           ======================== */
+        // 已通过题目 id 集合（localStorage 持久化）
+        let solved = loadSolved();
+
+        function loadSolved() {
+            try {
+                const arr = JSON.parse(localStorage.getItem(LS.solved) || "[]");
+                return new Set(Array.isArray(arr) ? arr : []);
+            } catch (e) {
+                return new Set();
+            }
+        }
+
+        function saveSolved() {
+            localStorage.setItem(LS.solved, JSON.stringify([...solved]));
+        }
+
+        // 顶栏进度标签：已通过 X / 共 Y
+        function updateProgress() {
+            progressLabel.textContent = `已通过 ${solved.size}/${problems.length}`;
+            progressLabel.title = `已完成 ${solved.size} 题 / 共 ${problems.length} 题（下拉框中带 ✓ 的题目为已通过）`;
+        }
+
+        // 按题目 id 推导分组名（示例题 / 2024年A卷 …）
+        function groupOf(p) {
+            if (p.id === "aplusb" || p.id === "array-sum" || p.id === "string-reverse") return "示例题";
+            const m = String(p.id).match(/^(\d{4})([a-d])-p/i);
+            return m ? `${m[1]}年${m[2].toUpperCase()}卷` : "其他";
+        }
+
+        // 渲染题目下拉框：按卷分组 + 序号（no. 标题）+ 已通过绿钩
+        function renderProblemSelect() {
+            problemSelect.innerHTML = "";
+            let lastGroup = null;
+            problems.forEach((p, idx) => {
+                const group = groupOf(p);
+                if (group !== lastGroup) {
+                    const og = document.createElement("optgroup");
+                    og.label = group;
+                    problemSelect.appendChild(og);
+                    lastGroup = group;
+                }
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                const no = p.no || idx + 1;
+                const done = solved.has(p.id);
+                opt.textContent = (done ? "✓ " : "") + no + ". " + p.title;
+                if (done) opt.title = "已通过";
+                problemSelect.lastElementChild.appendChild(opt);
+            });
+        }
+
+        async function loadProblems() {
+            try {
+                // 附带模块版本号破坏题库缓存（与 CourseArrangement.js 同款做法）
+                const res = await fetch("data/cpp-problems.json?v=" + APP_VERSION_CPP);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                problems = await res.json();
+                if (!Array.isArray(problems) || problems.length === 0) {
+                    throw new Error("题库为空");
+                }
+            } catch (e) {
+                problems = FALLBACK_PROBLEMS;
+                setStatus("题库加载失败，已使用内置默认题目", "err");
+            }
+
+            // 填充题目下拉框（分组 + 序号 + 绿钩）并更新进度
+            renderProblemSelect();
+            updateProgress();
+
+            // 恢复上次选中的题目（localStorage 持久化，刷新/重开仍回到该题）
+            const savedId = localStorage.getItem(LS.problemId);
+            const target = problems.find((p) => p.id === savedId) || problems[0];
+            selectProblem(target.id, { keepCode: true });
+        }
+
+        function selectProblem(id, opts = {}) {
+            const p = problems.find((item) => item.id === id);
+            if (!p) return;
+            currentProblem = p;
+            problemSelect.value = p.id;
+            localStorage.setItem(LS.problemId, p.id);
+
+            // 题目描述与判题样例为只读展示
+            problemDescEl.textContent = p.description || "（暂无题目描述）";
+            renderCases(p.cases || []);
+            judgeSummary.className = "judge-summary";
+
+            // 切换题目时载入该题初始代码（用户确认后覆盖）
+            if (!opts.keepCode) {
+                const starter = getStarterCode(p);
+                const current = editor.getValue();
+                if (current.trim() === "" || current === starter ||
+                    confirm("切换题目将覆盖当前代码为该题初始模板，是否继续？")) {
+                    setEditorCode(starter);
+                }
+            }
+        }
+
+        problemSelect.addEventListener("change", () => selectProblem(problemSelect.value));
+
+        btnReset.addEventListener("click", () => {
+            if (!currentProblem) return;
+            if (!confirm("将当前代码重置为该题初始模板，是否继续？")) return;
+            setEditorCode(getStarterCode(currentProblem));
+        });
+
+        function setEditorCode(code) {
+            editor.setValue(code);
+            localStorage.setItem(LS.code, code);
+        }
+
+        /* ========================
+           执行（JSCPP 同步解释执行；
+           注意：解释器为同步执行，死循环代码会卡住页面）
+           ======================== */
+        // 统一执行入口，返回 { out, error, exitCode }
+        // 说明：JSCPP 的 stdin 为一次性模型——stdio.drain 只在 cin/scanf 初始化时
+        // 被调用一次，返回值即程序全部输入缓冲；默认 drain 一次性返回 input，
+        // 正好符合该模型，因此这里只重写 write。input 必须为字符串（不能为 null，
+        // JSCPP.run 入口会对它立即调用 toString()）。
+        function execCode(code, input) {
+            // 解释器脚本加载失败时给出友好提示，而不是裸报 JSCPP is not defined
+            if (typeof JSCPP === "undefined") {
+                return {
+                    out: "",
+                    error: "C++ 解释器未加载：请确认 js/lib/JSCPP.es5.min.js 文件存在且可访问",
+                    exitCode: null
+                };
+            }
+            let out = "";
+            const config = {
+                stdio: {
+                    write(s) { out += s; }
+                }
+            };
+            try {
+                const exitCode = JSCPP.run(code, String(input == null ? "" : input), config);
+                return { out, error: null, exitCode };
+            } catch (e) {
+                return { out, error: String((e && e.message) || e), exitCode: null };
+            }
+        }
+
+        /* ========================
+           判题样例渲染（只读）
+           ======================== */
+        function renderCases(cases) {
+            caseList.innerHTML = "";
+            cases.forEach((c, i) => {
+                const card = document.createElement("div");
+                card.className = "case-card";
+
+                const head = document.createElement("div");
+                head.className = "case-head";
+
+                const title = document.createElement("span");
+                title.className = "case-title";
+                title.textContent = `用例 ${i + 1}`;
+
+                const result = document.createElement("span");
+                result.className = "case-result";
+                result.id = `caseResult${i}`;
+
+                head.append(title, result);
+
+                const body = document.createElement("div");
+                body.className = "case-body";
+
+                const inputCol = document.createElement("div");
+                inputCol.className = "case-col";
+                const inputTitle = document.createElement("div");
+                inputTitle.className = "case-col-title";
+                inputTitle.textContent = "输入";
+                const inputPre = document.createElement("pre");
+                inputPre.textContent = c.input || "（空）";
+                inputCol.append(inputTitle, inputPre);
+
+                const expectedCol = document.createElement("div");
+                expectedCol.className = "case-col";
+                const expectedTitle = document.createElement("div");
+                expectedTitle.className = "case-col-title";
+                expectedTitle.textContent = "期望输出";
+                const expectedPre = document.createElement("pre");
+                expectedPre.textContent = c.expected || "（空）";
+                expectedCol.append(expectedTitle, expectedPre);
+
+                body.append(inputCol, expectedCol);
+
+                const actual = document.createElement("div");
+                actual.className = "case-actual";
+                actual.id = `caseActual${i}`;
+
+                card.append(head, body, actual);
+                caseList.appendChild(card);
+            });
+        }
+
+        /* ========================
+           提交判题：逐用例运行并校核输出
+           ======================== */
+        // 校核规范化：统一换行、去除每行尾空白与末尾空行
+        function normalizeOutput(s) {
+            return String(s)
+                .replace(/\r\n/g, "\n")
+                .split("\n")
+                .map((line) => line.replace(/\s+$/, ""))
+                .join("\n")
+                .replace(/\n+$/, "");
+        }
+
+        async function submitCode() {
+            if (!currentProblem) return;
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = "判题中…";
+            judgeSummary.className = "judge-summary";
+            setStatus("判题中…");
+
+            const code = editor.getValue();
+            const cases = currentProblem.cases || [];
+            let passCount = 0;
+
+            for (let i = 0; i < cases.length; i++) {
+                const resultEl = document.getElementById(`caseResult${i}`);
+                const actualEl = document.getElementById(`caseActual${i}`);
+                resultEl.className = "case-result";
+                resultEl.textContent = "运行中…";
+                actualEl.className = "case-actual";
+                actualEl.textContent = "";
+                // 每个用例之间让出一帧，避免长时间无反馈
+                await new Promise((resolve) => setTimeout(resolve, 30));
+
+                const { out, error } = execCode(code, cases[i].input);
+
+                const label = document.createElement("span");
+                label.className = "actual-label";
+
+                if (error) {
+                    resultEl.textContent = "✗ 运行错误";
+                    resultEl.classList.add("re");
+                    label.textContent = "错误信息：";
+                    actualEl.append(label, document.createTextNode(error));
+                    actualEl.classList.add("visible", "wa");
+                } else if (normalizeOutput(out) === normalizeOutput(cases[i].expected)) {
+                    resultEl.textContent = "✓ 通过";
+                    resultEl.classList.add("ac");
+                    passCount++;
+                } else {
+                    resultEl.textContent = "✗ 答案错误";
+                    resultEl.classList.add("wa");
+                    label.textContent = "实际输出：";
+                    actualEl.append(label, document.createTextNode(out || "（无输出）"));
+                    actualEl.classList.add("visible", "wa");
+                }
+            }
+
+            if (passCount === cases.length) {
+                judgeSummary.textContent = `✓ Accepted（${passCount}/${cases.length} 通过）`;
+                judgeSummary.classList.add("visible", "ac");
+                setStatus(`判题完成：${passCount}/${cases.length} 通过`, "ok");
+                // 记录为已通过：下拉框选项前显示绿钩，并刷新进度
+                if (currentProblem && !solved.has(currentProblem.id)) {
+                    solved.add(currentProblem.id);
+                    saveSolved();
+                    renderProblemSelect();
+                    problemSelect.value = currentProblem.id;
+                    updateProgress();
+                }
+            } else {
+                judgeSummary.textContent = `✗ Wrong Answer（${passCount}/${cases.length} 通过）`;
+                judgeSummary.classList.add("visible", "wa");
+                setStatus(`判题完成：${passCount}/${cases.length} 通过`, "err");
+            }
+
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = "提交";
+        }
+
+        btnSubmit.addEventListener("click", submitCode);
+
+        /* ========================
+           启动
+           ======================== */
+        loadProblems();
+    </script>
+</body>
+</html>
