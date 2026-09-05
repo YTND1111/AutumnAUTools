@@ -67,27 +67,6 @@
     min-width: 280px;
 }
 
-.ca-beta-page .button-area {
-    display: flex;
-    gap: 10px;
-    padding-top: 8px;
-}
-
-.ca-beta-page .action-btn {
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.16);
-    color: #ffffff;
-    font-size: 14px;
-    padding: 9px 16px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.ca-beta-page .action-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
 /* ===== 搜索栏（移植自 ca.html） ===== */
 .ca-beta-page .search-bar {
     position: relative;
@@ -101,6 +80,16 @@
 
 .ca-beta-page .search-bar:focus-within {
     z-index: 90;
+}
+
+/* 检索框 hover 高亮提示（输入框描边 + 光晕，同页两个检索框共用） */
+.ca-beta-page .search-bar:hover {
+    box-shadow: 0 4px 14px rgba(15, 122, 71, 0.22);
+}
+
+.ca-beta-page .search-bar:hover .search-input {
+    border-color: rgba(15, 122, 71, 0.6);
+    box-shadow: 0 0 0 3px rgba(15, 122, 71, 0.16);
 }
 
 .ca-beta-page .search-field {
@@ -284,37 +273,25 @@
     padding: 0;
 }
 
-/* 设置区 */
-.ca-beta-page .settings-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-    font-size: 14px;
-    color: #1d3a2d;
-}
-
-.ca-beta-page .settings-label {
-    font-weight: bold;
-    min-width: 96px;
-}
-
-.ca-beta-page .settings-cycle-btn {
-    background: rgba(15, 122, 71, 0.12);
-    border-color: rgba(15, 122, 71, 0.3);
-    color: #0f5132;
-    min-width: 88px;
-}
-
-.ca-beta-page .settings-cycle-btn:hover {
-    background: rgba(15, 122, 71, 0.2);
-}
-
+/* 设置区（精简：仅本地保存说明） */
 .ca-beta-page .settings-note {
     border-top: 1px dashed var(--surface-border, #E5E7EB);
     padding-top: 10px;
     margin-top: 4px;
+}
+
+.ca-beta-page .guide-reopen {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 新手引导入口旁的 AI 生成声明 */
+.ca-beta-page .guide-ai-note {
+    margin: 6px 0 0;
+    text-align: right;
+    font-size: 11px;
+    color: #8a9a90;
 }
 
 /* 占位区 */
@@ -493,6 +470,17 @@
     color: #0f5132;
 }
 
+.ca-beta-page .option-limit {
+    font-size: 12px;
+    line-height: 1.7;
+    font-weight: 600;
+    color: #8a5a00;
+    background: rgba(255, 193, 7, 0.16);
+    border-radius: 999px;
+    padding: 0 8px;
+    white-space: nowrap;
+}
+
 .ca-beta-page .option-time {
     color: var(--text-secondary, #666);
     flex-basis: 100%;
@@ -504,9 +492,44 @@
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-    margin: 6px 0 10px;
+    margin: 0;
     max-height: 72px;
     overflow-y: auto;
+}
+
+/* 课表头部工具行：周次定位居左，操作区（导出等）居右 */
+.ca-beta-page .tt-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 2px 0 10px;
+}
+
+.ca-beta-page .tt-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.ca-beta-page .tt-export-msg {
+    font-size: 12px;
+    color: #2c624a;
+}
+
+.ca-beta-page .tt-export-btn {
+    background: #0f7a47;
+    color: #ffffff;
+    border-color: #0f7a47;
+    font-weight: 600;
+}
+
+.ca-beta-page .tt-export-btn:hover {
+    background: #0c6a3e;
+    color: #ffffff;
 }
 
 .ca-beta-page .tt-week-chip {
@@ -654,6 +677,11 @@
     margin: 6px 0 8px;
 }
 
+/* 班级课表调用：侧栏内班级检索框（占满卡片宽度，建议框向下展开） */
+.ca-beta-page .class-call-search {
+    width: 100%;
+}
+
 .ca-beta-page .pool-btn {
     border: 1px solid rgba(15, 122, 71, 0.35);
     border-radius: 999px;
@@ -684,6 +712,129 @@
 
 .ca-beta-page .plan-generate-btn:hover {
     background: #0c6a3e;
+}
+
+/* ========== 方案生成面板：偏好集中区 + 主操作按钮（UI 重构） ========== */
+
+/* 偏好设置分组框：收纳校区/时间段/重置，避免偏好按钮分散重复 */
+.ca-beta-page .plan-prefs {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background: rgba(15, 122, 71, 0.05);
+    border: 1px dashed rgba(15, 122, 71, 0.3);
+    border-radius: 10px;
+}
+
+.ca-beta-page .plan-prefs-caption {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2c624a;
+}
+
+.ca-beta-page .plan-pref-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+
+.ca-beta-page .plan-pref-label {
+    min-width: 70px;
+    font-weight: 600;
+    color: #1d3a2d;
+}
+
+/* 校区偏好分段选择（直接设定，替代循环按钮，避免歧义） */
+.ca-beta-page .plan-seg {
+    display: inline-flex;
+    border: 1px solid rgba(15, 122, 71, 0.35);
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.ca-beta-page .plan-seg-btn {
+    border: 0;
+    background: transparent;
+    color: #174a34;
+    font-size: 12px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.ca-beta-page .plan-seg-btn + .plan-seg-btn {
+    border-left: 1px solid rgba(15, 122, 71, 0.2);
+}
+
+.ca-beta-page .plan-seg-btn:hover {
+    background: rgba(15, 122, 71, 0.1);
+}
+
+.ca-beta-page .plan-seg-btn.is-active {
+    background: #0f7a47;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* 重置偏好：轻量文字操作 */
+.ca-beta-page .plan-pref-reset {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: #9e6a1e;
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.ca-beta-page .plan-pref-reset:hover {
+    color: #7a520f;
+}
+
+/* 偏好行下方引导文案（编辑中高亮为红色提示） */
+.ca-beta-page .plan-pref-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted, #888);
+    line-height: 1.5;
+}
+
+.ca-beta-page .plan-pref-hint.is-editing {
+    color: #a02020;
+    font-weight: 600;
+}
+
+/* 主操作按钮：生成方案（全宽、渐变高亮，明确主次） */
+.ca-beta-page .plan-run-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #12915a 0%, #0f7a47 55%, #0a5c36 100%);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(15, 122, 71, 0.3);
+    transition: box-shadow 0.2s ease, transform 0.1s ease, filter 0.2s ease;
+}
+
+.ca-beta-page .plan-run-btn:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 8px 18px rgba(15, 122, 71, 0.38);
+}
+
+.ca-beta-page .plan-run-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 4px 10px rgba(15, 122, 71, 0.3);
 }
 
 .ca-beta-page .plan-hint {
@@ -918,16 +1069,206 @@
     line-height: 1.5;
 }
 
-/* 复制到方案排课结果提示条（全局，模拟原站 toast） */
-.ca-beta-page .copy-hint-banner {
-    margin: 10px auto 0;
-    max-width: 1080px;
+/* ================================================================
+   交互式引导教程（SpotlightGuide，portal 至 body，全局类名）
+   ================================================================ */
+
+.spotlight-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+}
+
+/* 压暗遮罩条：目标四周暗化，目标区留空可交互 */
+.spotlight-strip {
+    position: fixed;
+    background: rgba(13, 34, 24, 0.45);
+    z-index: 5001;
+}
+
+.spotlight-strip.spotlight-full {
+    inset: 0;
+    width: auto;
+    height: auto;
+}
+
+/* 高亮描边框 */
+.spotlight-ring {
+    position: fixed;
+    z-index: 5002;
+    border: 2px solid #1dbd70;
+    border-radius: 10px;
+    box-shadow: 0 0 0 4px rgba(29, 189, 112, 0.25), 0 0 24px rgba(15, 122, 71, 0.35);
+    pointer-events: none;
+    transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+/* 底部引导面板 */
+.spotlight-panel {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    width: min(620px, calc(100vw - 32px));
+    z-index: 5010;
+    background: #ffffff;
+    border: 1px solid rgba(15, 122, 71, 0.35);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px rgba(9, 53, 38, 0.32);
+    padding: 16px 18px 14px;
+    animation: spotlight-panel-in 0.25s ease;
+}
+
+@keyframes spotlight-panel-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 14px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.spotlight-progress {
+    height: 4px;
+    border-radius: 2px;
+    background: #e2efe7;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.spotlight-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #17a25f, #0f7a47);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.spotlight-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.spotlight-step-count {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2c624a;
+}
+
+.spotlight-skip {
+    border: 0;
+    background: transparent;
+    color: #8a9a90;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.spotlight-skip:hover {
+    color: #0f5132;
+}
+
+.spotlight-title {
+    font-size: 17px;
+    color: #17462f;
+    margin: 0 0 6px;
+}
+
+.spotlight-body {
+    margin: 0 0 10px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #214435;
+}
+
+.spotlight-demo-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
     border: 1px solid rgba(15, 122, 71, 0.4);
     border-radius: 10px;
-    background: rgba(232, 247, 237, 0.95);
+    background: linear-gradient(135deg, #12915a, #0f7a47);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 9px 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(15, 122, 71, 0.25);
+    transition: filter 0.2s ease, transform 0.1s ease;
+}
+
+.spotlight-demo-btn:hover {
+    filter: brightness(1.06);
+}
+
+.spotlight-demo-btn:active {
+    transform: translateY(1px);
+}
+
+.spotlight-demo-msg {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f7a47;
+    background: rgba(15, 122, 71, 0.08);
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+.spotlight-nav {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.spotlight-btn {
+    border: 1px solid rgba(15, 122, 71, 0.3);
+    border-radius: 999px;
+    background: #ffffff;
     color: #174a34;
     font-size: 13px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.spotlight-btn.is-primary {
+    background: #0f7a47;
+    border-color: #0f7a47;
+    color: #ffffff;
     font-weight: 700;
-    padding: 8px 14px;
-    text-align: center;
+}
+
+.spotlight-btn.is-primary:hover {
+    background: #0c6a3e;
+}
+
+.spotlight-btn.is-ghost:hover:not(:disabled) {
+    background: rgba(15, 122, 71, 0.1);
+}
+
+.spotlight-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* 引导面板内的 AI 生成声明水印 */
+.spotlight-watermark {
+    position: absolute;
+    left: 18px;
+    bottom: 12px;
+    font-size: 11px;
+    color: #7c9386;
+    letter-spacing: 0.3px;
+    opacity: 0.75;
+    pointer-events: none;
+    user-select: none;
+}
+
+.spotlight-panel .spotlight-nav {
+    padding-left: 140px;
 }

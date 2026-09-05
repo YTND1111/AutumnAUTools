@@ -3,15 +3,20 @@ import type { PlanGenerator } from "../hooks/usePlanGenerator";
 import { CAMPUS_PREF_TEXT } from "../services/planGenerator";
 
 /**
- * PlanGeneratorPanel —— 方案生成面板（工具栏 + 方案候选 pills）。
+ * PlanGeneratorPanel —— 方案生成面板（偏好设置 + 生成主操作 + 方案候选 pills）。
  *
  * 对齐原站 PoolToolbar（plan 模式）+ PlanCandidateArea：
- * - 工具栏：校区偏好循环 / 时间段偏好编辑开关 / 重置偏好 / 生成方案；
- * - 编辑模式开启时点击「生成方案」给出提示（原站 toast 文案）；
+ * - 「偏好设置」集中收纳（UI 重构：此前校区偏好与用户设置卡片重复、偏好按钮分散）：
+ *   校区偏好采用分段按钮直接设定；时间段偏好为阻塞时段编辑开关（开启后点击
+ *   课表格子/星期/节次标记不可用）；重置偏好为小组内轻量操作；
+ * - 「生成方案」为全宽主操作大按钮（编辑模式下点击给出原站 toast 提示）；
  * - 候选区：无冲突方案 pills + 冲突方案 pills（红色），点击切换激活方案，
  *   网格随即显示对应方案（activePlanId 经 PlanProvider 持久化）；
  * - 校区偏好复用设置层 settings.campusPreference（不再单设状态）。
  */
+
+const CAMPUS_VALUES = ["none", "east", "west"] as const;
+type CampusPref = (typeof CAMPUS_VALUES)[number];
 
 export default function PlanGeneratorPanel({
   generator,
@@ -19,14 +24,14 @@ export default function PlanGeneratorPanel({
   onTogglePrefEditing,
   onResetPreferences,
   campusPreference,
-  onCycleCampus,
+  onSetCampus,
 }: {
   generator: PlanGenerator;
   prefEditing: boolean;
   onTogglePrefEditing: () => void;
   onResetPreferences: () => void;
-  campusPreference: "none" | "east" | "west";
-  onCycleCampus: () => void;
+  campusPreference: CampusPref;
+  onSetCampus: (value: CampusPref) => void;
 }) {
   const { plans, conflicts, activePlanId, hasGenerated, errorText, generate, setActivePlan } = generator;
   const [hint, setHint] = useState("");
@@ -55,29 +60,57 @@ export default function PlanGeneratorPanel({
             ? errorText
               ? "生成失败"
               : `${plans.length} 套无冲突 · ${conflicts.length} 套冲突`
-            : "候选池 + 校区偏好/阻塞时段 → 多套方案"}
+            : "候选池 + 偏好设置 → 自动生成多套方案"}
         </span>
       </h2>
 
-      <div className="plan-toolbar">
-        <button type="button" className="pool-btn" onClick={onCycleCampus}>
-          校区偏好：{CAMPUS_PREF_TEXT[campusPreference]}
-        </button>
-        <button
-          type="button"
-          className={`pool-btn pool-btn-wide${prefEditing ? " is-active" : ""}`}
-          aria-pressed={prefEditing}
-          onClick={onTogglePrefEditing}
-        >
-          {prefEditing ? "保存" : "时间段偏好"}
-        </button>
-        <button type="button" className="pool-btn" onClick={onResetPreferences}>
-          重置偏好
-        </button>
-        <button type="button" className="pool-btn plan-generate-btn" onClick={handleGenerate}>
-          生成方案
-        </button>
+      {/* 偏好设置：集中收纳校区/时间段/重置，避免偏好按钮分散、重复 */}
+      <div className="plan-prefs">
+        <span className="plan-prefs-caption">偏好设置</span>
+
+        <div className="plan-pref-row">
+          <span className="plan-pref-label">校区偏好</span>
+          <div className="plan-seg" role="group" aria-label="校区偏好">
+            {CAMPUS_VALUES.map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={`plan-seg-btn${campusPreference === value ? " is-active" : ""}`}
+                aria-pressed={campusPreference === value}
+                onClick={() => onSetCampus(value)}
+              >
+                {CAMPUS_PREF_TEXT[value]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="plan-pref-row">
+          <span className="plan-pref-label">时间段偏好</span>
+          <button
+            type="button"
+            className={`pool-btn${prefEditing ? " is-active" : ""}`}
+            aria-pressed={prefEditing}
+            onClick={onTogglePrefEditing}
+          >
+            {prefEditing ? "完成设置" : "设置阻塞时段"}
+          </button>
+          <button type="button" className="plan-pref-reset" onClick={onResetPreferences}>
+            重置偏好
+          </button>
+        </div>
+
+        <p className={`plan-pref-hint${prefEditing ? " is-editing" : ""}`}>
+          {prefEditing
+            ? "编辑中：点击课表中的格子、星期或节次即可设为不可用，点「完成设置」结束"
+            : "可先设置时间段偏好排除不想上课的时间，方案生成时会自动避让"}
+        </p>
       </div>
+
+      {/* 主操作：生成方案（大而显眼） */}
+      <button type="button" className="plan-run-btn" onClick={handleGenerate}>
+        生成方案
+      </button>
 
       {hint && <p className="plan-hint">{hint}</p>}
 

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { CourseRecord } from "../services/courseData";
-import { splitClasses } from "../services/courseData";
+import { NON_CLASS_NAME, splitClasses } from "../services/courseData";
 import { buildConflictMap, extractMaxWeekFromCourses, formatConflictMessage, parseCourseSchedule } from "../services/scheduleParse";
 import type { ScheduleEntry } from "../services/scheduleParse";
 import type { PlanCourse } from "../services/planGenerator";
@@ -10,20 +10,18 @@ import type { PoolOption } from "./usePlanPool";
 import { toPoolOption } from "./usePlanPool";
 
 /**
- * useClassGroups —— 班级课表组的领域逻辑 Hook（class 模式池 + plan 模式课程组）。
+ * useClassGroups —— 「班级课表调用」子功能区的领域逻辑 Hook。
  *
- * 忠实移植 js/CourseArrangement.js 的班级组语义：
- * - 班级组课程列表不持久化，恢复时按 className 从课程数据重建
- *   （courseMatchesClass：上课班级包含班级名，按 poolKey 去重；
- *   学期切换后无匹配课程的组自动丢弃）；
- * - class 模式：检索选中即整班激活；单门课程点击排除/恢复（并自动激活整组）；
- *   一键清除 / 全选；网格显示激活组减去排除项；
- * - plan 模式：课程组作为「固定占用」参与网格显示与方案生成（fixedCourses）；
- * - 复制到方案排课：激活的 class 组连同排除状态深复制到 plan 组并激活；
+ * 班级课表调用是自助方案排课内的子功能：检索班级后整班调用其课表，
+ * 该班课程**默认即参与排课**（对应原「复制到方案排课」行为，无需单独复制）：
+ * - 激活组的非排除课程（fixedCourses）显示在课表网格，并作为固定占用
+ *   参与方案生成避让（usePlanGenerator 的 fixedCourses 入参）；
+ * - 单门课程可排除/恢复（自动激活整组）；「取消整班」使整组退出网格；
+ *   全选 / 一键清除；
+ * - 组课程列表不持久化，恢复时按 className 从课程数据重建
+ *   （courseMatchesClass + poolKey 去重；学期切换后无匹配课程的组自动丢弃）；
+ * - 组内冲突红色标记（激活组非排除课程之间）；
  * - 全部状态经 PlanProvider 持久化。
- *
- * 与原站的差异：plan 组卡片的冲突信息仅在组内课程间计算
- * （原站还计入当前方案课程——该信息已由网格的冲突高亮与冲突面板覆盖）。
  */
 
 export interface ClassGroupView {
@@ -38,27 +36,19 @@ export interface ClassGroupView {
 
 export interface ClassGroups {
   ready: boolean;
-  classModeGroups: ClassGroupView[];
-  planGroups: ClassGroupView[];
-  /** class 模式网格显示课程（激活组 − 排除项，含解析好的课表条目） */
-  classModeDisplayCourses: PlanCourse[];
-  /** plan 模式固定占用课程（激活 plan 组 − 排除项；网格显示 + 方案生成避让） */
-  planGroupCourses: PlanCourse[];
-  /** groupKey → 冲突文案（无冲突不收录） */
-  classModeConflicts: Map<string, string>;
-  planGroupConflicts: Map<string, string>;
-  /** class 模式：检索选中班级（新增即整班激活） */
-  ingestClassGroup: (className: string) => void;
-  toggleClassModeGroup: (groupKey: string) => void;
-  toggleClassModeCourse: (groupKey: string, poolKey: string) => void;
-  removeClassModeGroup: (groupKey: string) => void;
-  clearClassModeGroups: () => void;
-  selectAllClassModeGroups: () => void;
-  togglePlanGroup: (groupKey: string) => void;
-  togglePlanGroupCourse: (groupKey: string, poolKey: string) => void;
-  removePlanGroup: (groupKey: string) => void;
-  /** 复制激活的 class 组到 plan 组（含排除状态），返回复制数量 */
-  copyClassGroupsToPlan: () => { groups: number; courses: number };
+  /** 班级课表调用组（active = 整班固定占用参与排课） */
+  groups: ClassGroupView[];
+  /** groupKey → 冲突文案（组内课程间，无冲突不收录） */
+  conflicts: Map<string, string>;
+  /** 激活组 − 排除项的课程（课表网格显示 + 方案生成固定占用） */
+  fixedCourses: PlanCourse[];
+  /** 班级检索选中：整班调用并默认激活参与排课（已存在则仅重新激活） */
+  addClass: (className: string) => void;
+  toggleActive: (groupKey: string) => void;
+  toggleCourse: (groupKey: string, poolKey: string) => void;
+  removeGroup: (groupKey: string) => void;
+  clearAll: () => void;
+  selectAll: () => void;
 }
 
 /** 与原站 getClassGroupKey 一致 */
@@ -96,22 +86,20 @@ export function useClassGroups(courses: CourseRecord[]): ClassGroups {
   // 组课程列表的条目解析缓存（组课程未必在任何卡片里，独立缓存）
   const entriesCache = useMemo(() => {
     const cache = new Map<string, ScheduleEntry[]>();
-    const collect = (groups: ClassGroupState[]) => {
-      groups.forEach((group) => {
-        buildGroupOptions(group.className, courses).forEach((option) => {
-          if (!cache.has(option.poolKey)) {
-            cache.set(option.poolKey, parseCourseSchedule(option.timeText, option.weekText, maxWeek));
-          }
-        });
+    planState.classGroups.forEach((group) => {
+      buildGroupOptions(group.className, courses).forEach((option) => {
+        if (!cache.has(option.poolKey)) {
+          cache.set(option.poolKey, parseCourseSchedule(option.timeText, option.weekText, maxWeek));
+        }
       });
-    };
-    collect(planState.classModeGroups);
-    collect(planState.planClassGroups);
+    });
     return cache;
-  }, [planState.classModeGroups, planState.planClassGroups, courses, maxWeek]);
+  }, [planState.classGroups, courses, maxWeek]);
 
   const hydrate = useMemo(() => {
     return (saved: ClassGroupState): ClassGroupView | null => {
+      // “临班”等非真实班级不可调用（历史遗留的旧组在此自动丢弃）
+      if (saved.className === NON_CLASS_NAME) return null;
       const options = buildGroupOptions(saved.className, courses);
       if (!options.length) return null; // 学期切换后无匹配课程 → 丢弃（与原站一致）
       const excluded = new Set(saved.excludedPoolKeys);
@@ -126,20 +114,12 @@ export function useClassGroups(courses: CourseRecord[]): ClassGroups {
     };
   }, [courses]);
 
-  const classModeGroups = useMemo(
+  const groups = useMemo(
     () =>
-      planState.classModeGroups
+      planState.classGroups
         .map(hydrate)
         .filter((group): group is ClassGroupView => group !== null),
-    [planState.classModeGroups, hydrate]
-  );
-
-  const planGroups = useMemo(
-    () =>
-      planState.planClassGroups
-        .map(hydrate)
-        .filter((group): group is ClassGroupView => group !== null),
-    [planState.planClassGroups, hydrate]
+    [planState.classGroups, hydrate]
   );
 
   const toDisplayCourses = useMemo(() => {
@@ -164,16 +144,9 @@ export function useClassGroups(courses: CourseRecord[]): ClassGroups {
     };
   }, [entriesCache]);
 
-  const classModeDisplayCourses = useMemo(
-    () => toDisplayCourses(classModeGroups),
-    [classModeGroups, toDisplayCourses]
-  );
-  const planGroupCourses = useMemo(
-    () => toDisplayCourses(planGroups),
-    [planGroups, toDisplayCourses]
-  );
+  const fixedCourses = useMemo(() => toDisplayCourses(groups), [groups, toDisplayCourses]);
 
-  // 组冲突：对全部显示课程做冲突检测后按组聚合（对齐原站 collectConflictTargetsForClassMode）
+  // 组冲突：对全部固定占用课程做冲突检测后按组聚合
   const collectConflicts = useMemo(() => {
     return (groups: ClassGroupView[], displayCourses: PlanCourse[]): Map<string, string> => {
       const conflictMap = buildConflictMap(displayCourses.filter((course) => course.entries.length));
@@ -191,41 +164,37 @@ export function useClassGroups(courses: CourseRecord[]): ClassGroups {
     };
   }, []);
 
-  const classModeConflicts = useMemo(
-    () => collectConflicts(classModeGroups, classModeDisplayCourses),
-    [classModeGroups, classModeDisplayCourses, collectConflicts]
-  );
-  const planGroupConflicts = useMemo(
-    () => collectConflicts(planGroups, planGroupCourses),
-    [planGroups, planGroupCourses, collectConflicts]
+  const conflicts = useMemo(
+    () => collectConflicts(groups, fixedCourses),
+    [groups, fixedCourses, collectConflicts]
   );
 
-  // ── class 模式操作 ──
+  // ── 班级课表调用操作（均落在 planState.classGroups 上） ──
 
-  const ingestClassGroup: ClassGroups["ingestClassGroup"] = (className) => {
+  const addClass: ClassGroups["addClass"] = (className) => {
     const name = className.trim();
-    if (!name) return;
+    if (!name || name === NON_CLASS_NAME) return; // “临班”等非真实班级不可整班调用
     updatePlanState((prev) => {
-      const existing = prev.classModeGroups.find((group) => group.className === name);
+      const existing = prev.classGroups.find((group) => group.className === name);
       if (existing) {
         return {
           ...prev,
-          classModeGroups: prev.classModeGroups.map((group) =>
+          classGroups: prev.classGroups.map((group) =>
             group.className === name ? { ...group, active: true } : group
           ),
         };
       }
       return {
         ...prev,
-        classModeGroups: [...prev.classModeGroups, { className: name, active: true, excludedPoolKeys: [] }],
+        classGroups: [...prev.classGroups, { className: name, active: true, excludedPoolKeys: [] }],
       };
     });
   };
 
-  const toggleClassModeGroup: ClassGroups["toggleClassModeGroup"] = (groupKey) => {
+  const toggleActive: ClassGroups["toggleActive"] = (groupKey) => {
     updatePlanState((prev) => ({
       ...prev,
-      classModeGroups: prev.classModeGroups.map((group) =>
+      classGroups: prev.classGroups.map((group) =>
         getClassGroupKey(group.className) === groupKey ? { ...group, active: !group.active } : group
       ),
     }));
@@ -245,100 +214,41 @@ export function useClassGroups(courses: CourseRecord[]): ClassGroups {
       return { ...group, active: true, excludedPoolKeys: excluded };
     });
 
-  const toggleClassModeCourse: ClassGroups["toggleClassModeCourse"] = (groupKey, poolKey) => {
+  const toggleCourse: ClassGroups["toggleCourse"] = (groupKey, poolKey) => {
     updatePlanState((prev) => ({
       ...prev,
-      classModeGroups: toggleCourseExcluded(prev.classModeGroups, groupKey, poolKey),
+      classGroups: toggleCourseExcluded(prev.classGroups, groupKey, poolKey),
     }));
   };
 
-  const removeClassModeGroup: ClassGroups["removeClassModeGroup"] = (groupKey) => {
+  const removeGroup: ClassGroups["removeGroup"] = (groupKey) => {
     updatePlanState((prev) => ({
       ...prev,
-      classModeGroups: prev.classModeGroups.filter((group) => getClassGroupKey(group.className) !== groupKey),
+      classGroups: prev.classGroups.filter((group) => getClassGroupKey(group.className) !== groupKey),
     }));
   };
 
-  const clearClassModeGroups: ClassGroups["clearClassModeGroups"] = () => {
-    updatePlanState((prev) => ({ ...prev, classModeGroups: [] }));
+  const clearAll: ClassGroups["clearAll"] = () => {
+    updatePlanState((prev) => ({ ...prev, classGroups: [] }));
   };
 
-  const selectAllClassModeGroups: ClassGroups["selectAllClassModeGroups"] = () => {
+  const selectAll: ClassGroups["selectAll"] = () => {
     updatePlanState((prev) => ({
       ...prev,
-      classModeGroups: prev.classModeGroups.map((group) => ({ ...group, active: true })),
+      classGroups: prev.classGroups.map((group) => ({ ...group, active: true })),
     }));
-  };
-
-  // ── plan 模式操作 ──
-
-  const togglePlanGroup: ClassGroups["togglePlanGroup"] = (groupKey) => {
-    updatePlanState((prev) => ({
-      ...prev,
-      planClassGroups: prev.planClassGroups.map((group) =>
-        getClassGroupKey(group.className) === groupKey ? { ...group, active: !group.active } : group
-      ),
-    }));
-  };
-
-  const togglePlanGroupCourse: ClassGroups["togglePlanGroupCourse"] = (groupKey, poolKey) => {
-    updatePlanState((prev) => ({
-      ...prev,
-      planClassGroups: toggleCourseExcluded(prev.planClassGroups, groupKey, poolKey),
-    }));
-  };
-
-  const removePlanGroup: ClassGroups["removePlanGroup"] = (groupKey) => {
-    updatePlanState((prev) => ({
-      ...prev,
-      planClassGroups: prev.planClassGroups.filter((group) => getClassGroupKey(group.className) !== groupKey),
-    }));
-  };
-
-  const copyClassGroupsToPlan: ClassGroups["copyClassGroupsToPlan"] = () => {
-    let copiedGroupCount = 0;
-    let copiedCourseCount = 0;
-
-    updatePlanState((prev) => {
-      const activeGroups = classModeGroups.filter((group) => group.active);
-      copiedGroupCount = activeGroups.length;
-      copiedCourseCount = activeGroups.reduce((sum, group) => sum + group.enabledCount, 0);
-      if (!activeGroups.length) return prev;
-
-      const nextPlanGroups = [...prev.planClassGroups];
-      activeGroups.forEach((group) => {
-        const entry: ClassGroupState = {
-          className: group.className,
-          active: true,
-          excludedPoolKeys: Array.from(group.excluded),
-        };
-        const index = nextPlanGroups.findIndex((item) => item.className === group.className);
-        if (index >= 0) nextPlanGroups[index] = entry;
-        else nextPlanGroups.push(entry);
-      });
-      return { ...prev, planClassGroups: nextPlanGroups };
-    });
-
-    return { groups: copiedGroupCount, courses: copiedCourseCount };
   };
 
   return {
     ready,
-    classModeGroups,
-    planGroups,
-    classModeDisplayCourses,
-    planGroupCourses,
-    classModeConflicts,
-    planGroupConflicts,
-    ingestClassGroup,
-    toggleClassModeGroup,
-    toggleClassModeCourse,
-    removeClassModeGroup,
-    clearClassModeGroups,
-    selectAllClassModeGroups,
-    togglePlanGroup,
-    togglePlanGroupCourse,
-    removePlanGroup,
-    copyClassGroupsToPlan,
+    groups,
+    conflicts,
+    fixedCourses,
+    addClass,
+    toggleActive,
+    toggleCourse,
+    removeGroup,
+    clearAll,
+    selectAll,
   };
 }

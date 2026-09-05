@@ -42,9 +42,14 @@ export function SettingsContextProvider({ children }: { children: ReactNode }) {
     settingsProvider
       .load()
       .then((stored) => {
-        if (!cancelled) {
-          setSettings({ ...DEFAULT_SETTINGS, ...stored });
-        }
+        if (cancelled) return;
+        // 只合并当前版本已知的设置项，忽略旧版遗留字段（如已移除的排课模式）
+        const merged: UserSettings = { ...DEFAULT_SETTINGS };
+        (Object.keys(DEFAULT_SETTINGS) as (keyof UserSettings)[]).forEach((key) => {
+          const value = (stored as Partial<UserSettings>)[key];
+          if (value !== undefined) merged[key] = value;
+        });
+        setSettings(merged);
       })
       .catch((err) => {
         console.warn("[设置] 加载设置失败，使用默认值。", err);

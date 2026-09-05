@@ -36,10 +36,10 @@ export interface SavedPlanMeta {
   payload?: unknown;
 }
 
-/** 班级课表组（持久化部分；课程列表恢复时按 className 从课程数据重建，与原站一致） */
+/** 班级课表调用组（持久化部分；课程列表恢复时按 className 从课程数据重建，与原站一致） */
 export interface ClassGroupState {
   className: string;
-  /** 是否整班选中（参与网格显示；plan 模式下为方案生成的固定占用） */
+  /** 整班是否激活（激活后该班课程作为固定占用显示于课表并参与方案生成避让） */
   active: boolean;
   /** 被单独排除的课程 poolKey 列表 */
   excludedPoolKeys: string[];
@@ -63,10 +63,8 @@ export interface PlanState {
   blockedDays: number[];
   /** 阻塞的整行大节（0-5） */
   blockedPeriods: number[];
-  /** plan 模式：来自班级课表的课程组（复制自 class 模式，方案生成时视为固定占用） */
-  planClassGroups: ClassGroupState[];
-  /** class 模式：班级课表组池 */
-  classModeGroups: ClassGroupState[];
+  /** 班级课表调用组（整班调用默认参与排课：作为固定占用显示与方案生成避让） */
+  classGroups: ClassGroupState[];
 }
 
 export const PLAN_STATE_VERSION = 1 as const;
@@ -81,8 +79,7 @@ export const DEFAULT_PLAN_STATE: PlanState = {
   blockedCells: [],
   blockedDays: [],
   blockedPeriods: [],
-  planClassGroups: [],
-  classModeGroups: [],
+  classGroups: [],
 };
 
 /** 卡片唯一键（与原站 cardKey 规则一致，便于未来互通） */

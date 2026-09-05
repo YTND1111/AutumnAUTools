@@ -29,6 +29,8 @@ export interface PoolOption {
   weekText: string;
   classText: string;
   locationText: string;
+  /** 限选人数（通知单「限选人数」列，教学班粒度） */
+  limit: string;
 }
 
 export interface PoolCard {
@@ -81,6 +83,7 @@ export function toPoolOption(record: CourseRecord): PoolOption {
     weekText: String(record["上课周次"] ?? "").trim(),
     classText: String(record["上课班级"] ?? "").trim(),
     locationText: String(record["上课地点"] ?? "").trim(),
+    limit: String(record["限选人数"] ?? "").trim(),
   };
 }
 

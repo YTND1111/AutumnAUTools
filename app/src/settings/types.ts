@@ -8,13 +8,10 @@
  */
 
 export interface UserSettings {
-  /** 排课表工具：默认进入模式（plan=自助方案排课，class=班级课表调用） */
-  scheduleMode: "plan" | "class";
   /** 排课表工具：校区偏好（none=无，east=东校区，west=西校区） */
   campusPreference: "none" | "east" | "west";
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  scheduleMode: "plan",
   campusPreference: "none",
 };

@@ -12,7 +12,8 @@ import { isOptionEnabled } from "../hooks/usePlanPool";
  * - 全部状态经 usePlanPool → PlanProvider 持久化（当前 localStorage，后端就绪后按用户隔离）。
  *
  * 与原站的差异：UI 为原生 React 重排（非像素复刻，chips 替代 checkbox），语义保持一致；
- * 原站展开区无教学班列表，此处额外提供 option-list 便于直观看清筛选结果（置灰 = 被过滤）。
+ * 原站展开区无教学班列表，此处额外提供 option-list 便于直观看清筛选结果（置灰 = 被过滤）；
+ * 教学班行额外展示「限选人数」（通知单「限选人数」列，行内每班一个准确值）。
  */
 
 function FilterChips({
@@ -131,6 +132,7 @@ function PoolCardView({
                   <span className="option-seq">课序号 {option.课序号 || "—"}</span>
                   <span className="option-teacher">{option.teacher || "—"}</span>
                   <span className="option-campus">{option.campus || "—"}</span>
+                  <span className="option-limit">限选 {option.limit || "—"} 人</span>
                   <span className="option-time">{option.timeText || "时间待定"}</span>
                 </li>
               );
@@ -148,7 +150,7 @@ export default function CourseCardPool({ pool }: { pool: PlanPool }) {
       <h2 className="beta-card-title">
         候选课程卡片池
         <span className="beta-card-sub">
-          {pool.cards.length} 张卡片 · {pool.activeCount} 张参与排课 · PlanProvider 持久化（后端就绪后按用户隔离）
+          {pool.cards.length} 张卡片 · {pool.activeCount} 张参与排课 · 自动保存在本地浏览器
         </span>
       </h2>
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Timetable, TimetableBlock } from "../hooks/useTimetable";
 import { BIG_PERIOD_LABELS, WEEK_HEADERS } from "../services/scheduleParse";
 
@@ -71,6 +72,8 @@ export default function TimetableGrid({
   pref,
   summary,
   emptyHint,
+  actions,
+  id,
 }: {
   timetable: Timetable;
   pref?: GridPrefEditing;
@@ -78,6 +81,10 @@ export default function TimetableGrid({
   summary?: string;
   /** 覆盖默认空态提示（class 模式传入班级引导文案） */
   emptyHint?: string;
+  /** 头部右侧操作区（如「导出当前课表」按钮） */
+  actions?: ReactNode;
+  /** 根元素 id（供引导定位使用） */
+  id?: string;
 }) {
   const {
     maxWeek,
@@ -106,7 +113,7 @@ export default function TimetableGrid({
   });
 
   return (
-    <section className="surface-card beta-card">
+    <section id={id} className="surface-card beta-card">
       <h2 className="beta-card-title">
         课表网格
         <span className="beta-card-sub">
@@ -118,20 +125,23 @@ export default function TimetableGrid({
         </span>
       </h2>
 
-      {/* 周次定位（持久化，与原站 week-chip 一致） */}
-      <div className="tt-week-row" role="radiogroup" aria-label="周次定位">
-        {weekOptions.map((week) => (
-          <label key={week} className={`tt-week-chip${selectedWeek === week ? " is-on" : ""}`}>
-            <input
-              type="radio"
-              name="betaWeekLocator"
-              value={week}
-              checked={selectedWeek === week}
-              onChange={() => setSelectedWeek(week)}
-            />
-            <span>{week === "all" ? "全部" : `${week}周`}</span>
-          </label>
-        ))}
+      {/* 头部工具行：周次定位 + 右侧操作区（导出等） */}
+      <div className="tt-toolbar">
+        <div className="tt-week-row" role="radiogroup" aria-label="周次定位">
+          {weekOptions.map((week) => (
+            <label key={week} className={`tt-week-chip${selectedWeek === week ? " is-on" : ""}`}>
+              <input
+                type="radio"
+                name="betaWeekLocator"
+                value={week}
+                checked={selectedWeek === week}
+                onChange={() => setSelectedWeek(week)}
+              />
+              <span>{week === "all" ? "全部" : `${week}周`}</span>
+            </label>
+          ))}
+        </div>
+        {actions && <div className="tt-actions">{actions}</div>}
       </div>
 
       <div className={`tt-grid${pref?.editing ? " is-pref-editing" : ""}`}>

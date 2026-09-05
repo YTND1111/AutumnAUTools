@@ -1,8 +1,26 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { PlanState } from "./types";
+import type { ClassGroupState, PlanState } from "./types";
 import { DEFAULT_PLAN_STATE, PLAN_STATE_VERSION } from "./types";
 import { planProvider } from "./provider";
+
+/** 旧版数据迁移：合并历史 plan/class 双池为新的班级课表调用组（默认参与排课） */
+function mergeLegacyClassGroups(...lists: ClassGroupState[][]): ClassGroupState[] {
+  const byName = new Map<string, ClassGroupState>();
+  lists.flat().forEach((group) => {
+    const prev = byName.get(group.className);
+    if (!prev) {
+      byName.set(group.className, { ...group });
+      return;
+    }
+    byName.set(group.className, {
+      className: group.className,
+      active: prev.active || group.active,
+      excludedPoolKeys: Array.from(new Set([...prev.excludedPoolKeys, ...group.excludedPoolKeys])),
+    });
+  });
+  return Array.from(byName.values());
+}
 
 /**
  * 配课方案状态的 React 集成层（与 settings/SettingsContext 同构）。
@@ -40,13 +58,30 @@ export function PlansContextProvider({ children }: { children: ReactNode }) {
     planProvider
       .load()
       .then((stored) => {
-        if (!cancelled) {
-          setPlanState({
-            ...DEFAULT_PLAN_STATE,
-            ...stored,
-            version: PLAN_STATE_VERSION, // 版本字段始终以当前代码为准
-          });
-        }
+        if (cancelled) return;
+        // 旧版迁移：历史 plan/class 双池 → 新的班级课表调用组（classGroups）
+        const legacy = stored as Partial<PlanState> & {
+          planClassGroups?: ClassGroupState[];
+          classModeGroups?: ClassGroupState[];
+        };
+        const migratedLegacy = Array.isArray(legacy.classGroups)
+          ? undefined
+          : mergeLegacyClassGroups(legacy.planClassGroups ?? [], legacy.classModeGroups ?? []);
+        // 只合并当前版本已知的字段，忽略其他旧版遗留键
+        const storedAny = stored as Record<string, unknown>;
+        const merged: PlanState = { ...DEFAULT_PLAN_STATE };
+        (Object.keys(DEFAULT_PLAN_STATE) as (keyof PlanState)[]).forEach((key) => {
+          if (migratedLegacy && key === "classGroups") {
+            merged.classGroups = migratedLegacy;
+            return;
+          }
+          const value = storedAny[key];
+          if (value !== undefined) {
+            (merged as unknown as Record<string, unknown>)[key] = value;
+          }
+        });
+        merged.version = PLAN_STATE_VERSION; // 版本字段始终以当前代码为准
+        setPlanState(merged);
       })
       .catch((err) => {
         console.warn("[方案] 加载方案状态失败，使用默认值。", err);

@@ -3,14 +3,14 @@ import type { ReactNode } from "react";
 import type { ClassGroupView } from "../hooks/useClassGroups";
 
 /**
- * ClassGroupSection —— 班级课表组卡片列表（class 模式池与 plan 模式课程组共用）。
+ * ClassGroupSection —— 班级课表调用组卡片列表（自助方案排课内的子功能区）。
  *
  * 卡片语义对齐原站 class-group-card：
  * - 头部：标题 + 选中整班/取消整班 + 展开/收起 + 删除；
  * - meta：课程数 / 当前启用（= 总数 − 排除数）；
  * - 展开体：单门课程按钮，点击排除/恢复（is-off = 被排除或整组未激活）；
- * - 冲突时卡片显示红色冲突文案；
- * - class 模式额外提供工具栏（一键清除/全选/复制到方案排课）。
+ * - 冲突时卡片显示红色冲突文案（组内课程间）；
+ * - 工具栏（班级检索 + 全选/一键清除）由页面通过 toolbar 传入。
  */
 
 function ClassGroupCard({

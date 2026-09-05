@@ -43,6 +43,9 @@ export interface ClassCandidate {
   label: string;
 }
 
+/** 非真实班级的占位标签（如通识课对所有学生开放时的“临班”），不可作为班级课表调用目标 */
+export const NON_CLASS_NAME = "临班";
+
 /** 与原脚本一致：trim + 小写 */
 export function normalize(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
@@ -88,17 +91,20 @@ export function findClassTimetableCandidates(courses: CourseRecord[], rawQuery: 
   const query = normalize(rawQuery);
   const classNames = new Set<string>();
 
+  /** 仅收录真实班级名：过滤“临班”等非班级占位标签 */
+  const isRealClassName = (name: string) => name !== NON_CLASS_NAME;
+
   courses.forEach((course) => {
     const raw = String(course["上课班级"] ?? "").trim();
     if (!raw) return;
 
     splitClasses(raw).forEach((className) => {
-      if (normalize(className).includes(query)) {
+      if (isRealClassName(className) && normalize(className).includes(query)) {
         classNames.add(className);
       }
     });
 
-    if (normalize(raw).includes(query)) {
+    if (isRealClassName(raw) && normalize(raw).includes(query)) {
       classNames.add(raw);
     }
   });
