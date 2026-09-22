@@ -6,6 +6,7 @@ import CourseCardPool from "../components/CourseCardPool";
 import TimetableGrid from "../components/TimetableGrid";
 import PlanGeneratorPanel from "../components/PlanGeneratorPanel";
 import ClassGroupSection from "../components/ClassGroupSection";
+import ExternalLink from "../components/ExternalLink";
 import SpotlightGuide from "../components/SpotlightGuide";
 import type { GuideStep } from "../components/SpotlightGuide";
 import { useCourseData } from "../hooks/useCourseData";
@@ -18,7 +19,7 @@ import type { ClassGroups } from "../hooks/useClassGroups";
 import { usePlans } from "../plans/PlansContext";
 import { useSettings } from "../settings/SettingsContext";
 import { getCardKey } from "../plans/types";
-import { APP_VERSION_CA } from "../config";
+import { APP_VERSION_CA, CAU_COURSE_ASSISTANT_URL } from "../config";
 import type { CourseCandidate, CourseRecord } from "../services/courseData";
 import { findClassTimetableCandidates, findCourseCandidates, NON_CLASS_NAME, splitClasses } from "../services/courseData";
 import type { PlanCourse } from "../services/planGenerator";
@@ -29,7 +30,8 @@ import "./CaBetaPage.css";
  * CaBetaPage —— 排课表工具（原生 React 版，正式路由 /ca）。
  *
  * 页面为「自助方案排课」单视图（班级课表调用模式已移除，不再有模式切换）：
- * - 顶栏：课程检索（课程编号/名称），添加候选课程卡片；
+ * - 顶栏：课程检索（课程编号/名称），添加候选课程卡片；检索框下方为站外链接入口
+ *   （CAU 选课助手，第三方站点；点击时由全局 ExternalLinkGuard 弹出风险提醒）；
  * - 课表网格：6 大节 × 7 天，周次定位持久化；头部右侧提供「导出当前课表」(.txt)；
  *   显示源 = 激活方案课程 + 班级课表调用组的固定占用（未生成方案且无组时走过渡
  *   预览：每张卡片一个教学班、点击块循环切换，会话态）；冲突检测/高亮与原站一致；
@@ -54,6 +56,7 @@ const SIDEBAR_LINKS = [
   { to: "/", label: "本站首页" },
   { to: "/ca", label: "排课表工具" },
   { to: "/qbn", label: "题库" },
+  { to: "/resources", label: "学习资料" },
 ];
 
 /** 新手引导“已看过”标记（localStorage） */
@@ -428,6 +431,16 @@ export default function CaBetaPage() {
                 onPick={pickCourse}
               />
             </div>
+          </div>
+
+          {/* 站外链接入口：CAU 选课助手（第三方站点，点击时由全局 ExternalLinkGuard 弹出风险提醒） */}
+          <div className="beta-ext-row">
+            <span className="beta-ext-note" role="note">
+              外链提醒：右侧按钮指向外部网站，内容由@kaiyangfu提供
+            </span>
+            <ExternalLink href={CAU_COURSE_ASSISTANT_URL} className="beta-ext-btn">
+              CAU选课助手
+            </ExternalLink>
           </div>
         </div>
 

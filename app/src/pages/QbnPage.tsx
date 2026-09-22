@@ -19,6 +19,7 @@ const SIDEBAR_LINKS = [
   { to: "/", label: "本站首页" },
   { to: "/ca", label: "排课表工具" },
   { to: "/qbn", label: "题库" },
+  { to: "/resources", label: "学习资料" },
 ];
 
 export default function QbnPage() {
@@ -41,6 +42,9 @@ export default function QbnPage() {
               </div>
               <div className="nav-item">
                 <Link to="/qbn">题库</Link>
+              </div>
+              <div className="nav-item">
+                <Link to="/resources">学习资料</Link>
               </div>
               <div className="nav-item">联系作者</div>
             </div>

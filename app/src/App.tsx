@@ -5,6 +5,8 @@ import { LEGACY_PAGES } from "./legacy/pages";
 import HomePage from "./pages/HomePage";
 import QbnPage from "./pages/QbnPage";
 import CaBetaPage from "./pages/CaBetaPage";
+import ResourcesPage from "./pages/ResourcesPage";
+import ExternalLinkGuard from "./components/ExternalLinkGuard";
 import { SettingsContextProvider } from "./settings/SettingsContext";
 import { PlansContextProvider } from "./plans/PlansContext";
 
@@ -69,6 +71,8 @@ export default function App() {
   return (
     <HashRouter>
       <LegacyLinkInterceptor />
+      {/* 站外链接（非同域名）风险提醒：全局拦截外链点击并弹确认框（含 legacy 挂载页） */}
+      <ExternalLinkGuard />
       {/* 用户设置全局上下文（SettingsProvider 抽象：当前 localStorage，后端就绪后可换远程实现） */}
       <SettingsContextProvider>
         {/* 配课方案全局上下文（PlanProvider 抽象：预留用户维度，多用户方案上云） */}
@@ -83,6 +87,8 @@ export default function App() {
           {/* 遗留挂载回滚兜底（无入口，仅手动访问；稳定后可删除） */}
           <Route path="/ca-legacy" element={<LegacyPage {...LEGACY_PAGES.ca} />} />
           <Route path="/qbn" element={<QbnPage />} />
+          {/* 学习资料下载页（静态清单驱动，见 services/resources.ts 与 scripts/sync-resources.mjs） */}
+          <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/cn" element={<RedirectToStaticPage to="/cn.html" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

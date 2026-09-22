@@ -35,7 +35,7 @@ AutumnAUTools/
 ├── app/                    # React 应用（Vite + React 19 + TS，当前开发主线，详见下文「React 迁移」）
 │   ├── index.html          # Vite 入口 HTML（挂载 #root）
 │   ├── src/                # React 源码（pages/ components/ hooks/ services/ settings/ plans/ legacy/）
-│   ├── public/             # 静态资源副本（css/js/data/src/py/questionBank/cn.html/legacy/*.html）
+│   ├── public/             # 静态资源副本（css/js/data/src/py/questionBank/resources/cn.html/legacy/*.html）
 │   └── package.json        # dev / build / preview 脚本
 ├── legacy/                 # 原纯静态站点归档（不再开发，仅查阅与回滚参考）
 │   ├── index.html          # 旧版首页：悬浮球 + 侧边栏导航
@@ -57,7 +57,7 @@ AutumnAUTools/
 
 ### 迁移架构
 
-- **路由外壳**：`app/src/App.tsx` 使用 HashRouter（`/` 首页、`/ca` 排课表、`/qbn` 题库、`/cn` 整页跳转静态 `cn.html`），并以**捕获阶段**全局点击拦截把遗留 HTML 中的 `/index.html`、`/ca.html`、`/qbn.html`（含笔误 `/qn.html`）绝对链接映射为路由跳转（侧边栏在冒泡阶段有 `stopPropagation`，故必须捕获阶段）。
+- **路由外壳**：`app/src/App.tsx` 使用 HashRouter（`/` 首页、`/ca` 排课表、`/qbn` 题库、`/resources` 学习资料、`/cn` 整页跳转静态 `cn.html`），并以**捕获阶段**全局点击拦截把遗留 HTML 中的 `/index.html`、`/ca.html`、`/qbn.html`（含笔误 `/qn.html`）绝对链接映射为路由跳转（侧边栏在冒泡阶段有 `stopPropagation`，故必须捕获阶段）。
 - **遗留页面挂载**：`app/src/legacy/LegacyPage.tsx` 按 `app/src/legacy/pages.ts` 清单工作——fetch `public/legacy/*.html`（页面 `<style>` 块 + 去除 `<script>` 的 body 内容）注入容器，再按原顺序执行原始脚本。
 - **脚本执行机制**：`version-*.js` 全局常量脚本以经典 `<script>` 方式**会话内仅加载一次**（顶层 `const APP_VERSION_*` 全局词法绑定对后续所有脚本可见，重复加载会报重复声明错误）；其余页面脚本逐个 fetch 源码后在**独立函数作用域**（`new Function`）内执行，避免 SPA 重复挂载时顶层 `const`/`let` 冲突。跨脚本共享仅依赖 `window`（如 `window.createFloatingWindow`），不受影响。
 - **静态资源**：`css/`、`js/`、`data/`、`src/py/`（课程 JSON/XLS/PDF）、`questionBank/`、`cn.html`、`floatingball-demo.html` 原样复制到 `app/public/`，浏览器 fetch 的相对路径全部不变。`cn.html` 及题库答题页保持独立静态页（CDN 引入 Univer Sheets），由悬浮窗 iframe 或 `/cn` 路由整页打开，未做 React 化。
@@ -127,6 +127,27 @@ React 迁移后，旧站 `version-*.json` + bump 脚本的版本管理体系**�
 - 已完成：**班级课表调用（子功能区）**——`app/src/hooks/useClassGroups.ts` + `app/src/components/ClassGroupSection.tsx`。语义：班级检索选中即整班调用，**默认参与排课**（即原「复制到方案排课」行为内建，无需单独复制或切换模式）——激活组的非排除课程作为固定占用显示于课表并参与方案生成避让；组课程列表不持久化、按班级名从课程数据重建（`courseMatchesClass` 忠实移植，poolKey 去重，学期切换后无匹配自动丢弃）；单门课程排除/恢复（自动激活整组）、取消整班、全选/一键清除、组冲突红色标记（仅组内计算；方案课程冲突已由网格高亮覆盖）。
 - UI 细节：检索框 **hover 高亮**（绿色描边 + 光晕）；课表头部工具行右侧提供「**导出当前课表 (.txt)**」按钮（`app/src/services/timetableExport.ts`，格式/去重/文件名与旧站 `exportTimetable()` 一致，导出源 = 当前网格显示课程）。
 - 已完成：**交互式新手引导**——`app/src/components/SpotlightGuide.tsx`（portal 渲染：目标四周压暗 + 高亮框 + 底部引导面板，目标区保持可交互）。步骤流程：基础介绍 → 课程检索与卡片定制 → 班级课表调用与定制 → 偏好设置 → 课表导出；**首次访问自动弹出**（`localStorage` 键 `autumn-ca-guide-seen` 记录已看过），「用户设置」卡片提供「查看新手引导」随时重开；每步可点「自动演示」（自动添加示例课程/班级〔示例班级固定为「试验261」〕、示范校区与阻塞时段、真实导出 txt），引导结束时自动撤销全部演示数据，不影响真实排课。引导面板与「查看新手引导」入口旁均带「引导内容由 AI 生成」声明水印。
+- **站外链接入口**：顶栏检索框下方 `.beta-ext-row` 提供「CAU选课助手」外链按钮（`ExternalLink` 渲染，地址常量见 `config.ts` 的 `CAU_COURSE_ASSISTANT_URL`），按钮左侧为常驻外链提醒文案；点击时由全局 `ExternalLinkGuard` 弹出风险提醒（见下文「站外链接与外链风险提醒」）。
+
+### 学习资料下载页（`/resources`，纯静态）
+
+- **页面**：`app/src/pages/ResourcesPage.tsx` + `ResourcesPage.css`，路由 `/resources`；悬浮球侧边栏（各页 `SIDEBAR_LINKS`）与首页/题库页顶部导航均已加入「学习资料」入口。
+- **数据 = manifest + files 双 JSON 合并**：
+  - `app/public/resources/manifest.json`：**人工维护**的清单（`groups` 按课程/学科分组；`items` 字段含 `id/name/description/type/file`，`file` 为站点根相对路径），其目录内 `README.txt` 有完整字段约定与上架步骤；
+  - `app/public/resources/files.json`：由 `app/scripts/sync-resources.mjs`（npm script `pnpm sync:resources`）扫描 resources 目录自动生成（真实大小 + 存在性校验），页面合并后展示真实文件大小；**条目文件在磁盘缺失时自动标记「文件缺失」并禁用下载**，防止 404 链接上架。
+- **页面能力**：分组折叠、全库搜索（课程/名称/描述/年份）、类型徽标（PDF/WORD/EXCEL/PPT/压缩包等，`services/resources.ts` 的 `TYPE_META`）、本机下载计数（localStorage 键 `autumn-res-dl:<id>`）、**PDF 在线预览**（iframe 弹层，原生渲染）。
+- **上架一份资料**：文件放入 `public/resources/`（建议按课程建子目录）→ `manifest.json` 登记分组/条目 → `pnpm sync:resources` 重新生成 files.json 并交叉校验（缺失引用告警、未登记文件提示）。
+- `resources/demo/` 为占位演示（最小 PDF + 说明 txt，`manifest.json` 的 `demo` 组），正式上架后删除对应组与文件夹。
+
+### 站外链接与外链风险提醒（全站）
+
+- **两个组件**：
+  - `app/src/components/ExternalLink.tsx`（+ `ExternalLink.css`）：站外链接的统一锚点组件——自动补 `target="_blank"` 与 `rel="noopener noreferrer nofollow"`，默认在文字后加「↗」标记（图标类外链传 `showIcon={false}`，仅包裹图片/多行内容时用）。组件本身**不做提醒**，只负责标记与加固；
+  - `app/src/components/ExternalLinkGuard.tsx`（+ `ExternalLinkGuard.css`）：挂载于 `App.tsx` 顶层的**全局外链风险提醒**——在 document 捕获阶段拦截所有 `<a href>` 点击，目标与当前站点**不同 host**（即非同域名外链）时先 `preventDefault`，弹出 `role="alertdialog"` 提醒框（醒目展示目标域名与完整地址 + 三条风险提示），用户点「我已知晓，继续访问」后才按原锚点语义跳转（原 `target="_blank"` → `window.open`，否则整页跳转），点「取消，留在本站」/Esc/点遮罩则原地不动。
+- **为什么用全局拦截而非逐个包组件**：外链散落在 React 页面与 legacy 挂载页（含 legacy HTML 里的普通 `<a>`），全局拦截一次覆盖，且同一链接不会弹两次框。**新增外链仍应使用 `ExternalLink`**（统一 rel/标记），地址常量登记在 `config.ts`。
+- **豁免规则**：同 host 站内链接、`#hash`、`mailto:`/`tel:` 等协议、带 `download` 的下载链接不拦截；按住 Ctrl/Cmd/Shift/Alt 或中键点击时放行浏览器默认行为（用户明确要求新标签页，与站内 `LegacyLinkInterceptor` 约定一致）；锚点加 `data-external-ignore` 表示已知可信外链，跳过提醒（白名单口子）。
+- **提醒强度**：默认每次点击都提醒；弹窗内勾选「本次会话不再提醒」后写 `sessionStorage` 键 `autumn-external-link-ack`，仅在当前标签页会话内静默放行，关闭标签页恢复提醒。
+- 已接入的外链：排课表页「CAU选课助手」按钮（`config.ts` 的 `CAU_COURSE_ASSISTANT_URL`，顶栏 `.beta-ext-row`，旁有常驻提醒文案）、首页「机考模拟」（vm.cau.edu.cn）、首页页脚 GitHub / Apache 链接、首页广告弹窗（jwzs.cau.edu.cn）。
 
 ## 构建与运行（原静态站点）
 
@@ -264,6 +285,7 @@ pip install xlrd
   - 排课表页三个搜索框的输入建议、选中课程后预览标签的更新；
   - `cn.html` 通知单课表页：表头是否显示筛选下拉按钮、多列筛选后行数是否正确、状态栏是否随选区变化；
   - `ca.html` 排课表页：添加方案卡片/班级课表并刷新后状态是否恢复、点击“校区偏好”按钮是否在“无/东校区/西校区”之间循环切换并重新生成方案、时间段偏好编辑模式下课表边框是否闪烁且 hover 为手型光标；
+  - 外链提醒：点排课表页「CAU选课助手」或首页「机考模拟」等非同域名外链应先弹风险提醒——「取消」不跳转、「我已知晓，继续访问」才按原语义（新窗口/整页）打开，勾选「本次会话不再提醒」后本次会话内不再弹窗；点站内链接与带 `download` 的下载链接不应弹窗；
   - 浏览器控制台是否有 `fetch` 或 JS 报错。
 
 ## 部署说明
@@ -279,6 +301,7 @@ pip install xlrd
 
 - 前端从相对路径 `fetch` JSON，应确保该 JSON 文件可被公开访问且不被注入恶意内容。
 - Python 脚本生成的 JSON 文件名来自 Excel 的 A2 单元格，脚本已做文件名安全化，但仍建议不要在不受信任的 Excel 文件上直接运行。
+- **站外链接**：全站非同域名外链点击时由 `ExternalLinkGuard` 弹出风险提醒，确认后才跳转（见「站外链接与外链风险提醒」）；外链统一使用 `ExternalLink` 渲染，自动带 `rel="noopener noreferrer nofollow"`，防止第三方页面通过 `window.opener` 反向控制本站。
 - 项目无认证、无授权、无敏感数据处理逻辑，部署时无需额外鉴权配置。
 
 ## 已知待办/扩展点

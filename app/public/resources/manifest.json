@@ -1,0 +1,28 @@
+{
+  "title": "学习资料",
+  "updatedAt": "2026-09-06",
+  "notice": "资料持续整理中：页面按课程分组，点击「下载」保存到本地，PDF 可先「预览」再下载。如需某门课程的往年试卷等资料，欢迎联系站长补充。",
+  "groups": [
+    {
+      "id": "demo",
+      "name": "示例资料（开发占位，可删除）",
+      "description": "用于演示「预览 / 下载 / 本机计数」，正式上架后请删除本组与 resources/demo 文件夹。",
+      "items": [
+        {
+          "id": "demo-pdf",
+          "name": "示例占位说明.pdf",
+          "description": "最小占位 PDF，用于演示在线预览功能（正文为英文占位文本）。",
+          "type": "pdf",
+          "file": "resources/demo/placeholder-demo.pdf"
+        },
+        {
+          "id": "demo-txt",
+          "name": "示例说明.txt",
+          "description": "占位文本，说明本页面资料如何维护上架。",
+          "type": "txt",
+          "file": "resources/demo/placeholder-demo.txt"
+        }
+      ]
+    }
+  ]
+}

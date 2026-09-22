@@ -1,0 +1,11 @@
+AutumnAUTools 学习资料占位示例
+===============================
+本目录为「学习资料」页面演示用示例资料：
+1) placeholder-demo.pdf - 最小 PDF，用于演示「在线预览」；
+2) placeholder-demo.txt - 本说明文件，用于演示「下载」。
+
+正式上架资料时：
+- 将文件放入 resources/ 下（建议按课程建子文件夹）；
+- 在 resources/manifest.json 中登记课程分组与条目（参照现有 demo 组）；
+- 运行 node scripts/sync-resources.mjs 自动生成 files.json 并校验缺失/未登记文件；
+- 删除本 demo 文件夹与 manifest.json 中的 demo 组。

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import FloatingChrome from "../components/FloatingChrome";
+import ExternalLink from "../components/ExternalLink";
 import FunTabs from "../components/FunTabs";
 import FeeCalendar from "../components/FeeCalendar";
 import AdPopup from "../components/AdPopup";
@@ -18,7 +19,9 @@ import "./HomePage.css";
  * - 窝囊费打表日历 → FeeCalendar 组件（useState 驱动，替代手动 innerHTML 重绘）；
  * - 资讯列表由静态重复 HTML 收敛为 NEWS_ITEMS 数据驱动渲染（三个独立 .news-list
  *   包装合并为单个列表，CSS 中间距保持原视觉效果）；
- * - 站内 .html 绝对链接 → <Link>；外部链接与 PDF 下载保持 <a>；
+ * - 站内 .html 绝对链接 → <Link>；外部链接 → <ExternalLink>（非同域名外链，
+ *   点击时由全局 ExternalLinkGuard 弹出风险提醒；图标类外链关闭「↗」标记），
+ *   PDF 下载保持 <a>；
  * - 不再加载 version-global.js（页面内 fetch 均走固定路径，无版本戳用途）。
  */
 
@@ -26,9 +29,11 @@ const SIDEBAR_LINKS = [
   { to: "/", label: "本站首页" },
   { to: "/ca", label: "排课表工具" },
   { to: "/qbn", label: "题库" },
+  { to: "/resources", label: "学习资料" },
 ];
 
 const NEWS_ITEMS = [
+  { title: "排课表工具v2.0.1新增外链入口与外链提醒", date: "2026-09-22" },
   { title: "秋功v2.0.0 React 重构上线", date: "2026-08-10" },
   { title: "排课表工具v2.0.0版本更新", date: "2026-08-10" },
   { title: "排课表工具v1.2.3版本更新", date: "2026-07-19" },
@@ -59,6 +64,9 @@ export default function HomePage() {
               </div>
               <div className="nav-item">
                 <Link to="/qbn">题库</Link>
+              </div>
+              <div className="nav-item">
+                <Link to="/resources">学习资料</Link>
               </div>
               <div className="nav-item">联系作者</div>
             </div>
@@ -114,10 +122,15 @@ export default function HomePage() {
                   <span className="dial-segment-title">本地刷题</span>
                   <span className="dial-segment-sub">C++ 在线判题</span>
                 </a>
-                <a href="http://vm.cau.edu.cn/s2025321070110/oj/index.jsp" className="dial-segment">
+                {/* 机考模拟为第三方外链（不同域名），点击前会弹出外链风险提醒 */}
+                <ExternalLink
+                  href="http://vm.cau.edu.cn/s2025321070110/oj/index.jsp"
+                  className="dial-segment"
+                  showIcon={false}
+                >
                   <span className="dial-segment-title">机考模拟</span>
                   <span className="dial-segment-sub">由@计算姬珂学家 提供</span>
-                </a>
+                </ExternalLink>
               </div>
               <a href="/src/py/中国农业大学本科生培养方案.pdf" download className="dial-btn">
                 培养方案（2023版）
@@ -168,8 +181,11 @@ export default function HomePage() {
           <div className="container">
             <p className="home-version">秋功 v{APP_VERSION_HOME}</p>
             <p>
-              <a href="https://github.com/YTND1111/AutumnAUTools">秋功</a>-本项目采用{" "}
-              <a href="http://www.apache.org/licenses/LICENSE-2.0">[Apache License 2.0](LICENSE) 开源许可证</a>
+              <ExternalLink href="https://github.com/YTND1111/AutumnAUTools">秋功</ExternalLink>
+              -本项目采用{" "}
+              <ExternalLink href="http://www.apache.org/licenses/LICENSE-2.0">
+                [Apache License 2.0](LICENSE) 开源许可证
+              </ExternalLink>
             </p>
           </div>
         </div>

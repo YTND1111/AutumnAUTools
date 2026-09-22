@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-09-07T13:50:29.783Z",
+  "files": [
+    {
+      "path": "resources/demo/placeholder-demo.pdf",
+      "name": "placeholder-demo.pdf",
+      "ext": "pdf",
+      "size": 761
+    },
+    {
+      "path": "resources/demo/placeholder-demo.txt",
+      "name": "placeholder-demo.txt",
+      "ext": "txt",
+      "size": 628
+    }
+  ]
+}

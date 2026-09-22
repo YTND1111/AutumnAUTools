@@ -12,7 +12,7 @@
 export const APP_VERSION_HOME = "2.0.0";
 
 /** 排课表工具版本号，展示于排课表页顶栏右上角 */
-export const APP_VERSION_CA = "2.0.0";
+export const APP_VERSION_CA = "2.0.1";
 
 /**
  * 课程数据 JSON 路径（public/src/py/ 下，与原静态站点保持一致）。
@@ -26,6 +26,19 @@ export const COURSE_DATA_PATH = "/src/py/中国农业大学2026-2027学年秋季
  */
 export const COURSE_DATA_VERSION = APP_VERSION_CA;
 
+/**
+ * 站外链接（非同域名外链）清单。
+ *
+ * 约定：所有指向第三方网站、与本站不同域名的外链集中登记在此，页面用
+ * components/ExternalLink 渲染（统一 target/rel 与「↗」标记）。
+ * 任何非同域名外链在点击时都会被 components/ExternalLinkGuard 拦截并弹出
+ * 风险提醒；如需放行某个已确认可信的外链，在锚点上加 `data-external-ignore`。
+ */
+
+/** CAU 选课助手（第三方站点，CAU 排课/选课辅助工具） */
+export const CAU_COURSE_ASSISTANT_URL =
+  "https://4m0wx6v13h11a.aiforce.cloud/app/app_17duqfz189b";
+
 /** 首页公告条目 */
 export interface Announcement {
   date: string;
@@ -38,6 +51,12 @@ export interface Announcement {
  * 新公告加在数组开头。
  */
 export const ANNOUNCEMENTS: Announcement[] = [
+  {
+    date: "2026-09-22",
+    title: "排课表工具 v2.0.1：新增 CAU选课助手友链",
+    content:
+      "",
+  },
   {
     date: "2026-08-10",
     title: "秋功 v2.0.0 全新上线",

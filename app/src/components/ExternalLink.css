@@ -1,0 +1,23 @@
+/*
+ * ExternalLink —— 站外链接标记样式（全局，不区分页面）。
+ *
+ * 组件本身不改变锚点的布局（.ext-link 不设 display/padding 等），
+ * 以兼容被复用的既有类（.dial-segment / .ad-popup-link 等）；
+ * 此处只负责文字末尾的「↗」外链标记。
+ */
+
+.ext-link-icon {
+    display: inline-block;
+    margin-left: 3px;
+    font-size: 0.85em;
+    line-height: 1;
+    vertical-align: 1px;
+    opacity: 0.8;
+    /* 图标仅作提示，不参与命中判定与文本选中复制 */
+    pointer-events: none;
+    user-select: none;
+}
+
+.ext-link:hover .ext-link-icon {
+    opacity: 1;
+}
