@@ -105,9 +105,6 @@ export default function HomePage() {
               <Link to="/gpa" className="dial-btn">
                 绩点与目标成绩计算器
               </Link>
-              <Link to="/deepseek" className="dial-btn">
-                DeepSeek 学习助手
-              </Link>
               <Link to="/qbn" className="dial-btn">
                 题库
               </Link>

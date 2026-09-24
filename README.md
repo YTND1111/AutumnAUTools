@@ -16,9 +16,7 @@ React 版首页快捷入口或悬浮球导航进入，路由为 `/#/gpa`。
 
 ## DeepSeek 学习助手
 
-React 版路由为 `/#/deepseek`，采用纯前端 BYOK 模式：用户填写自己的 DeepSeek API 地址、Key 和模型，浏览器直接请求接口，调用费用由用户账户承担。默认地址为 `https://api.deepseek.com`，默认模型为 `deepseek-chat`；接口需要允许浏览器跨域访问。
-
-API Key 默认保存在当前浏览器会话，用户主动勾选后才保存到本机。实现只使用项目既有的 React、React Router、Vite 和浏览器 Fetch API，没有引入额外聊天 SDK。具体开发记录和开源工具清单见 [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md)。
+该功能目前已暂时禁用，页面源码保留，待完成后端代理、密钥保护和外部接口安全审查后再恢复入口。
 
 ## 排课表工具
 v 1.0.0
