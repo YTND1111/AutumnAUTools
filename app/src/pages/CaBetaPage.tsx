@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import FloatingChrome from "../components/FloatingChrome";
 import SearchBar from "../components/SearchBar";
 import CourseCardPool from "../components/CourseCardPool";
 import TimetableGrid from "../components/TimetableGrid";
@@ -51,13 +50,6 @@ import "./CaBetaPage.css";
  *
  * 路由说明：/ca-beta 重定向至此；原遗留挂载退至 /ca-legacy（无入口，回滚兜底）。
  */
-
-const SIDEBAR_LINKS = [
-  { to: "/", label: "本站首页" },
-  { to: "/ca", label: "排课表工具" },
-  { to: "/qbn", label: "题库" },
-  { to: "/resources", label: "学习资料" },
-];
 
 /** 新手引导“已看过”标记（localStorage） */
 const GUIDE_SEEN_KEY = "autumn-ca-guide-seen";
@@ -412,7 +404,6 @@ export default function CaBetaPage() {
 
   return (
     <>
-      <FloatingChrome links={SIDEBAR_LINKS} />
 
       <div className="ca-beta-page">
         {/* 顶栏：课程检索（班级检索位于侧栏「班级课表调用」子功能区） */}

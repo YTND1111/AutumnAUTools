@@ -6,6 +6,8 @@ import HomePage from "./pages/HomePage";
 import QbnPage from "./pages/QbnPage";
 import CaBetaPage from "./pages/CaBetaPage";
 import ResourcesPage from "./pages/ResourcesPage";
+import GpaPage from "./pages/GpaPage";
+import DeepSeekPage from "./pages/DeepSeekPage";
 import ExternalLinkGuard from "./components/ExternalLinkGuard";
 import { SettingsContextProvider } from "./settings/SettingsContext";
 import { PlansContextProvider } from "./plans/PlansContext";
@@ -89,6 +91,8 @@ export default function App() {
           <Route path="/qbn" element={<QbnPage />} />
           {/* 学习资料下载页（静态清单驱动，见 services/resources.ts 与 scripts/sync-resources.mjs） */}
           <Route path="/resources" element={<ResourcesPage />} />
+          <Route path="/gpa" element={<GpaPage />} />
+          <Route path="/deepseek" element={<DeepSeekPage />} />
           <Route path="/cn" element={<RedirectToStaticPage to="/cn.html" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

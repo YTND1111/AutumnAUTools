@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import FloatingChrome from "../components/FloatingChrome";
 import type { ResourceView } from "../services/resources";
 import {
   buildResourceViews,
@@ -21,13 +20,6 @@ import "./ResourcesPage.css";
  *   本机下载次数（localStorage 记录，键 autumn-res-dl:<id>）；
  * - 文件缺失时行内提示并禁用下载（防止 404 链接上架）。
  */
-
-const SIDEBAR_LINKS = [
-  { to: "/", label: "本站首页" },
-  { to: "/ca", label: "排课表工具" },
-  { to: "/qbn", label: "题库" },
-  { to: "/resources", label: "学习资料" },
-];
 
 const DL_COUNT_KEY_PREFIX = "autumn-res-dl:";
 
@@ -187,7 +179,6 @@ export default function ResourcesPage() {
 
   return (
     <>
-      <FloatingChrome links={SIDEBAR_LINKS} />
 
       <div className="resources-page">
         {/* 顶部导航栏 */}

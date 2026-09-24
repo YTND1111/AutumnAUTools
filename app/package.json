@@ -8,6 +8,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "test:gpa": "node --experimental-strip-types --test scripts/gpa.test.mjs",
+    "test:xgxz": "node --test scripts/xgxz.test.mjs",
     "sync:resources": "node scripts/sync-resources.mjs"
   },
   "dependencies": {

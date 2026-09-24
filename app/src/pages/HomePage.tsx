@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import FloatingChrome from "../components/FloatingChrome";
 import ExternalLink from "../components/ExternalLink";
 import FunTabs from "../components/FunTabs";
 import FeeCalendar from "../components/FeeCalendar";
@@ -12,7 +11,6 @@ import "./HomePage.css";
  * HomePage —— 首页（原生 React 重写版，原 index.html 的渐进重构）。
  *
  * 与原页面的对应关系：
- * - 悬浮球/侧边栏框架 → FloatingChrome 组件（与题库页共享）；
  * - 内联 <style> → HomePage.css（统一收敛在 .home-page 作用域；:root 变量与
  *   GlobalStyle.css 完全一致，属冗余定义，已省略）；
  * - 趣味功能选项卡 → FunTabs 组件（绿色光影滑动 + 阴影生长动画原样保留）；
@@ -24,13 +22,6 @@ import "./HomePage.css";
  *   PDF 下载保持 <a>；
  * - 不再加载 version-global.js（页面内 fetch 均走固定路径，无版本戳用途）。
  */
-
-const SIDEBAR_LINKS = [
-  { to: "/", label: "本站首页" },
-  { to: "/ca", label: "排课表工具" },
-  { to: "/qbn", label: "题库" },
-  { to: "/resources", label: "学习资料" },
-];
 
 const NEWS_ITEMS = [
   { title: "排课表工具v2.0.1新增外链入口与外链提醒", date: "2026-09-22" },
@@ -48,8 +39,6 @@ export default function HomePage() {
 
   return (
     <>
-      <FloatingChrome links={SIDEBAR_LINKS} />
-
       {/* 右下角趣味广告弹窗（白色遮罩闪烁 + X 关闭） */}
       <AdPopup />
 
@@ -112,6 +101,12 @@ export default function HomePage() {
             <div className="dial-grid">
               <Link to="/ca" className="dial-btn">
                 排课表工具
+              </Link>
+              <Link to="/gpa" className="dial-btn">
+                绩点与目标成绩计算器
+              </Link>
+              <Link to="/deepseek" className="dial-btn">
+                DeepSeek 学习助手
               </Link>
               <Link to="/qbn" className="dial-btn">
                 题库

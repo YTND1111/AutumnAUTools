@@ -1,26 +1,17 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import FloatingChrome from "../components/FloatingChrome";
 import "./QbnPage.css";
 
 /**
  * QbnPage —— 题库首页（原生 React 重写版，原 qbn.html 的渐进重构范例）。
  *
  * 与原页面的对应关系：
- * - 悬浮球/侧边栏框架 → FloatingChrome 组件（useFloatingBall Hook 驱动）；
  * - 页面结构/文案原样保留，内联 <style> → QbnPage.css（统一收敛在 .qbn-page 作用域）；
  * - /index.html、/qbn.html 绝对链接 → react-router <Link>（SPA 内无整页刷新）；
  * - ./questionBank/sz/*.html 答题页仍为独立静态页，保持 <a> 整页打开；
  * - "待补充"占位按钮原为 href="#"（HashRouter 下 "#" 会误触路由），改为 button；
  * - 不再加载 version-qbn.js / version-global.js（本页无任何 fetch，版本常量无用途）。
  */
-
-const SIDEBAR_LINKS = [
-  { to: "/", label: "本站首页" },
-  { to: "/ca", label: "排课表工具" },
-  { to: "/qbn", label: "题库" },
-  { to: "/resources", label: "学习资料" },
-];
 
 export default function QbnPage() {
   useEffect(() => {
@@ -29,8 +20,6 @@ export default function QbnPage() {
 
   return (
     <>
-      <FloatingChrome links={SIDEBAR_LINKS} />
-
       <div className="qbn-page">
         {/* 顶部导航栏 */}
         <div className="header primary-bg">

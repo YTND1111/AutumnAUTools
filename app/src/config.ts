@@ -39,6 +39,9 @@ export const COURSE_DATA_VERSION = APP_VERSION_CA;
 export const CAU_COURSE_ASSISTANT_URL =
   "https://4m0wx6v13h11a.aiforce.cloud/app/app_17duqfz189b";
 
+/** 本科生院：成绩单 GPA 计算与课程计入规则。 */
+export const CAU_GPA_RULES_URL = "https://jwc.cau.edu.cn/art/2026/7/16/art_41139_1122721.html";
+
 /** 首页公告条目 */
 export interface Announcement {
   date: string;

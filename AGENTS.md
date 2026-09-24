@@ -279,7 +279,9 @@ pip install xlrd
 
 ## 测试说明
 
-- 当前项目**没有单元测试、集成测试或端到端测试**。
+- 绩点计算器（`/#/gpa`）已有计算与缓存回归测试：`cd app` 后运行 `pnpm test:gpa`（Node.js 22.6+）。测试覆盖加权、重修、换算分段、输入校验、目标反推与缓存恢复；其余历史功能仍以浏览器手动验证为主。
+- 绩点模块源码：`app/src/pages/GpaPage.tsx` / `GpaPage.css`、`app/src/services/gpa.ts` / `gpaStorage.ts`。本机保存键为 `autumn-gpa-v1`，百分制规则仅为可编辑示例；官方成绩单口径链接集中于 `config.ts` 的 `CAU_GPA_RULES_URL`。
+- 原生页悬浮球导航已统一到 `app/src/navigation.ts`，新增工具请维护共享 `SIDEBAR_LINKS`。
 - 如需验证改动，请按“构建与运行”章节启动本地服务器，并手动在浏览器中测试：
   - 首页悬浮球拖拽、边缘吸附、点击展开侧边栏；
   - 排课表页三个搜索框的输入建议、选中课程后预览标签的更新；

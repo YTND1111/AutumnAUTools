@@ -10,7 +10,6 @@
 .home-page,
 .home-page * {
     margin: 0;
-    padding: 0;
     box-sizing: border-box;
     font-family: "Microsoft Yahei", SimSun, sans-serif;
 }
@@ -435,7 +434,8 @@
     position: fixed;
     right: 18px;
     bottom: 18px;
-    z-index: 9999;
+    /* 广告位于悬浮导航与其遮罩下方，避免挡住站内入口。 */
+    z-index: 180;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
