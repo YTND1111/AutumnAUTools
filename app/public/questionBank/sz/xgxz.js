@@ -45,9 +45,12 @@ function update(next, { focus = false } = {}) {
 
 function goTo(cursor) {
     if (cursor < 0 || cursor >= state.order.length) return;
+    const viewportX = window.scrollX;
+    const viewportY = window.scrollY;
     update({ ...state, cursor }, { focus: true });
-    // 手机从答题卡切题后返回题干，桌面端则保持稳定。
-    if (matchMedia('(max-width: 700px)').matches) $('questionText').scrollIntoView({ block: 'start' });
+    // 移动端切题时保持页面纵向位置，避免按钮点击后视口突然跳到题干顶部。
+    window.scrollTo(viewportX, viewportY);
+    requestAnimationFrame(() => window.scrollTo(viewportX, viewportY));
 }
 
 function render() {
@@ -56,6 +59,8 @@ function render() {
     const done = isDone(q.id);
     const stats = getStats(state);
     $('questionText').textContent = q.stem;
+    // 新题从题干开头显示，但不影响页面本身的滚动位置。
+    $('questionText').scrollTop = 0;
     $('sourceNumber').textContent = `原题第 ${q.id} 题`;
     $('progress').textContent = `${state.cursor + 1} / ${state.order.length}`;
     $('questionHint').textContent = state.wrong.includes(q.id) ? '本题在错题本中，独立作答正确后自动移出。' : '选择一个选项，提交后查看结果。';
