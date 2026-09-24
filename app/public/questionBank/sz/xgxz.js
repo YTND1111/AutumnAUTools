@@ -34,23 +34,18 @@ function save() {
 function currentQuestion() { return byId.get(state.order[state.cursor]); }
 function isDone(id) { const r = state.records[id]; return r && r.status !== 'draft'; }
 
-function update(next, { focus = false } = {}) {
+function update(next) {
     if (next === state) return;
     state = next;
     $('summary').hidden = true;
     save();
     render();
-    if (focus) $('questionText').focus({ preventScroll: true });
 }
 
 function goTo(cursor) {
     if (cursor < 0 || cursor >= state.order.length) return;
-    const viewportX = window.scrollX;
-    const viewportY = window.scrollY;
-    update({ ...state, cursor }, { focus: true });
-    // 移动端切题时保持页面纵向位置，避免按钮点击后视口突然跳到题干顶部。
-    window.scrollTo(viewportX, viewportY);
-    requestAnimationFrame(() => window.scrollTo(viewportX, viewportY));
+    // 切题只更新题目状态，不主动改变页面或题干内部的滚动位置。
+    update({ ...state, cursor });
 }
 
 function render() {
@@ -59,8 +54,6 @@ function render() {
     const done = isDone(q.id);
     const stats = getStats(state);
     $('questionText').textContent = q.stem;
-    // 新题从题干开头显示，但不影响页面本身的滚动位置。
-    $('questionText').scrollTop = 0;
     $('sourceNumber').textContent = `原题第 ${q.id} 题`;
     $('progress').textContent = `${state.cursor + 1} / ${state.order.length}`;
     $('questionHint').textContent = state.wrong.includes(q.id) ? '本题在错题本中，独立作答正确后自动移出。' : '选择一个选项，提交后查看结果。';
@@ -144,7 +137,6 @@ function showSummary() {
     $('summaryText').textContent = `共 ${stats.total} 题：答对 ${stats.correct} 题，答错 ${stats.wrong} 题，已看答案 ${stats.revealed} 题，未答 ${stats.total - stats.completed} 题。${stats.answered ? `正确率 ${stats.accuracy}%。` : '完成独立作答后显示正确率。'}`;
     $('resumeQuestion').hidden = stats.completed === stats.total;
     $('summary').hidden = false;
-    $('summary').focus();
 }
 
 function nextQuestion() {
@@ -161,10 +153,10 @@ function nextUnanswered() {
 }
 
 optionButtons.forEach((button, index) => button.addEventListener('click', () => update(selectOption(state, currentQuestion(), index))));
-modeButtons.forEach(button => button.addEventListener('click', () => update(changeMode(state, button.dataset.mode, questions), { focus: true })));
+modeButtons.forEach(button => button.addEventListener('click', () => update(changeMode(state, button.dataset.mode, questions))));
 $('submitAnswer').addEventListener('click', () => update(submitAnswer(state, currentQuestion())));
 $('revealAnswer').addEventListener('click', () => update(revealAnswer(state, currentQuestion())));
-$('retryQuestion').addEventListener('click', () => update(retryQuestion(state, currentQuestion().id), { focus: true }));
+$('retryQuestion').addEventListener('click', () => update(retryQuestion(state, currentQuestion().id)));
 $('previousQuestion').addEventListener('click', () => goTo(state.cursor - 1));
 $('nextQuestion').addEventListener('click', nextQuestion);
 $('nextUnanswered').addEventListener('click', nextUnanswered);
