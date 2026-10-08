@@ -89,13 +89,15 @@ pnpm run build       # 生产构建 → app/dist/
 
 题库页（`/qbn`）与首页（`/`）是前两个原生 React 页面，展示了遗留页 → 原生页的渐进重构模式：
 
-- **`app/src/hooks/useFloatingBall.ts`**：`js/index.js` 悬浮球逻辑（拖拽/吸附/侧边栏/rAF 合帧）的忠实 Hook 移植。`getElementById` 改为 ref 注入；全部事件监听在卸载时精确移除（消除了原脚本 SPA 切换后监听残留的问题）；暴露 `closeSidebar()` 供导航后主动收起侧边栏。
-- **`app/src/components/FloatingChrome.tsx`**：悬浮球 + 遮罩 + 侧边栏共享框架组件。class/id 保持原样（样式仍由 `GlobalStyle.css` 提供）；侧边栏链接用 `<Link>` 并通过 props 传入；清理了原 HTML 的无效 `<scan>` 标签与重复 `id="Tool"`（链接块统一用 `.nav-cell` 类，`app/public/css/GlobalStyle.css` 中已与原 `#Navigater, #Tool, #News` 选择器并列声明，遗留页面不受影响）。
+- **悬浮球框架已移除（2026-09）**：原 `app/src/hooks/useFloatingBall.ts`（`js/index.js` 悬浮球逻辑的 Hook 移植：拖拽/吸附/侧边栏/rAF 合帧）与 `app/src/components/FloatingChrome.tsx`（悬浮球 + 遮罩 + 侧边栏共享框架，含各页 `SIDEBAR_LINKS`）**已整体删除**；所有 React 页面不再渲染悬浮球/遮罩/侧边栏，`app/public/css/GlobalStyle.css` 中的 `#floatingBall` 规则与 `--fb-*` 变量同步清除。仅归档页 `app/public/legacy/*.html` 仍引用的 `#PageBackdrop` / `#NavSidebar` / `#Navigater, #Tool, #News` / `.href` 样式保留（该段已在文件内注释标注，归档目录删除后可一并清理）。**React 页面的站内导航现仅由首页/题库页/学习资料页的顶部导航栏承担，排课表页 `/ca` 当前无站内跳转入口。**
 - **`app/src/components/FunTabs.tsx`**：首页趣味功能选项卡。绿色光影滑动 + 阴影生长动画原样保留（光影位移直接操作 DOM style 不进状态，激活/阴影态由 useState 驱动），快速连点的定时器结算逻辑一致。
 - **`app/src/components/FeeCalendar.tsx`**：窝囊费打表日历。年月状态由 useState 驱动（替代手动 innerHTML 重绘），`data/fee-days.json` 高亮日期在 useEffect 内 fetch 一次，失败按无高亮渲染（同原逻辑）。
 - **`app/src/pages/QbnPage.tsx` / `HomePage.tsx` + 同名 scoped CSS**：页面内容原生 JSX。内联 `<style>` 移植为 `.qbn-page` / `.home-page` 作用域 CSS（避免通用类名污染）；站内链接改用 `<Link>`；`href="#"` 占位按钮改为 `<button>`（HashRouter 下 `#` 会误触路由）；答题页仍为独立静态页整页打开；不再加载页面用不到的 version 常量脚本。首页的 `:root` 变量与 GlobalStyle 完全一致（冗余，已省略）；三个独立 `.news-list` 包装合并为数据驱动的单列表（CSS gap 归零保持原间距）。
+- **`app/src/pages/SharedPage.css`（页面骨架与“边框厚度”约定）**：首页/题库页/学习资料页原本各自复制了一份完全相同的骨架规则（`.container` / `.header` / `.logo` / `.nav-list` / `.nav-item` / `.main` / `.left-box` / `.right-box` / `.footer`，约 90 行 × 3），现统一抽到本文件，三个页面 CSS 首行 `@import "./SharedPage.css";`，页面根节点加 `layout-page` 类（如 `className="home-page layout-page"`）。
+  - **踩坑记录（文字贴边框的根因）**：各页开头的 `页作用域 * { padding: 0 }`（`.home-page *`，特异性 0,1,0）会**压过 GlobalStyle.css 里的公共组件类**（`.surface-card`、`.dial-btn` 同为 0,1,0，后位胜出），把本该有的 20px / 12px 内边距清成 0 —— 表现为卡片文字紧贴卡片边框、按钮文字顶着上下边框。因此 `SharedPage.css` 用 `.layout-page .surface-card`（0,2,0）这一级特异性把内边距显式补回；**新增页面若沿用 `页作用域 * { padding: 0 }` 写法并用到 GlobalStyle 的组件类，必须同样补回内边距**。
+  - 分隔线类元素（`.title-bar` / `.dial-title`）统一遵循“文字与线之间留 8~14px”：卡片内标题改为通栏条（`margin: -20px -20px 14px; padding: 14px 20px 12px` + 渐变底 + 2px 主色分隔线），`.dial-title` 在 GlobalStyle 中加了 `line-height: 1.5; padding-bottom: 8px`，避免分隔线压在文字基线上像下划线。
 
-后续重写排课表页时遵循同一模式：页面内容 → `pages/XxxPage.tsx` + 作用域 CSS，公共框架复用 `FloatingChrome`，业务脚本按 `useFloatingBall` 的方式逐步 Hook 化（排课表页的 `CourseArrangement.js` 约 2400 行，建议按「课程搜索 / 候选池 / 方案生成 / 课表渲染」分模块拆解，而非一次性移植）。
+后续重写排课表页时遵循同一模式：页面内容 → `pages/XxxPage.tsx` + 作用域 CSS，业务脚本逐步 Hook 化（排课表页的 `CourseArrangement.js` 约 2400 行，建议按「课程搜索 / 候选池 / 方案生成 / 课表渲染」分模块拆解，而非一次性移植）。原公共 chrome 组件 `FloatingChrome` 已随悬浮球移除，页面无需再挂载公共框架。
 
 ### 版本号与公告（React 版）
 
@@ -131,7 +133,7 @@ React 迁移后，旧站 `version-*.json` + bump 脚本的版本管理体系**�
 
 ### 学习资料下载页（`/resources`，纯静态）
 
-- **页面**：`app/src/pages/ResourcesPage.tsx` + `ResourcesPage.css`，路由 `/resources`；悬浮球侧边栏（各页 `SIDEBAR_LINKS`）与首页/题库页顶部导航均已加入「学习资料」入口。
+- **页面**：`app/src/pages/ResourcesPage.tsx` + `ResourcesPage.css`，路由 `/resources`；首页/题库页顶部导航均已加入「学习资料」入口（原悬浮球侧边栏已移除）。
 - **数据 = manifest + files 双 JSON 合并**：
   - `app/public/resources/manifest.json`：**人工维护**的清单（`groups` 按课程/学科分组；`items` 字段含 `id/name/description/type/file`，`file` 为站点根相对路径），其目录内 `README.txt` 有完整字段约定与上架步骤；
   - `app/public/resources/files.json`：由 `app/scripts/sync-resources.mjs`（npm script `pnpm sync:resources`）扫描 resources 目录自动生成（真实大小 + 存在性校验），页面合并后展示真实文件大小；**条目文件在磁盘缺失时自动标记「文件缺失」并禁用下载**，防止 404 链接上架。

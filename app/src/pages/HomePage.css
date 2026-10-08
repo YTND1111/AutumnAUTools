@@ -4,7 +4,11 @@
  * 完全一致（--joint-color 等），属冗余定义，已省略。
  * 注：原页面中资讯项由三个独立 .news-list 包装，重写后合并为单个列表，
  *     为保持原视觉间距，列表 gap 归零（原堆叠本无 gap）。
+ * 骨架（顶部导航 / 主体两栏 / 页脚）已抽到 SharedPage.css，并在此
+ * 统一补齐被 `页作用域 * { padding: 0 }` 清掉的组件内边距。
  */
+
+@import "./SharedPage.css";
 
 /* 全局基础重置（收敛到本页作用域） */
 .home-page,
@@ -15,95 +19,22 @@
     font-family: "Microsoft Yahei", SimSun, sans-serif;
 }
 
-.home-page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+/* 标题栏：做成卡片顶部的通栏条（外扩到卡片内边距之外），
+   文字与上下边框之间留足留白，不再贴着分隔线 */
+.home-page .surface-card {
+    overflow: hidden;
 }
 
-.home-page .container {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 16px;
-}
-
-/* 头部导航 */
-.home-page .header {
-    color: #ffffff;
-    height: 60px;
-    line-height: 60px;
-}
-
-.home-page .header .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.home-page .logo {
-    font-size: 20px;
-    font-weight: bold;
-}
-
-.home-page .nav-list {
-    display: flex;
-    gap: 35px;
-}
-
-.home-page .nav-item {
-    cursor: pointer;
-    font-size: 15px;
-}
-
-.home-page .nav-item a {
-    color: inherit;
-    text-decoration: none;
-}
-
-.home-page .nav-item:hover {
-    text-decoration: underline;
-}
-
-/* 主体内容布局 */
-.home-page .main {
-    flex: 1 0 auto;
-    display: flex;
-    gap: 30px;
-    margin: 30px auto;
-    width: 100%;
-}
-
-.home-page .left-box {
-    flex: 840 0 0;
-    min-width: 0;
-}
-
-.home-page .right-box {
-    flex: 330 0 0;
-    min-width: 0;
-}
-
-/* 页面宽度短于 850px 时改为上下排列 */
-@media (max-width: 849px) {
-    .home-page .main {
-        flex-direction: column;
-    }
-
-    .home-page .left-box,
-    .home-page .right-box {
-        flex: 0 0 auto;
-        width: 100%;
-    }
-}
-
-/* 标题栏 */
 .home-page .title-bar {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    border-bottom: 2px solid;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
+    gap: 12px;
+    border-bottom: 2px solid var(--joint-color);
+    background: linear-gradient(180deg, rgba(15, 122, 71, 0.07), rgba(15, 122, 71, 0.02));
+    border-radius: 4px 4px 0 0;
+    margin: -20px -20px 14px;
+    padding: 14px 20px 12px;
 }
 
 .home-page .title {
@@ -137,11 +68,13 @@
     border-bottom: none;
 }
 
+/* 圆点与首行文字（不拉伸时垂直居中即为对齐基线附近）对齐 */
 .home-page .dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     margin-right: 12px;
+    margin-top: 4px;
     flex-shrink: 0;
 }
 
@@ -155,12 +88,6 @@
     color: #888;
     font-size: 13px;
     flex-shrink: 0;
-}
-
-/* 页脚 */
-.home-page .footer {
-    margin-top: auto;
-    padding: 16px 0;
 }
 
 /* 胶囊分段式按钮（OJ 入口：本地刷题 / 机考模拟并列） */

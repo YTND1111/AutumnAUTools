@@ -1,0 +1,133 @@
+/*
+ * 原生 React 页面通用骨架样式（首页 / 题库页 / 学习资料页）
+ *
+ * 背景：这三个页面的顶部导航、页脚、主体布局原本各自复制了一份完全相同的规则
+ * （.container / .header / .logo / .nav-list / .nav-item / .main / .left-box /
+ *   .right-box / .footer 计 90 行 × 3），且每页开头都有一条 `页作用域 * { padding: 0 }`
+ * 的粗粒度重置。后者会以 “.page *（0,1,0）> .surface-card（0,1,0）后位胜出” 的
+ * 方式，把 GlobalStyle.css 里公共组件类（.surface-card 的 20px、.dial-btn 的 12px）
+ * 的内边距一并清成 0 —— 于是卡片边框紧贴文字、按钮文字几乎顶着上边框。
+ *
+ * 因此这里做两件事：
+ * 1. 抽公共骨架（各页面 CSS 改为引用本文件，不再重复声明）；
+ * 2. 以 `.page .surface-card`（0,2,0）这一级特异性把公共组件类的内边距显式补回，
+ *    并为“纯靠边框分隔”的元素补足上下留白，让边框与文字之间始终有厚度。
+ *
+ * 使用方式：页面 CSS 中写 `@import "./SharedPage.css";` 后，根节点加上
+ * `layout-page` 类（例如 `<div className="home-page layout-page">`）。
+ */
+
+/* 页面基础重置（字体/盒模型；各页面仍保留自己的 `页作用域 *` 规则） */
+.layout-page,
+.layout-page * {
+    box-sizing: border-box;
+    font-family: "Microsoft Yahei", SimSun, sans-serif;
+}
+
+.layout-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.layout-page .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* 顶部导航 */
+.layout-page .header {
+    color: #ffffff;
+    height: 60px;
+    line-height: 60px;
+}
+
+.layout-page .header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.layout-page .logo {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.layout-page .nav-list {
+    display: flex;
+    gap: 35px;
+}
+
+.layout-page .nav-item {
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.layout-page .nav-item a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.layout-page .nav-item:hover {
+    text-decoration: underline;
+}
+
+/* 主体内容布局 */
+.layout-page .main {
+    flex: 1 0 auto;
+    display: flex;
+    gap: 30px;
+    margin: 30px auto;
+    width: 100%;
+}
+
+.layout-page .left-box {
+    flex: 840 0 0;
+    min-width: 0;
+}
+
+.layout-page .right-box {
+    flex: 330 0 0;
+    min-width: 0;
+}
+
+/* 页脚 */
+.layout-page .footer {
+    margin-top: auto;
+    padding: 16px 0;
+}
+
+/* 页面宽度不足 850px 时两栏改上下排列 */
+@media (max-width: 849px) {
+    .layout-page .main {
+        flex-direction: column;
+    }
+
+    .layout-page .left-box,
+    .layout-page .right-box {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+}
+
+/* ========================
+   全局组件类的页面内厚度补偿
+   （压过各页 `页作用域 * { padding: 0 }`，与 GlobalStyle.css 的取值一致）
+   ======================== */
+
+/* 白色卡片：恢复 20px 内边距，文字不再贴着卡片边框 */
+.layout-page .surface-card {
+    padding: 20px;
+}
+
+/* 圆角大按钮：恢复 12px 内边距 */
+.layout-page .dial-btn {
+    padding: 12px;
+}
+
+/* 胶囊分段按钮本身不留内边距（由内部 .dial-segment 承担） */
+.layout-page .dial-btn.dial-segmented {
+    padding: 0;
+}
