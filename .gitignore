@@ -7,3 +7,9 @@ __pycache__/
 
 # pnpm 包存储（若 store-dir 指向项目内）
 .pnpm-store/
+
+# 文档收敛：除 README.md 外，Markdown 文档一律留本地、不入远端仓库
+# （AGENTS.md / prd.md / 审计报告 / 开发日志 / 选型文档等内部资料）
+*.md
+!README.md
+!**/README.md
