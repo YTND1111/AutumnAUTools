@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import ExternalLink from "../components/ExternalLink";
 import FunTabs from "../components/FunTabs";
 import FeeCalendar from "../components/FeeCalendar";
 import AdPopup from "../components/AdPopup";
-import AccountDialog from "../auth/AccountDialog";
-import { useAuth } from "../auth/AuthContext";
+// 账号系统入口暂时隐藏（用户后端尚未接入）：恢复时取消下面两行注释，
+// 并同时恢复页面内“账号与云端同步弹窗”“导航栏登录 / 注册按钮”两处注释。
+// import AccountDialog from "../auth/AccountDialog";
+// import { useAuth } from "../auth/AuthContext";
 import { ANNOUNCEMENTS, APP_VERSION_HOME } from "../config";
 import "./HomePage.css";
 
@@ -24,7 +26,8 @@ import "./HomePage.css";
  *   点击时由全局 ExternalLinkGuard 弹出风险提醒；图标类外链关闭「↗」标记），
  *   PDF 下载保持 <a>；
  * - 不再加载 version-global.js（页面内 fetch 均走固定路径，无版本戳用途）；
- * - 导航栏「登录 / 注册」入口 → auth/AccountDialog（账号与云端同步，见 backend/）。
+ * - 导航栏「登录 / 注册」入口 → auth/AccountDialog（账号与云端同步，见 backend/）；
+ *   **当前暂时隐藏**（用户后端尚未接入），恢复步骤见文件头部 import 处注释。
  */
 
 const NEWS_ITEMS = [
@@ -42,8 +45,9 @@ const NEWS_ITEMS = [
 ];
 
 export default function HomePage() {
-  const { user } = useAuth();
-  const [accountOpen, setAccountOpen] = useState(false);
+  // 账号系统入口暂时隐藏（用户后端尚未接入）：恢复时取消注释
+  // const { user } = useAuth();
+  // const [accountOpen, setAccountOpen] = useState(false);
 
   useEffect(() => {
     document.title = "秋功-首页";
@@ -54,8 +58,9 @@ export default function HomePage() {
       {/* 右下角趣味广告弹窗（白色遮罩闪烁 + X 关闭） */}
       <AdPopup />
 
-      {/* 账号与云端同步弹窗（未登录显示「登录 / 注册」，登录后显示用户名） */}
+      {/* 账号与云端同步弹窗（暂时隐藏，用户后端尚未接入）：恢复时取消注释
       <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} />
+      */}
 
       <div className="home-page layout-page">
         {/* 顶部导航栏 */}
@@ -75,7 +80,7 @@ export default function HomePage() {
               <div className="nav-item">
                 <Link to="/gpa">绩点计算</Link>
               </div>
-              {/* 账号入口：未登录显示「登录 / 注册」，登录后显示昵称（点击可管理云端数据） */}
+              {/* 账号入口暂时隐藏（用户后端尚未接入）：恢复时取消注释
               <div className="nav-item">
                 <button
                   type="button"
@@ -93,6 +98,7 @@ export default function HomePage() {
                   )}
                 </button>
               </div>
+              */}
               <div className="nav-item">联系作者</div>
             </div>
           </div>

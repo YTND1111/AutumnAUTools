@@ -89,6 +89,9 @@ export const BACKEND_BASE_URL: string = (
  * 云端后端总开关（构建期）。设为 "false" 时：
  *   - 不发起任何 /api 请求，账号入口显示为「未启用」；
  *   - 设置与方案回退为纯 localStorage 单机模式（与接入后端前的行为完全一致）。
+ *
+ * ⚠️ 临时状态：用户后端尚未接入，默认值暂时改为 "false"（页面不发起任何 /api 请求）。
+ *    后端部署完成后把下面的 "false" 改回 "true"，或构建时设 VITE_BACKEND_ENABLED=true。
  */
 export const BACKEND_ENABLED: boolean =
-  ((import.meta.env.VITE_BACKEND_ENABLED as string | undefined) ?? "true").toLowerCase() !== "false";
+  ((import.meta.env.VITE_BACKEND_ENABLED as string | undefined) ?? "false").toLowerCase() !== "false";

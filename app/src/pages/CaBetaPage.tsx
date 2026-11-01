@@ -8,8 +8,10 @@ import ClassGroupSection from "../components/ClassGroupSection";
 import ExternalLink from "../components/ExternalLink";
 import SpotlightGuide from "../components/SpotlightGuide";
 import type { GuideStep } from "../components/SpotlightGuide";
-import AccountPanel from "../auth/AccountPanel";
-import { useAuth } from "../auth/AuthContext";
+// 账号面板暂时隐藏（用户后端尚未接入）：恢复时取消下面两行注释，
+// 并同时恢复组件内“用户设置”卡片的云端文案与 <AccountPanel /> 注释。
+// import AccountPanel from "../auth/AccountPanel";
+// import { useAuth } from "../auth/AuthContext";
 import { useCourseData } from "../hooks/useCourseData";
 import { usePlanPool } from "../hooks/usePlanPool";
 import type { PlanPool } from "../hooks/usePlanPool";
@@ -50,7 +52,7 @@ import "./CaBetaPage.css";
  *      （默认即参与排课避让，可单门排除/整组取消/全选/清除）；
  *   3. 方案生成面板：偏好设置（校区/时间段/重置）+ 全宽「生成方案」主按钮
  *      + 方案候选 pills（无冲突/冲突）；时间段偏好编辑模式点击课表设置阻塞；
- *   4. 用户设置：账号面板（登录后云端同步，见 backend/）+ 重新打开「新手引导」。
+ *   4. 用户设置：账号面板（**暂时隐藏**，用户后端尚未接入）+ 重新打开「新手引导」。
  * - 新手引导（SpotlightGuide）：首次访问自动弹出，可随时重开；各步骤可
  *   一键「自动演示」（添加示例课程/班级、示范偏好、实际导出 txt），
  *   结束时清理全部演示数据。
@@ -119,7 +121,8 @@ function dedupePlanCourses(list: PlanCourse[]): PlanCourse[] {
 export default function CaBetaPage() {
   const { courses, loading, error } = useCourseData();
   const { settings, updateSettings } = useSettings();
-  const { user } = useAuth();
+  // 账号系统入口暂时隐藏（用户后端尚未接入）：恢复时取消注释
+  // const { user } = useAuth();
   const pool = usePlanPool(courses);
   const classGroups = useClassGroups(courses);
   const generator = usePlanGenerator(pool.cards, courses, classGroups.fixedCourses);
@@ -577,18 +580,18 @@ export default function CaBetaPage() {
               />
             </div>
 
-            {/* 用户设置：账号（云端同步，未登录时数据仅存本机）+ 重新打开引导 */}
+            {/* 用户设置：账号面板暂时隐藏（用户后端尚未接入）+ 重新打开引导 */}
             <section className="surface-card beta-card">
               <h2 className="beta-card-title">
                 用户设置
-                <span className="beta-card-sub">{user ? "云端同步已开启" : "本地自动保存"}</span>
+                <span className="beta-card-sub">本地自动保存</span>
               </h2>
               <p className="muted settings-note">
-                {user
-                  ? `已登录 @${user.username}：候选课程、班级课表调用、阻塞时段与偏好设置会同步到云端，换设备登录即可继续。`
-                  : "候选课程、班级课表调用、阻塞时段与偏好设置均自动保存在本浏览器中，刷新后自动恢复；登录后可在多设备间同步。"}
+                候选课程、班级课表调用、阻塞时段与偏好设置均自动保存在本浏览器中，刷新后自动恢复。
               </p>
+              {/* 账号面板暂时隐藏（用户后端尚未接入）：恢复时取消注释
               <AccountPanel />
+              */}
               <div className="guide-reopen">
                 <button type="button" className="pool-btn" onClick={() => setGuideOpen(true)}>
                   查看新手引导
