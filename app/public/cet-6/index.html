@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="词隙：6,405 个六级备考词，默认随机抽取 3,991 个核心词，选择中文释义，标记陌生词并导出 Word 生词本。完全离线可用。">
+  <meta name="theme-color" content="#f4f0e6">
+  <title>词隙 · 六级单词随机测 | 6,405 词离线词库</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d241c'/%3E%3Ctext x='32' y='45' font-size='38' text-anchor='middle' fill='%23f4f0e6' font-family='serif'%3E词%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-volume" viewBox="0 0 24 24">
+      <path d="M11 5 6.5 8.5H3.5v7h3L11 19V5Z"></path>
+      <path d="M15 8.7a4.7 4.7 0 0 1 0 6.6"></path>
+      <path d="M17.8 6a8.6 8.6 0 0 1 0 12"></path>
+    </symbol>
+    <symbol id="icon-bookmark" viewBox="0 0 24 24">
+      <path d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.4L5.5 20.5v-16a1 1 0 0 1 1-1Z"></path>
+    </symbol>
+    <symbol id="icon-arrow-right" viewBox="0 0 24 24">
+      <path d="M4 12h15"></path>
+      <path d="m13 6 6 6-6 6"></path>
+    </symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24">
+      <path d="M12 3v12"></path>
+      <path d="m7 10 5 5 5-5"></path>
+      <path d="M4 20h16"></path>
+    </symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24">
+      <circle cx="10.8" cy="10.8" r="6.8"></circle>
+      <path d="m16 16 4.2 4.2"></path>
+    </symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24">
+      <path d="M4 7h16"></path>
+      <path d="M9 7V4h6v3"></path>
+      <path d="m6 7 1 13h10l1-13"></path>
+      <path d="M10 11v5M14 11v5"></path>
+    </symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24">
+      <path d="m6 6 12 12M18 6 6 18"></path>
+    </symbol>
+    <symbol id="icon-repeat" viewBox="0 0 24 24">
+      <path d="M20 7H7a4 4 0 0 0-4 4v1"></path>
+      <path d="m16 3 4 4-4 4"></path>
+      <path d="M4 17h13a4 4 0 0 0 4-4v-1"></path>
+      <path d="m8 21-4-4 4-4"></path>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+      <path d="m4 12.5 5 5L20 6.5"></path>
+    </symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24">
+      <path d="M12 2.8c.6 5.8 3.4 8.6 9.2 9.2-5.8.6-8.6 3.4-9.2 9.2-.6-5.8-3.4-8.6-9.2-9.2 5.8-.6 8.6-3.4 9.2-9.2Z"></path>
+    </symbol>
+  </svg>
+
+  <div class="page-grain" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#quiz" data-view-link="quiz" aria-label="词隙首页">
+        <span class="brand-mark">词</span>
+        <span class="brand-text">
+          <strong>词隙</strong>
+          <small>CET-6 WORD LAB</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="主导航">
+        <a class="nav-link is-active" href="#quiz" data-view-link="quiz">随机测验</a>
+        <a class="nav-link" href="#library" data-view-link="library">
+          陌生单词库
+          <span class="nav-count" id="navCount">0</span>
+        </a>
+      </nav>
+
+      <div class="header-note">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>进度自动保存在本机</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <!-- ================= 随机测验 ================= -->
+    <section class="view quiz-view is-active" id="view-quiz" aria-labelledby="quizHeading">
+      <div class="quiz-layout">
+        <aside class="hero-copy">
+          <p class="eyebrow">
+            <span class="eyebrow-line" aria-hidden="true"></span>
+            CET-6 · 六级必背词库
+          </p>
+          <h1 id="quizHeading">把陌生的词，<br><em>变成你的词。</em></h1>
+          <p class="hero-desc">
+            词库共 <strong>6,405</strong> 个六级备考词，默认从 <strong>3,991</strong> 个六级核心词中随机抽题；
+            再从四个同词性、相近语义场的中文释义里选出正确答案。不会就标记，交给陌生单词库慢慢消化。
+          </p>
+
+          <div class="stats-grid" aria-label="学习统计">
+            <div class="stat">
+              <span class="stat-value" id="statAnswered">0</span>
+              <span class="stat-label">累计作答</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="statAccuracy">—</span>
+              <span class="stat-label">正确率</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="statStreak">0</span>
+              <span class="stat-label">连续答对</span>
+            </div>
+          </div>
+
+          <div class="hero-note">
+            <span class="hero-note-index">01</span>
+            <p>作答后，每个选项都会显示它对应的英文单词。选错，也是一次记忆。</p>
+          </div>
+
+          <div class="hero-meta">
+            <span><b id="heroWordCount">6,405</b> 个备考词</span>
+            <span><b>4</b> 档考频标记</span>
+            <span><b>100%</b> 离线可用</span>
+          </div>
+        </aside>
+
+        <div class="quiz-stage">
+          <section class="quiz-card" id="quizCard" aria-labelledby="wordText">
+            <div class="card-top">
+              <div class="question-meta">
+                <span class="meta-pulse" aria-hidden="true"></span>
+                <button class="mode-button" id="quizMode" type="button" title="切换：六级核心 → 全部词库 → 陌生词复习">六级核心</button>
+                <span class="meta-divider" aria-hidden="true">/</span>
+                <span id="questionNo">01</span>
+              </div>
+              <div class="freq-badge" id="questionFreq" aria-label="考频"></div>
+            </div>
+
+            <div class="word-block">
+              <div class="word-heading">
+                <h2 class="word" id="wordText">abandon</h2>
+                <button class="icon-button speak-button" id="speakBtn" type="button" title="朗读单词" aria-label="朗读单词">
+                  <svg aria-hidden="true"><use href="#icon-volume"></use></svg>
+                </button>
+              </div>
+              <div class="word-meta-row">
+                <div class="word-sub">
+                  <span class="phonetic" id="phonetic">/əˈbændən/</span>
+                  <span class="word-sub-dot" aria-hidden="true"></span>
+                  <span class="pos-tag" id="posText">v.</span>
+                </div>
+                <button class="mark-toggle" id="markBtn" type="button" aria-pressed="false">
+                  <svg aria-hidden="true"><use href="#icon-bookmark"></use></svg>
+                  <span id="markBtnText">加入陌生词库</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="example-panel">
+              <div class="example-label">
+                <span id="exampleLabel">EXAMPLE</span>
+                <span class="example-rule" aria-hidden="true"></span>
+              </div>
+              <p class="example-en" id="exampleEn"></p>
+              <p class="example-zh" id="exampleZh" hidden></p>
+            </div>
+
+            <div class="options" id="options" role="group" aria-label="选择正确的中文释义"></div>
+
+            <div class="answer-panel" id="answerPanel" hidden aria-live="polite">
+              <div class="answer-head">
+                <span class="answer-icon" id="answerIcon" aria-hidden="true"></span>
+                <div class="answer-copy">
+                  <strong id="answerTitle"></strong>
+                  <p id="answerText"></p>
+                </div>
+                <span class="answer-mark" id="answerMark"></span>
+              </div>
+              <div class="answer-details" id="answerDetails"></div>
+            </div>
+
+            <div class="card-footer">
+              <button class="ghost-button" id="skipBtn" type="button">不认识？直接看答案</button>
+              <button class="primary-button next-button" id="nextBtn" type="button" hidden>
+                下一个单词
+                <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+              </button>
+            </div>
+
+            <p class="keyboard-hint">
+              按 <kbd>1</kbd>–<kbd>4</kbd> 选择 · <kbd>M</kbd> 标记 · <kbd>Enter</kbd> 下一个
+            </p>
+          </section>
+
+          <div class="stage-caption">
+            <span class="caption-index">WORD / <span id="captionIndex">001</span></span>
+            <span class="caption-line" aria-hidden="true"></span>
+            <span>每一次犹豫，都是记忆开始的地方。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 陌生单词库 ================= -->
+    <section class="view library-view" id="view-library" aria-labelledby="libraryHeading" hidden>
+      <header class="library-hero">
+        <div class="library-title">
+          <p class="eyebrow">
+            <span class="eyebrow-line" aria-hidden="true"></span>
+            YOUR UNKNOWN WORDS
+          </p>
+          <h1 id="libraryHeading">
+            陌生单词库
+            <span class="library-count" id="libraryCount">0</span>
+          </h1>
+          <p>被标记的单词会自动收在这里。随时回来复习，或导出一份 Word 生词本。</p>
+        </div>
+        <div class="library-actions">
+          <button class="secondary-button" id="reviewBtn" type="button">
+            <svg aria-hidden="true"><use href="#icon-repeat"></use></svg>
+            复习这些词
+          </button>
+          <button class="primary-button export-button" id="exportBtn" type="button">
+            <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+            导出 Word
+          </button>
+        </div>
+      </header>
+
+      <div class="export-note">
+        <span class="export-note-icon">
+          <svg aria-hidden="true"><use href="#icon-download"></use></svg>
+        </span>
+        <p><strong>Word 文档包含</strong> 单词、音标、词性、中文释义、考频与例句，按标记时间排列；有译文的例句会一并附上。</p>
+      </div>
+
+      <div class="library-toolbar" id="libraryToolbar">
+        <label class="search-box" for="searchInput">
+          <svg aria-hidden="true"><use href="#icon-search"></use></svg>
+          <input id="searchInput" type="search" placeholder="搜索单词、释义或例句…" autocomplete="off">
+        </label>
+        <div class="select-wrap">
+          <label class="sr-only" for="filterFreq">按考频筛选</label>
+          <select id="filterFreq">
+            <option value="all">全部考频</option>
+            <option value="高频">高频</option>
+            <option value="中高频">中高频</option>
+            <option value="中频">中频</option>
+            <option value="低频">低频</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <label class="sr-only" for="sortSelect">排序方式</label>
+          <select id="sortSelect">
+            <option value="recent">最近标记</option>
+            <option value="alphabetical">字母 A–Z</option>
+            <option value="frequency">考频从高到低</option>
+          </select>
+        </div>
+        <button class="text-button clear-button" id="clearBtn" type="button">
+          <svg aria-hidden="true"><use href="#icon-trash"></use></svg>
+          清空
+        </button>
+      </div>
+
+      <div class="library-grid" id="libraryGrid"></div>
+
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-mark" aria-hidden="true">
+          <svg><use href="#icon-bookmark"></use></svg>
+        </div>
+        <p class="eyebrow">NOTHING HERE YET</p>
+        <h2 id="emptyTitle">还没有陌生单词</h2>
+        <p id="emptyText">答错，或点击「不认识？直接看答案」，单词就会被收进这里。</p>
+        <button class="primary-button" id="emptyCta" type="button">
+          去认识第一个词
+          <svg aria-hidden="true"><use href="#icon-arrow-right"></use></svg>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>词隙 · CET-6 Word Lab</p>
+    <p class="footer-note">单词与标记仅保存在本机浏览器 · 题库 6,405 词 · 考频按通用英语语料词频估算，作为复习优先级参考</p>
+  </footer>
+
+  <div class="modal-backdrop" id="modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText">
+      <button class="modal-close" id="modalClose" type="button" aria-label="关闭">
+        <svg aria-hidden="true"><use href="#icon-close"></use></svg>
+      </button>
+      <p class="eyebrow">PLEASE CONFIRM</p>
+      <h2 id="modalTitle">清空陌生单词库？</h2>
+      <p id="modalText">所有已标记的单词都会被移除，此操作无法撤销。</p>
+      <div class="modal-actions">
+        <button class="secondary-button" id="modalCancel" type="button">再想想</button>
+        <button class="danger-button" id="modalConfirm" type="button">确认清空</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/word-export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
