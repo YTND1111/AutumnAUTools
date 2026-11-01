@@ -145,9 +145,11 @@ export default function HomePage() {
                 绩点计算
               </Link>
               {/* 六级单词工具：public/cet-6 下的独立静态页（完全离线，无 CDN 依赖），
-                  整页打开；与 cpp.html 一样用普通 <a>，不经过路由 */}
-              <a href="/cet-6/index.html" className="dial-btn">
-                六级单词（词隙）
+                  整页打开；与 cpp.html 一样用普通 <a>，不经过路由。
+                  署名排版仿「机考模拟」：主标题 + 一行小字「由@作者 提供」 */}
+              <a href="/cet-6/index.html" className="dial-btn dial-btn-stacked">
+                <span>六级单词（词隙）</span>
+                <span className="dial-btn-sub">由@千矢_Chiya 提供</span>
               </a>
               {/* OJ 入口：胶囊分段式——本地刷题（cpp.html）与外包机考模拟并列 */}
               <div className="dial-btn dial-segmented" role="group" aria-label="OJ 刷题入口">

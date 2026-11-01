@@ -134,6 +134,19 @@
     color: #6b8a7c;
 }
 
+/* 大按钮的「标题 + 署名」两行式：排版对齐胶囊按钮的 title/sub 层级，
+   外观仍与排课表工具/题库/绩点计算等常规大按钮一致 */
+.home-page .dial-btn-stacked {
+    flex-direction: column;
+    gap: 3px;
+}
+
+.home-page .dial-btn-sub {
+    font-size: 12px;
+    font-weight: normal;
+    color: #6b8a7c;
+}
+
 .home-page .footer .home-version {
     font-weight: bold;
     margin-bottom: 6px;
