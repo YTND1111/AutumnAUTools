@@ -144,6 +144,11 @@ export default function HomePage() {
               <Link to="/gpa" className="dial-btn">
                 绩点计算
               </Link>
+              {/* 六级单词工具：public/cet-6 下的独立静态页（完全离线，无 CDN 依赖），
+                  整页打开；与 cpp.html 一样用普通 <a>，不经过路由 */}
+              <a href="/cet-6/index.html" className="dial-btn">
+                六级单词（词隙）
+              </a>
               {/* OJ 入口：胶囊分段式——本地刷题（cpp.html）与外包机考模拟并列 */}
               <div className="dial-btn dial-segmented" role="group" aria-label="OJ 刷题入口">
                 <a href="/cpp.html" className="dial-segment">
