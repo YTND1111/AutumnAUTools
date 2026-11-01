@@ -194,6 +194,9 @@ export default function ResourcesPage() {
               <div className="nav-item">
                 <Link to="/resources">学习资料</Link>
               </div>
+              <div className="nav-item">
+                <Link to="/gpa">绩点计算</Link>
+              </div>
               <div className="nav-item">联系作者</div>
             </div>
           </div>

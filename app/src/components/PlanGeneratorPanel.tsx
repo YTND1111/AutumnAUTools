@@ -25,6 +25,8 @@ export default function PlanGeneratorPanel({
   onResetPreferences,
   campusPreference,
   onSetCampus,
+  canExportToGpa,
+  onExportToGpa,
 }: {
   generator: PlanGenerator;
   prefEditing: boolean;
@@ -32,6 +34,10 @@ export default function PlanGeneratorPanel({
   onResetPreferences: () => void;
   campusPreference: CampusPref;
   onSetCampus: (value: CampusPref) => void;
+  /** 当前课表是否有可带到绩点规划的课程 */
+  canExportToGpa: boolean;
+  /** 把当前课表（激活方案 + 班级课表）带到目标 GPA 规划 */
+  onExportToGpa: () => void;
 }) {
   const { plans, conflicts, activePlanId, hasGenerated, errorText, generate, setActivePlan } = generator;
   const [hint, setHint] = useState("");
@@ -155,6 +161,26 @@ export default function PlanGeneratorPanel({
             )}
           </>
         )}
+      </div>
+
+      {/* 带到绩点规划：把当前课表（激活方案 + 班级课表）的课程与学分交给 /gpa 的目标规划 */}
+      <div className="plan-handoff">
+        <button
+          type="button"
+          className="plan-handoff-btn"
+          onClick={onExportToGpa}
+          disabled={!canExportToGpa}
+          title={
+            canExportToGpa
+              ? "把当前课表的课程与学分带入「目标 GPA 规划」，用于反解本学期需要的成绩组合"
+              : "先点「生成方案」（或调用班级课表）后再导入"
+          }
+        >
+          导入到绩点规划 →
+        </button>
+        <span className="plan-handoff-hint">
+          带过去的是当前课表的课程与学分，可在绩点页继续增删
+        </span>
       </div>
     </section>
   );

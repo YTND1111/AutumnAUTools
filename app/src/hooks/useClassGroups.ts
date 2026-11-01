@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { CourseRecord } from "../services/courseData";
-import { NON_CLASS_NAME, splitClasses } from "../services/courseData";
+import { NON_CLASS_NAME, courseMatchesClassText } from "../services/courseData";
 import { buildConflictMap, extractMaxWeekFromCourses, formatConflictMessage, parseCourseSchedule } from "../services/scheduleParse";
 import type { ScheduleEntry } from "../services/scheduleParse";
 import type { PlanCourse } from "../services/planGenerator";
@@ -56,21 +56,13 @@ export function getClassGroupKey(className: string): string {
   return `class-group|${className}`;
 }
 
-/** 与原站 courseMatchesClass 一致 */
-function courseMatchesClass(option: PoolOption, className: string): boolean {
-  const raw = option.classText;
-  if (!raw) return false;
-  if (raw.includes(className)) return true;
-  return splitClasses(raw).includes(className);
-}
-
 /** 按班级名从课程数据重建组课程列表（poolKey 去重，与原站 buildClassGroup 一致） */
 function buildGroupOptions(className: string, courses: CourseRecord[]): PoolOption[] {
   const seen = new Set<string>();
   const options: PoolOption[] = [];
   courses.forEach((record) => {
     const option = toPoolOption(record);
-    if (!courseMatchesClass(option, className)) return;
+    if (!courseMatchesClassText(option.classText, className)) return;
     if (seen.has(option.poolKey)) return;
     seen.add(option.poolKey);
     options.push(option);

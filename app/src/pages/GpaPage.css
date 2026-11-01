@@ -1,0 +1,907 @@
+/*
+ * 绩点计算页样式（/gpa）
+ *
+ * 骨架（顶栏 / 主体两栏 / 页脚）来自 SharedPage.css；本文件只写页面内控件与表格。
+ * 与首页一致：开头 `页作用域 * { padding: 0 }` 会压掉 GlobalStyle 公共类的内边距，
+ * 依赖 SharedPage.css 中 .layout-page .surface-card / .dial-btn 那级特异性补回，
+ * 本文件内的控件类（.gpa-input / .gpa-btn 等）自行声明内边距，不受影响。
+ */
+
+@import "./SharedPage.css";
+
+/* 页面内重置 */
+.gpa-page,
+.gpa-page * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Microsoft Yahei", SimSun, sans-serif;
+}
+
+.gpa-page {
+    background: #f5f7f6;
+}
+
+.gpa-page .surface-card {
+    overflow: hidden;
+}
+
+/* 卡片标题条：通栏条 + 2px 主色分隔线，文字与线之间留白 */
+.gpa-page .title-bar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 2px solid var(--joint-color);
+    background: linear-gradient(180deg, rgba(15, 122, 71, 0.07), rgba(15, 122, 71, 0.02));
+    border-radius: 4px 4px 0 0;
+    margin: -20px -20px 14px;
+    padding: 14px 20px 12px;
+}
+
+.gpa-page .title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #222;
+}
+
+.gpa-term-tag {
+    flex: 0 0 auto;
+    font-size: 12px;
+    color: var(--joint-color);
+    background: #e8f8ef;
+    border-radius: 999px;
+    padding: 2px 10px;
+}
+
+/* ---------- 通用控件 ---------- */
+
+.gpa-input,
+.gpa-select {
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #d6ded9;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #222;
+    font-size: 14px;
+}
+
+.gpa-input:focus,
+.gpa-select:focus {
+    outline: none;
+    border-color: var(--joint-color);
+    box-shadow: 0 0 0 3px rgba(15, 122, 71, 0.12);
+}
+
+.gpa-btn {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid #d6ded9;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #222;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.gpa-btn:hover:not(:disabled) {
+    border-color: var(--joint-color);
+    color: var(--joint-color);
+}
+
+.gpa-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.gpa-btn.is-primary {
+    background: var(--joint-color);
+    border-color: var(--joint-color);
+    color: #ffffff;
+}
+
+.gpa-btn.is-primary:hover:not(:disabled) {
+    background: #0c6a3d;
+    color: #ffffff;
+}
+
+.gpa-btn.is-ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--joint-color);
+    padding: 0 6px;
+}
+
+.gpa-btn.is-block {
+    display: block;
+    width: 100%;
+}
+
+.gpa-btn.is-danger:hover:not(:disabled) {
+    border-color: #c0392b;
+    color: #c0392b;
+}
+
+.gpa-hint {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #7b8d84;
+}
+
+.gpa-status {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #eaf7f0;
+    color: var(--joint-color);
+    font-size: 13px;
+}
+
+/* ---------- 快速添加行 ---------- */
+
+.gpa-add-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 14px;
+}
+
+.gpa-add-row .gpa-input.is-name {
+    flex: 1 1 220px;
+    min-width: 150px;
+}
+
+.gpa-add-row .gpa-input.is-credit {
+    flex: 0 0 92px;
+}
+
+/* ---------- 批量粘贴导入 ---------- */
+
+.gpa-paste {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border: 1px dashed #cfe0d6;
+    border-radius: 10px;
+    background: #fbfdfc;
+}
+
+.gpa-paste-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.gpa-paste-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #33594a;
+}
+
+.gpa-textarea {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #d6ded9;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #222;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.gpa-textarea:focus {
+    outline: none;
+    border-color: var(--joint-color);
+    box-shadow: 0 0 0 3px rgba(15, 122, 71, 0.12);
+}
+
+.gpa-paste-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.gpa-report {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #33594a;
+}
+
+.gpa-skip-list {
+    margin-top: 6px;
+    padding-left: 16px;
+    max-height: 132px;
+    overflow: auto;
+    font-size: 12px;
+    color: #8a9a92;
+}
+
+.gpa-skip-list li {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+}
+
+.gpa-skip-raw {
+    color: #66756d;
+    word-break: break-all;
+}
+
+.gpa-skip-reason {
+    flex: 0 0 auto;
+    color: #b06a2c;
+}
+
+/* ---------- 成绩表格 ---------- */
+
+.gpa-table-wrap {
+    overflow-x: auto;
+}
+
+.gpa-table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.gpa-table th,
+.gpa-table td {
+    padding: 8px 6px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid #eef2f0;
+}
+
+.gpa-table th {
+    background: #f7faf8;
+    border-bottom: 1px solid #e2eae5;
+    color: #7b8d84;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.gpa-table tbody tr:hover {
+    background: #f8fcfa;
+}
+
+.gpa-table tbody tr.is-excluded {
+    background: #fcfaf6;
+}
+
+.gpa-table tbody tr.is-excluded:hover {
+    background: #faf5ec;
+}
+
+.gpa-col-name {
+    min-width: 170px;
+}
+
+.gpa-col-code {
+    width: 96px;
+}
+
+.gpa-col-credit {
+    width: 70px;
+}
+
+.gpa-col-grade {
+    width: 76px;
+}
+
+.gpa-col-kind {
+    width: 92px;
+}
+
+.gpa-col-counted,
+.gpa-col-point,
+.gpa-col-op {
+    width: 44px;
+    text-align: center;
+}
+
+.gpa-cell-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #222;
+    font-size: 14px;
+}
+
+.gpa-cell-input:hover {
+    border-color: #dfe7e2;
+    background: #ffffff;
+}
+
+.gpa-cell-input:focus {
+    outline: none;
+    border-color: var(--joint-color);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(15, 122, 71, 0.1);
+}
+
+.gpa-cell-input.is-credit {
+    width: 62px;
+}
+
+.gpa-cell-input.is-narrow {
+    font-size: 12px;
+    color: #66756d;
+}
+
+.gpa-cell-select {
+    padding: 4px 2px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #222;
+    font-size: 13px;
+}
+
+.gpa-cell-select:hover {
+    border-color: #dfe7e2;
+    background: #ffffff;
+}
+
+.gpa-cell-select:focus {
+    outline: none;
+    border-color: var(--joint-color);
+    background: #ffffff;
+}
+
+.gpa-point {
+    display: inline-block;
+    min-width: 28px;
+    color: #9aa8a1;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.gpa-point.is-on {
+    color: var(--joint-color);
+}
+
+.gpa-tag {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #fdf3e6;
+    color: #b06a2c;
+    font-size: 11px;
+}
+
+.gpa-row-note {
+    margin-top: 2px;
+    color: #a0a8a2;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.gpa-icon-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #b0433b;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.gpa-icon-btn:hover {
+    background: #fbe9e7;
+}
+
+.gpa-empty {
+    padding: 18px 0 4px;
+    color: #7b8d84;
+    font-size: 14px;
+    line-height: 2;
+}
+
+.gpa-empty code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #f0f5f2;
+    font-size: 13px;
+}
+
+/* ---------- 右栏：结果卡 ---------- */
+
+.gpa-summary-card {
+    margin-bottom: 16px;
+}
+
+.gpa-metric-label {
+    color: #7b8d84;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+}
+
+.gpa-big {
+    color: var(--joint-color);
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.gpa-big.is-empty {
+    color: #b9c7c0;
+}
+
+.gpa-metric-sub {
+    color: #7b8d84;
+    font-size: 12px;
+}
+
+.gpa-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.gpa-metrics > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid #e6efe9;
+    border-radius: 8px;
+    background: #f6faf8;
+}
+
+.gpa-metrics span {
+    color: #7b8d84;
+    font-size: 12px;
+}
+
+.gpa-metrics b {
+    color: #222;
+    font-size: 16px;
+}
+
+/* ---------- 右栏：设置面板 ---------- */
+
+.gpa-panel,
+.gpa-rules {
+    margin-bottom: 16px;
+}
+
+.gpa-panel-title {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--joint-color);
+    color: #222;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.gpa-panel .gpa-select.is-block {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.gpa-panel .gpa-btn.is-block + .gpa-btn.is-block {
+    margin-top: 10px;
+}
+
+.gpa-seg {
+    display: flex;
+    margin-bottom: 10px;
+    border: 1px solid #d6ded9;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.gpa-seg button {
+    flex: 1;
+    height: 34px;
+    border: none;
+    background: #ffffff;
+    color: #4a5a52;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.gpa-seg button + button {
+    border-left: 1px solid #d6ded9;
+}
+
+.gpa-seg button.is-active {
+    background: var(--joint-color);
+    color: #ffffff;
+}
+
+.gpa-term-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.gpa-term-row .gpa-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* ---------- 右栏：规则说明 ---------- */
+
+.gpa-rule-line {
+    margin-bottom: 8px;
+    color: #33594a;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.gpa-rule-list {
+    margin-bottom: 12px;
+    padding-left: 16px;
+    color: #6b7c73;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.gpa-grade-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.gpa-grade-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 3px 7px;
+    border: 1px solid #dbe7e0;
+    border-radius: 6px;
+    background: #f7fbf9;
+    color: #33594a;
+    font-size: 12px;
+}
+
+.gpa-grade-chip span {
+    color: #7b8d84;
+}
+
+.gpa-grade-chip.is-off {
+    opacity: 0.65;
+    border-style: dashed;
+}
+
+.gpa-source {
+    color: #6b7c73;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.gpa-source a {
+    color: var(--joint-color);
+}
+
+.gpa-disclaimer {
+    margin-top: 8px;
+    color: #a3782f;
+    font-size: 12px;
+}
+
+/* 窄屏：表格横向滚动，结果卡不再固定宽度（SharedPage 已把两栏改为上下） */
+@media (max-width: 849px) {
+    .gpa-big {
+        font-size: 36px;
+    }
+
+    .gpa-metrics {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ========== 目标 GPA 规划 ========== */
+
+.gpa-page .gpa-goal-card {
+    margin-top: 16px;
+}
+
+.gpa-goal-tag {
+    flex: 0 0 auto;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #eef4ff;
+    color: #3b5bdb;
+    font-size: 12px;
+}
+
+.gpa-page .gpa-goal-base {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+    margin: 12px 0 4px;
+}
+
+.gpa-page .gpa-goal-field {
+    display: flex;
+    flex: 1 1 140px;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 120px;
+    font-size: 12px;
+    color: #7b8d84;
+}
+
+.gpa-page .gpa-goal-field .gpa-input {
+    width: 100%;
+}
+
+.gpa-page .gpa-goal-courses {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed #dbe7e0;
+}
+
+.gpa-page .gpa-goal-courses-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.gpa-goal-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #33594a;
+}
+
+.gpa-page .gpa-goal-courses-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.gpa-page .gpa-goal-course-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.gpa-page .gpa-goal-course-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.gpa-page .gpa-goal-course-credit {
+    flex: 0 0 84px;
+    width: 84px;
+}
+
+.gpa-page .gpa-goal-textarea {
+    margin-top: 8px;
+}
+
+.gpa-goal-empty {
+    padding: 12px 0 2px;
+    color: #7b8d84;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.gpa-page .gpa-goal-result {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 2px solid var(--joint-color);
+}
+
+.gpa-goal-message {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #eaf7f0;
+    color: #1c6b46;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.gpa-goal-message.is-warn {
+    background: #fdf3e6;
+    color: #a3641c;
+}
+
+.gpa-page .gpa-goal-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.gpa-page .gpa-goal-metrics > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid #e6efe9;
+    border-radius: 8px;
+    background: #f6faf8;
+}
+
+.gpa-page .gpa-goal-metrics span {
+    color: #7b8d84;
+    font-size: 12px;
+}
+
+.gpa-page .gpa-goal-metrics b {
+    color: #1c3f30;
+    font-size: 16px;
+}
+
+.gpa-page .gpa-goal-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 12px 0 8px;
+}
+
+.gpa-goal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gpa-goal-combo {
+    padding: 8px 10px;
+    border: 1px solid #e6efe9;
+    border-radius: 8px;
+    background: #fbfdfc;
+}
+
+.gpa-goal-combo-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.gpa-goal-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.gpa-goal-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+    padding: 1px 6px;
+    border: 1px solid #cfe4d8;
+    border-radius: 6px;
+    background: #eef8f2;
+    color: #1c6b46;
+    font-size: 12px;
+}
+
+.gpa-goal-chip b {
+    font-size: 13px;
+}
+
+.gpa-goal-combo-gpa {
+    color: var(--joint-color);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.gpa-goal-slack {
+    color: #7b8d84;
+    font-size: 12px;
+}
+
+.gpa-goal-slack.is-tight {
+    color: #b06a2c;
+}
+
+.gpa-goal-combo-detail {
+    margin-top: 4px;
+    color: #6b7c73;
+    font-size: 12px;
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+.gpa-goal-more {
+    padding: 4px 0;
+    color: #a0a8a2;
+    font-size: 12px;
+}
+
+@media (max-width: 849px) {
+    .gpa-page .gpa-goal-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 排课表导入：来源标记与提示 */
+.gpa-page .gpa-goal-courses-actions {
+    flex-wrap: wrap;
+}
+
+.gpa-page .gpa-btn.is-plan {
+    border-color: #cfe4d8;
+    background: #eef8f2;
+    color: #1c6b46;
+}
+
+.gpa-page .gpa-btn.is-plan:hover:not(:disabled) {
+    border-color: var(--joint-color);
+    color: var(--joint-color);
+}
+
+.gpa-page .gpa-goal-src {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: #eef4ff;
+    color: #3b5bdb;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.gpa-page .gpa-goal-plan-hint {
+    margin: 2px 0 8px;
+    color: #7b8d84;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.gpa-page .gpa-goal-plan-hint a {
+    color: var(--joint-color);
+}
+
+/* 排课表导入：来源规模提示 + 「含班级课表组」开关 */
+.gpa-page .gpa-goal-plan-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    margin: 2px 0 8px;
+}
+
+.gpa-page .gpa-goal-plan-row .gpa-goal-plan-hint {
+    margin: 0;
+}
+
+.gpa-page .gpa-goal-plan-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #6b7c73;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gpa-page .gpa-goal-plan-check input {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--joint-color);
+}
+
+/* 课表 txt 导入：隐藏原生文件选择框（由按钮触发） */
+.gpa-page .gpa-goal-file-input {
+    display: none;
+}

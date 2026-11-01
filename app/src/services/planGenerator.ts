@@ -11,10 +11,11 @@ import type { ScheduleEntry } from "./scheduleParse";
  *   （阻塞检查遍历全部周次的所有上课小节，不受周次定位影响）；
  * - 回溯枚举选课组合， pairwise 冲突检测（同一天 + 小节区间相交 +
  *   周次区间相交，全学期），无冲突方案与冲突方案各收集至多 20 套；
- * - 任一卡片候选为空 → 返回错误（原站文案「不存在满足要求的课程方案」）。
+ * - 任一卡片候选为空 → 返回错误（原站文案「不存在满足要求的课程方案」）；
+ * - 班级课表调用组（fixedCourses）作为固定占用参与冲突避让。
  *
- * 与原站的差异：班级课程组（fixedCourses）尚未迁移，保留扩展参数；
- * 校区偏好复用设置层（settings.campusPreference）而非单独的状态。
+ * 「只用班级课表、不加入自选课程」是一种合法使用方式：此时无需枚举候选，
+ * 固定占用本身就是唯一方案（内部互相冲突时归入冲突方案，交由网格标红）。
  */
 
 /** 设置层校区偏好 → 课程数据中的校区文本 */
@@ -88,14 +89,45 @@ export function generatePlans(
   cards: PoolCard[],
   prefs: PlanPreferences,
   getEntries: (option: PoolOption) => ScheduleEntry[],
-  /** 预留：班级课程组固定占用课程（原站 fixedCourses），迁移后传入 */
+  /** 班级课程组固定占用课程（仅班级课表、无自选卡片时即为方案的课程集合） */
   fixedCourses: PlanCourse[] = []
 ): GenerationResult {
   const empty: GenerationResult = { plans: [], conflicts: [], error: "" };
   const activeCards = cards.filter((card) => card.active);
 
   if (!activeCards.length) {
-    return { ...empty, error: "不存在满足要求的课程方案" };
+    // 没有任何参与排课的卡片：班级课表固定占用本身就是唯一方案
+    if (!fixedCourses.length) {
+      return { ...empty, error: "请先添加课程卡片，或调用班级课表后再生成方案" };
+    }
+
+    const uniqueFixed: PlanCourse[] = [];
+    const seenPoolKeys = new Set<string>();
+    for (const course of fixedCourses) {
+      if (seenPoolKeys.has(course.poolKey)) continue;
+      seenPoolKeys.add(course.poolKey);
+      uniqueFixed.push(course);
+    }
+
+    let selfConflict = false;
+    for (let i = 0; i < uniqueFixed.length && !selfConflict; i += 1) {
+      for (let j = i + 1; j < uniqueFixed.length && !selfConflict; j += 1) {
+        if (courseEntriesConflict(uniqueFixed[i], uniqueFixed[j])) selfConflict = true;
+      }
+    }
+
+    if (selfConflict) {
+      return {
+        plans: [],
+        conflicts: [{ id: "conflict-1", name: "冲突方案1", courses: uniqueFixed }],
+        error: "",
+      };
+    }
+    return {
+      plans: [{ id: "plan-1", name: "方案1", courses: uniqueFixed }],
+      conflicts: [],
+      error: "",
+    };
   }
 
   const campusNoPreference = prefs.campusPreference === "none";

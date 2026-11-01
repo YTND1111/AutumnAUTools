@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ExternalLink from "../components/ExternalLink";
 import FunTabs from "../components/FunTabs";
 import FeeCalendar from "../components/FeeCalendar";
 import AdPopup from "../components/AdPopup";
+import AccountDialog from "../auth/AccountDialog";
+import { useAuth } from "../auth/AuthContext";
 import { ANNOUNCEMENTS, APP_VERSION_HOME } from "../config";
 import "./HomePage.css";
 
@@ -21,10 +23,16 @@ import "./HomePage.css";
  * - 站内 .html 绝对链接 → <Link>；外部链接 → <ExternalLink>（非同域名外链，
  *   点击时由全局 ExternalLinkGuard 弹出风险提醒；图标类外链关闭「↗」标记），
  *   PDF 下载保持 <a>；
- * - 不再加载 version-global.js（页面内 fetch 均走固定路径，无版本戳用途）。
+ * - 不再加载 version-global.js（页面内 fetch 均走固定路径，无版本戳用途）；
+ * - 导航栏「登录 / 注册」入口 → auth/AccountDialog（账号与云端同步，见 backend/）。
  */
 
 const NEWS_ITEMS = [
+  { title: "排课表v2.0.3 / 绩点v1.3.0：方案一键带入目标 GPA 规划", date: "2026-10-28" },
+  { title: "排课表工具v2.0.2修复仅用班级课表无法生成方案", date: "2026-10-28" },
+  { title: "绩点计算工具v1.2.0：待修课程可从排课表导入", date: "2026-10-28" },
+  { title: "绩点计算工具v1.1.0新增目标 GPA 规划", date: "2026-10-28" },
+  { title: "绩点计算工具v1.0.0上线", date: "2026-10-28" },
   { title: "排课表工具v2.0.1新增外链入口与外链提醒", date: "2026-09-22" },
   { title: "秋功v2.0.0 React 重构上线", date: "2026-08-10" },
   { title: "排课表工具v2.0.0版本更新", date: "2026-08-10" },
@@ -34,6 +42,9 @@ const NEWS_ITEMS = [
 ];
 
 export default function HomePage() {
+  const { user } = useAuth();
+  const [accountOpen, setAccountOpen] = useState(false);
+
   useEffect(() => {
     document.title = "秋功-首页";
   }, []);
@@ -42,6 +53,9 @@ export default function HomePage() {
     <>
       {/* 右下角趣味广告弹窗（白色遮罩闪烁 + X 关闭） */}
       <AdPopup />
+
+      {/* 账号与云端同步弹窗（未登录显示「登录 / 注册」，登录后显示用户名） */}
+      <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} />
 
       <div className="home-page layout-page">
         {/* 顶部导航栏 */}
@@ -57,6 +71,27 @@ export default function HomePage() {
               </div>
               <div className="nav-item">
                 <Link to="/resources">学习资料</Link>
+              </div>
+              <div className="nav-item">
+                <Link to="/gpa">绩点计算</Link>
+              </div>
+              {/* 账号入口：未登录显示「登录 / 注册」，登录后显示昵称（点击可管理云端数据） */}
+              <div className="nav-item">
+                <button
+                  type="button"
+                  className="account-nav-btn"
+                  onClick={() => setAccountOpen(true)}
+                  title={user ? "账号与云端同步" : "登录后可在多设备同步排课数据"}
+                >
+                  {user ? (
+                    <>
+                      <span className="account-nav-user">{user.displayName ?? user.username}</span>
+                      <span>（云端）</span>
+                    </>
+                  ) : (
+                    "登录 / 注册"
+                  )}
+                </button>
               </div>
               <div className="nav-item">联系作者</div>
             </div>
@@ -105,6 +140,9 @@ export default function HomePage() {
               </Link>
               <Link to="/qbn" className="dial-btn">
                 题库
+              </Link>
+              <Link to="/gpa" className="dial-btn">
+                绩点计算
               </Link>
               {/* OJ 入口：胶囊分段式——本地刷题（cpp.html）与外包机考模拟并列 */}
               <div className="dial-btn dial-segmented" role="group" aria-label="OJ 刷题入口">

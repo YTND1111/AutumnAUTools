@@ -1,0 +1,321 @@
+/*
+ * 账号面板样式。
+ *
+ * 注意：首页（.home-page *）与排课表页（.ca-beta-page *）都有一条
+ * 「页作用域 * { margin:0; padding:0 }」粗粒度重置（特异性 0,1,0），
+ * 因此本文件所有规则都写成 .account-panel 后代选择器（0,2,0），
+ * 避免内边距被重置清成 0 导致文字贴边框（同 SharedPage.css 的踩坑记录）。
+ */
+
+.account-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-primary, #222);
+}
+
+.account-panel .account-hint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text-secondary, #666);
+}
+
+/* ── 登录 / 注册切换 ───────────────────────────────────────────────────── */
+.account-panel .account-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 3px;
+    background: #f2f6f3;
+    border: 1px solid var(--surface-border, #e5e7eb);
+    border-radius: 8px;
+}
+
+.account-panel .account-tab {
+    flex: 1;
+    padding: 7px 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary, #666);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
+}
+
+.account-panel .account-tab.is-active {
+    background: #ffffff;
+    color: var(--joint-color, #0f7a47);
+    font-weight: bold;
+    box-shadow: 0 1px 4px rgba(15, 122, 71, 0.18);
+}
+
+.account-panel .account-tab:disabled {
+    color: #b6bdb8;
+    cursor: not-allowed;
+}
+
+/* ── 表单 ─────────────────────────────────────────────────────────────── */
+.account-panel .account-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.account-panel .account-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.account-panel .account-label {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+}
+
+.account-panel .account-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--surface-border, #e5e7eb);
+    border-radius: 6px;
+    background: #ffffff;
+    color: var(--text-primary, #222);
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.account-panel .account-input:focus {
+    border-color: var(--joint-color, #0f7a47);
+    box-shadow: 0 0 0 3px rgba(15, 122, 71, 0.14);
+}
+
+/* ── 按钮 ─────────────────────────────────────────────────────────────── */
+.account-panel .account-btn {
+    padding: 8px 12px;
+    border: 1px solid rgba(15, 122, 71, 0.28);
+    border-radius: 6px;
+    background: #f4faf6;
+    color: #17462f;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.account-panel .account-btn:hover:not(:disabled) {
+    background: #e7f5ed;
+    border-color: var(--joint-color, #0f7a47);
+}
+
+.account-panel .account-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.account-panel .account-btn-primary {
+    background: var(--joint-color, #0f7a47);
+    border-color: var(--joint-color, #0f7a47);
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.account-panel .account-btn-primary:hover:not(:disabled) {
+    background: #0c6239;
+    border-color: #0c6239;
+}
+
+.account-panel .account-btn-danger {
+    background: #fdf1f1;
+    border-color: rgba(190, 40, 40, 0.35);
+    color: #8c2020;
+}
+
+.account-panel .account-btn-danger:hover:not(:disabled) {
+    background: #f8e2e2;
+    border-color: #be2828;
+}
+
+.account-panel .account-submit {
+    width: 100%;
+    margin-top: 2px;
+    padding: 10px 12px;
+}
+
+/* ── 已登录信息 ───────────────────────────────────────────────────────── */
+.account-panel .account-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--surface-border, #e5e7eb);
+    border-radius: 8px;
+    background: #f7fbf8;
+}
+
+.account-panel .account-avatar {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--joint-color, #0f7a47);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.account-panel .account-user-text {
+    min-width: 0;
+}
+
+.account-panel .account-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1d3a2d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account-panel .account-sub {
+    font-size: 12px;
+    color: var(--text-muted, #888);
+}
+
+.account-panel .account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.account-panel .account-actions .account-btn {
+    flex: 1 1 auto;
+}
+
+/* ── 注销确认区 ───────────────────────────────────────────────────────── */
+.account-panel .account-danger {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px dashed rgba(190, 40, 40, 0.4);
+    border-radius: 8px;
+    background: rgba(190, 40, 40, 0.06);
+}
+
+.account-panel .account-danger-text {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #8c2020;
+}
+
+.account-panel .account-danger-strong {
+    font-weight: bold;
+}
+
+/* ── 提示文案 ─────────────────────────────────────────────────────────── */
+.account-panel .account-error,
+.account-panel .account-notice {
+    margin: 0;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.account-panel .account-error {
+    background: rgba(190, 40, 40, 0.1);
+    color: #8c2020;
+}
+
+.account-panel .account-notice {
+    background: rgba(15, 122, 71, 0.1);
+    color: #17462f;
+}
+
+.account-panel .account-foot {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-muted, #888);
+}
+
+/* ── 首页导航栏内的账号入口（按钮外观对齐 .nav-item） ──────────────────── */
+.nav-item .account-nav-btn {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 15px;
+    font-family: inherit;
+    line-height: inherit;
+    cursor: pointer;
+}
+
+.nav-item .account-nav-btn:hover {
+    text-decoration: underline;
+}
+
+.account-nav-user {
+    font-weight: bold;
+}
+
+/* ── 弹窗（首页导航栏触发；portal 渲染到 body，不受页作用域重置影响） ──── */
+.account-modal-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(0, 0, 0, 0.42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.account-modal {
+    width: min(420px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    padding: 18px 20px 20px;
+    font-family: "Microsoft Yahei", SimSun, sans-serif;
+    color: var(--text-primary, #222);
+}
+
+.account-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(15, 122, 71, 0.25);
+    font-size: 16px;
+    font-weight: bold;
+    color: #1d3a2d;
+}
+
+.account-modal-close {
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #888);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.account-modal-close:hover {
+    color: var(--joint-color, #0f7a47);
+}

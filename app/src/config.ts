@@ -12,7 +12,10 @@
 export const APP_VERSION_HOME = "2.0.0";
 
 /** 排课表工具版本号，展示于排课表页顶栏右上角 */
-export const APP_VERSION_CA = "2.0.1";
+export const APP_VERSION_CA = "2.0.3";
+
+/** 绩点计算工具版本号，展示于绩点计算页页脚 */
+export const APP_VERSION_GPA = "1.3.0";
 
 /**
  * 课程数据 JSON 路径（public/src/py/ 下，与原静态站点保持一致）。
@@ -64,3 +67,28 @@ export const ANNOUNCEMENTS: Announcement[] = [
       "本站已迁移至 React 框架：首页与排课表工具全面重构（排课表工具同步升级 v2.0.0），界面与功能与原站保持一致。如遇显示异常，请刷新页面。",
   },
 ];
+
+/**
+ * ── 用户后端（Cloudflare Workers + D1）接入配置 ──────────────────────────────
+ *
+ * 后端代码与部署说明见仓库根目录的 backend/ 与 docs/user-backend.md。
+ *
+ * BACKEND_BASE_URL 取值：
+ *   * 留空（默认）→ 使用同源 `/api`：
+ *       - 本地开发：vite.config.ts 已把 /api 代理到 wrangler dev（127.0.0.1:8787）；
+ *       - 生产环境：静态站点与 Worker 同域（如 Cloudflare Pages + Workers 路由同一域名）。
+ *   * 跨域部署（静态站与 Worker 不同域名）→ 在 app/.env.local 填 Worker 地址，例如
+ *       VITE_BACKEND_BASE_URL=https://autumn-autools-api.<你的子域>.workers.dev
+ *     并把该静态站来源加入 backend/wrangler.toml 的 ALLOWED_ORIGINS。
+ */
+export const BACKEND_BASE_URL: string = (
+  (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ?? ""
+).replace(/\/+$/, "");
+
+/**
+ * 云端后端总开关（构建期）。设为 "false" 时：
+ *   - 不发起任何 /api 请求，账号入口显示为「未启用」；
+ *   - 设置与方案回退为纯 localStorage 单机模式（与接入后端前的行为完全一致）。
+ */
+export const BACKEND_ENABLED: boolean =
+  ((import.meta.env.VITE_BACKEND_ENABLED as string | undefined) ?? "true").toLowerCase() !== "false";

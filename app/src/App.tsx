@@ -6,7 +6,9 @@ import HomePage from "./pages/HomePage";
 import QbnPage from "./pages/QbnPage";
 import CaBetaPage from "./pages/CaBetaPage";
 import ResourcesPage from "./pages/ResourcesPage";
+import GpaPage from "./pages/GpaPage";
 import ExternalLinkGuard from "./components/ExternalLinkGuard";
+import { AuthContextProvider } from "./auth/AuthContext";
 import { SettingsContextProvider } from "./settings/SettingsContext";
 import { PlansContextProvider } from "./plans/PlansContext";
 
@@ -73,27 +75,32 @@ export default function App() {
       <LegacyLinkInterceptor />
       {/* 站外链接（非同域名）风险提醒：全局拦截外链点击并弹确认框（含 legacy 挂载页） */}
       <ExternalLinkGuard />
-      {/* 用户设置全局上下文（SettingsProvider 抽象：当前 localStorage，后端就绪后可换远程实现） */}
-      <SettingsContextProvider>
-        {/* 配课方案全局上下文（PlanProvider 抽象：预留用户维度，多用户方案上云） */}
-        <PlansContextProvider>
-          <Routes>
-          {/* 首页与题库页已完成原生 React 重写（pages/HomePage.tsx、pages/QbnPage.tsx），不再走遗留挂载 */}
-          <Route path="/" element={<HomePage />} />
-          {/* 排课表工具：原生重构版已上线（pages/CaBetaPage.tsx，plan/class 双模式与原站对齐） */}
-          <Route path="/ca" element={<CaBetaPage />} />
-          {/* 旧开发路由重定向到正式路由 */}
-          <Route path="/ca-beta" element={<Navigate to="/ca" replace />} />
-          {/* 遗留挂载回滚兜底（无入口，仅手动访问；稳定后可删除） */}
-          <Route path="/ca-legacy" element={<LegacyPage {...LEGACY_PAGES.ca} />} />
-          <Route path="/qbn" element={<QbnPage />} />
-          {/* 学习资料下载页（静态清单驱动，见 services/resources.ts 与 scripts/sync-resources.mjs） */}
-          <Route path="/resources" element={<ResourcesPage />} />
-          <Route path="/cn" element={<RedirectToStaticPage to="/cn.html" />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </PlansContextProvider>
-      </SettingsContextProvider>
+      {/* 登录态（云端用户后端，见 backend/）：最外层，供设置/方案上下文按账号重新加载 */}
+      <AuthContextProvider>
+        {/* 用户设置全局上下文（SettingsProvider 抽象：未登录走本机，登录后云端优先 + 本机镜像） */}
+        <SettingsContextProvider>
+          {/* 配课方案全局上下文（PlanProvider 抽象：多用户方案按账号上云隔离） */}
+          <PlansContextProvider>
+            <Routes>
+            {/* 首页与题库页已完成原生 React 重写（pages/HomePage.tsx、pages/QbnPage.tsx），不再走遗留挂载 */}
+            <Route path="/" element={<HomePage />} />
+            {/* 排课表工具：原生重构版已上线（pages/CaBetaPage.tsx，plan/class 双模式与原站对齐） */}
+            <Route path="/ca" element={<CaBetaPage />} />
+            {/* 旧开发路由重定向到正式路由 */}
+            <Route path="/ca-beta" element={<Navigate to="/ca" replace />} />
+            {/* 遗留挂载回滚兜底（无入口，仅手动访问；稳定后可删除） */}
+            <Route path="/ca-legacy" element={<LegacyPage {...LEGACY_PAGES.ca} />} />
+            <Route path="/qbn" element={<QbnPage />} />
+            {/* 学习资料下载页（静态清单驱动，见 services/resources.ts 与 scripts/sync-resources.mjs） */}
+            <Route path="/resources" element={<ResourcesPage />} />
+            {/* 绩点计算（按农大等级制规则计算总 GPA / 必修课 GPA，数据存本机 localStorage） */}
+            <Route path="/gpa" element={<GpaPage />} />
+            <Route path="/cn" element={<RedirectToStaticPage to="/cn.html" />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </PlansContextProvider>
+        </SettingsContextProvider>
+      </AuthContextProvider>
     </HashRouter>
   );
 }

@@ -100,6 +100,9 @@ export default function TimetableGrid({
 
   const weekOptions = ["all", ...Array.from({ length: maxWeek }, (_, i) => String(i + 1))];
 
+  /** 网格里是否已有任何课程块（班级课表固定占用也算，不能只看卡片数） */
+  const hasBlocks = [...slots.values()].some((blocks) => blocks.length > 0);
+
   // 汇总冲突文案（按块去重，每门课一条）
   const conflictMessages: string[] = [];
   const seenPoolKeys = new Set<string>();
@@ -120,7 +123,9 @@ export default function TimetableGrid({
           {summary ??
             (activeCardCount
               ? `${placedCardCount}/${activeCardCount} 张卡片已放置 · ${conflictCount} 门冲突`
-              : "候选池中没有参与排课的卡片")}
+              : hasBlocks
+                ? "仅班级课表固定占用"
+                : "候选池中没有参与排课的卡片")}
           {selectedWeek === "all" ? " · 周次：全部" : ` · 第 ${selectedWeek} 周`}
         </span>
       </h2>
@@ -220,10 +225,10 @@ export default function TimetableGrid({
         </p>
       )}
 
-      {activeCardCount === 0 && !summary && (
+      {activeCardCount === 0 && !summary && !hasBlocks && unplacedCards.length === 0 && (
         <p className="muted">在上方候选池添加课程卡片并勾选「参与排课」后，课程将显示在网格中。</p>
       )}
-      {summary && emptyHint && placedCardCount === 0 && <p className="muted">{emptyHint}</p>}
+      {summary && emptyHint && placedCardCount === 0 && !hasBlocks && <p className="muted">{emptyHint}</p>}
     </section>
   );
 }

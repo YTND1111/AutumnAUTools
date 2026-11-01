@@ -8,6 +8,8 @@ import ClassGroupSection from "../components/ClassGroupSection";
 import ExternalLink from "../components/ExternalLink";
 import SpotlightGuide from "../components/SpotlightGuide";
 import type { GuideStep } from "../components/SpotlightGuide";
+import AccountPanel from "../auth/AccountPanel";
+import { useAuth } from "../auth/AuthContext";
 import { useCourseData } from "../hooks/useCourseData";
 import { usePlanPool } from "../hooks/usePlanPool";
 import type { PlanPool } from "../hooks/usePlanPool";
@@ -20,9 +22,17 @@ import { useSettings } from "../settings/SettingsContext";
 import { getCardKey } from "../plans/types";
 import { APP_VERSION_CA, CAU_COURSE_ASSISTANT_URL } from "../config";
 import type { CourseCandidate, CourseRecord } from "../services/courseData";
-import { findClassTimetableCandidates, findCourseCandidates, NON_CLASS_NAME, splitClasses } from "../services/courseData";
+import {
+  coursePoolKey,
+  findClassTimetableCandidates,
+  findCourseCandidates,
+  NON_CLASS_NAME,
+  splitClasses,
+} from "../services/courseData";
 import type { PlanCourse } from "../services/planGenerator";
+import { setPlanHandoff } from "../services/planHandoff";
 import { downloadTimetableTxt } from "../services/timetableExport";
+import { useNavigate } from "react-router-dom";
 import "./CaBetaPage.css";
 
 /**
@@ -40,13 +50,13 @@ import "./CaBetaPage.css";
  *      （默认即参与排课避让，可单门排除/整组取消/全选/清除）；
  *   3. 方案生成面板：偏好设置（校区/时间段/重置）+ 全宽「生成方案」主按钮
  *      + 方案候选 pills（无冲突/冲突）；时间段偏好编辑模式点击课表设置阻塞；
- *   4. 用户设置（精简）：本地自动保存说明 + 重新打开「新手引导」。
+ *   4. 用户设置：账号面板（登录后云端同步，见 backend/）+ 重新打开「新手引导」。
  * - 新手引导（SpotlightGuide）：首次访问自动弹出，可随时重开；各步骤可
  *   一键「自动演示」（添加示例课程/班级、示范偏好、实际导出 txt），
  *   结束时清理全部演示数据。
  *
- * 状态持久化：候选卡池/班级组/阻塞时段/周次经 PlanProvider（localStorage，
- * 后端就绪后按 ownerId 隔离），校区偏好经 SettingsProvider。
+ * 状态持久化：候选卡池/班级组/阻塞时段/周次经 PlanProvider（未登录 = 本机 localStorage；
+ * 登录后 = 云端优先 + 本机镜像，按账号隔离），校区偏好经 SettingsProvider。
  *
  * 路由说明：/ca-beta 重定向至此；原遗留挂载退至 /ca-legacy（无入口，回滚兜底）。
  * 导航说明：原悬浮球/侧边栏框架已整体移除，本页当前无站内导航入口。
@@ -96,9 +106,20 @@ function pickDemoClass(courses: CourseRecord[], exclude: Set<string>): string | 
   return candidates.length ? candidates[0][0] : null;
 }
 
+/** 按 poolKey 去重：激活方案课程与班级课表固定占用可能指向同一门课 */
+function dedupePlanCourses(list: PlanCourse[]): PlanCourse[] {
+  const seen = new Set<string>();
+  return list.filter((course) => {
+    if (seen.has(course.poolKey)) return false;
+    seen.add(course.poolKey);
+    return true;
+  });
+}
+
 export default function CaBetaPage() {
   const { courses, loading, error } = useCourseData();
   const { settings, updateSettings } = useSettings();
+  const { user } = useAuth();
   const pool = usePlanPool(courses);
   const classGroups = useClassGroups(courses);
   const generator = usePlanGenerator(pool.cards, courses, classGroups.fixedCourses);
@@ -123,14 +144,56 @@ export default function CaBetaPage() {
   planStateRef.current = planState;
   const autoOpenedRef = useRef(false);
 
-  // 网格显示源：激活方案课程 + 班级课表调用组的固定占用
+  // 网格显示源：激活方案课程 + 班级课表调用组的固定占用（按 poolKey 去重，
+  // 仅用班级课表时方案课程即固定占用，避免同一门课被画两遍）
   // （两者皆空且未生成时走过渡预览）
-  const gridDisplayCourses = [...(generator.activePlanCourses ?? []), ...classGroups.fixedCourses];
+  const gridDisplayCourses = dedupePlanCourses([
+    ...(generator.activePlanCourses ?? []),
+    ...classGroups.fixedCourses,
+  ]);
   const gridOverride =
     generator.hasGenerated || gridDisplayCourses.length ? gridDisplayCourses : null;
   const timetable = useTimetable(pool.cards, courses, gridOverride);
   const gridDisplayRef = useRef<PlanCourse[]>(gridDisplayCourses);
   gridDisplayRef.current = gridDisplayCourses;
+
+  const navigate = useNavigate();
+
+  /** 把当前课表（激活方案 + 班级课表）的课程与学分交给 /gpa 的目标 GPA 规划 */
+  const handleExportToGpa = () => {
+    const recordByPoolKey = new Map<string, CourseRecord>();
+    courses.forEach((record) => {
+      const key = coursePoolKey(record);
+      if (!recordByPoolKey.has(key)) recordByPoolKey.set(key, record);
+    });
+
+    const seen = new Set<string>();
+    const handoff: { name: string; credits: number; code: string }[] = [];
+    let missing = 0;
+    for (const course of gridDisplayCourses) {
+      const key = course.courseCode || course.title;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const credits = Number(recordByPoolKey.get(course.poolKey)?.["学分"]);
+      if (!Number.isFinite(credits) || credits <= 0) {
+        missing += 1;
+        continue;
+      }
+      handoff.push({
+        name: course.title,
+        credits: Math.round(credits * 10) / 10,
+        code: course.courseCode,
+      });
+    }
+
+    if (!handoff.length) {
+      setExportMsg("当前课表没有可带去绩点规划的课程，请先生成方案或调用班级课表");
+      return;
+    }
+    setExportMsg("");
+    setPlanHandoff(handoff, missing);
+    navigate("/gpa");
+  };
 
   useEffect(() => {
     document.title = "秋功-排课表工具";
@@ -509,18 +572,23 @@ export default function CaBetaPage() {
                 onResetPreferences={resetPreferences}
                 campusPreference={settings.campusPreference}
                 onSetCampus={setCampus}
+                canExportToGpa={generator.hasGenerated && gridDisplayCourses.length > 0}
+                onExportToGpa={handleExportToGpa}
               />
             </div>
 
-            {/* 用户设置（精简：本地自动保存说明 + 重新打开引导） */}
+            {/* 用户设置：账号（云端同步，未登录时数据仅存本机）+ 重新打开引导 */}
             <section className="surface-card beta-card">
               <h2 className="beta-card-title">
                 用户设置
-                <span className="beta-card-sub">本地自动保存</span>
+                <span className="beta-card-sub">{user ? "云端同步已开启" : "本地自动保存"}</span>
               </h2>
               <p className="muted settings-note">
-                候选课程、班级课表调用、阻塞时段与偏好设置均自动保存在本浏览器中，刷新后自动恢复。
+                {user
+                  ? `已登录 @${user.username}：候选课程、班级课表调用、阻塞时段与偏好设置会同步到云端，换设备登录即可继续。`
+                  : "候选课程、班级课表调用、阻塞时段与偏好设置均自动保存在本浏览器中，刷新后自动恢复；登录后可在多设备间同步。"}
               </p>
+              <AccountPanel />
               <div className="guide-reopen">
                 <button type="button" className="pool-btn" onClick={() => setGuideOpen(true)}>
                   查看新手引导

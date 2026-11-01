@@ -89,8 +89,9 @@ export function usePlanGenerator(
     }
     if (prevCampus.current === settings.campusPreference) return;
     prevCampus.current = settings.campusPreference;
-    if (activeCardCount > 0) generate();
-  }, [settings.campusPreference, settingsReady, activeCardCount, generate]);
+    // 有自选卡片或班级课表固定占用时都重新生成（仅班级课表也能出方案）
+    if (activeCardCount > 0 || fixedCourses.length > 0) generate();
+  }, [settings.campusPreference, settingsReady, activeCardCount, fixedCourses.length, generate]);
 
   const activePlanId = planState.activePlanId ?? "";
 

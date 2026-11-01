@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useAuth } from "../auth/AuthContext";
 import type { ClassGroupState, PlanState } from "./types";
 import { DEFAULT_PLAN_STATE, PLAN_STATE_VERSION } from "./types";
 import { planProvider } from "./provider";
@@ -26,8 +27,10 @@ function mergeLegacyClassGroups(...lists: ClassGroupState[][]): ClassGroupState[
  * 配课方案状态的 React 集成层（与 settings/SettingsContext 同构）。
  *
  * - PlansContextProvider 挂载时从 PlanProvider 异步加载，与默认值合并后下发；
+ * - **账号维度**：登录/退出/切换账号时（useAuth().user.id 变化）自动重新加载，
+ *   登录用户读云端方案（ownerId 由 PlanProvider 填充）、未登录读本机匿名数据；
  * - updatePlanState 接收函数式更新器，先乐观更新内存状态，再防抖 300ms 持久化；
- * - 消费方统一使用 usePlans()，不感知存储实现（localStorage / 未来后端按用户隔离）。
+ * - 消费方统一使用 usePlans()，不感知存储实现（本机 / 云端按用户隔离）。
  */
 
 interface PlansContextValue {
@@ -51,10 +54,21 @@ export function PlansContextProvider({ children }: { children: ReactNode }) {
   const [planState, setPlanState] = useState<PlanState>(DEFAULT_PLAN_STATE);
   const [ready, setReady] = useState(false);
   const saveTimer = useRef(0);
+  const { user } = useAuth();
+  // 账号作用域：登录用户 = 其 id，未登录 = 匿名
+  const scope = user?.id ?? "anonymous";
+  const loadedScope = useRef<string | null>(null);
 
-  // 挂载时加载持久化方案状态
+  // 挂载时 / 账号切换时加载对应作用域的持久化方案状态
   useEffect(() => {
     let cancelled = false;
+    const scopeChanged = loadedScope.current !== null && loadedScope.current !== scope;
+    loadedScope.current = scope;
+    if (scopeChanged) {
+      // 切换账号先清空，避免短暂显示上一个账号的方案
+      setPlanState(DEFAULT_PLAN_STATE);
+      setReady(false);
+    }
     planProvider
       .load()
       .then((stored) => {
@@ -92,7 +106,7 @@ export function PlansContextProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [scope]);
 
   const updatePlanState = useCallback((updater: (prev: PlanState) => PlanState) => {
     setPlanState((prev) => {

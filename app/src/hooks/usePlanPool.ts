@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { CourseRecord } from "../services/courseData";
-import { splitTeachers } from "../services/courseData";
+import { coursePoolKey, splitTeachers } from "../services/courseData";
 import type { PlanCardState } from "../plans/types";
 import { getCardKey } from "../plans/types";
 import { usePlans } from "../plans/PlansContext";
@@ -60,20 +60,9 @@ const FILTER_FIELD: Record<FilterDimension, "enabledTeachers" | "enabledCampuses
   classes: "enabledClasses",
 };
 
-/** 与原站 getCourseKey 一致的五元组键 */
-function getOptionKey(record: CourseRecord): string {
-  return [
-    String(record["通知单号"] ?? ""),
-    String(record["课程编号"] ?? ""),
-    String(record["课序号"] ?? ""),
-    String(record["课程名称"] ?? ""),
-    String(record["上课时间"] ?? ""),
-  ].join("|");
-}
-
 export function toPoolOption(record: CourseRecord): PoolOption {
   return {
-    poolKey: getOptionKey(record),
+    poolKey: coursePoolKey(record),
     courseCode: String(record["课程编号"] ?? "").trim(),
     courseName: String(record["课程名称"] ?? "").trim(),
     课序号: String(record["课序号"] ?? "").trim(),

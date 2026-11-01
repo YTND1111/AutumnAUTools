@@ -1,0 +1,50 @@
+# 秋功用户后端 —— Cloudflare Workers 配置
+#
+# 首次部署步骤见 README.md「快速开始」：
+#   1) wrangler d1 create autumn-autools   → 把返回的 database_id 填到下面
+#   2) wrangler d1 migrations apply autumn-autools --remote
+#   3) wrangler secret put AUTH_PEPPER      → 设置密码加盐密钥（强烈建议）
+#   4) wrangler deploy
+
+name = "autumn-autools-api"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+# 零依赖实现，不需要 nodejs_compat
+
+# ── D1：用户 / 会话 / 设置 / 方案 ───────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "autumn-autools"
+# ⚠️ 替换为 `wrangler d1 create autumn-autools` 输出的真实 id
+#    （本地 `wrangler dev --local` 用占位 UUID 也能跑，远程部署必须换真实 id）
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# ── 非敏感变量（敏感项用 `wrangler secret put` 设置） ───────────────────────
+[vars]
+ENVIRONMENT = "production"
+APP_NAME = "秋功 AutumnAUTools"
+# 允许跨域访问的静态站点来源，逗号分隔；填 "*" 表示放行所有来源
+# （跨域携带 Cookie 时浏览器禁止 ACAO=* + credentials，建议显式列出来源）
+ALLOWED_ORIGINS = "https://autumnautools.pages.dev,http://localhost:3000,http://127.0.0.1:3000"
+# 是否开放注册（"true" / "false"）
+ALLOW_REGISTRATION = "true"
+# 会话有效期（天）
+SESSION_TTL_DAYS = "30"
+# PBKDF2-SHA256 迭代次数。免费套餐 CPU 上限较低，建议降到 25000；
+# Workers Paid（30s CPU）可保持 100000 及以上。
+PBKDF2_ITERATIONS = "100000"
+# 单次请求体上限（KB）：方案 JSON 含 savedPlans 时可能较大
+MAX_PAYLOAD_KB = "256"
+
+# ── 可观测性（可选） ───────────────────────────────────────────────────────
+[observability]
+enabled = true
+
+# ── 定时清理：每天 04:00 UTC 删除过期会话与陈旧限流计数行 ────────────────────
+[triggers]
+crons = ["0 4 * * *"]
+
+# ── 本地开发端口（与 app/vite.config.ts 的 /api 代理目标保持一致） ──────────
+[dev]
+port = 8787

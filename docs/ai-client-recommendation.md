@@ -122,7 +122,61 @@ Invoke-RestMethod "https://api.github.com/repos/$repo" |
 
 ---
 
-## 7. 附录：未纳入名册的类型
+## 7. 纯前端（无后端）BYOK 方案
+
+> **核对日期：2026-10-08 ~ 10-09**（GitHub API 快照）。
+
+**定义**：整个应用只有静态文件（HTML/JS/CSS），部署到任意静态托管即可用；API Key 存浏览器；**浏览器直连模型厂商端点**，中间没有任何服务端中转。用户自填 Key 即可使用。
+
+### 7.1 候选
+
+| 项目 | 形态 | 许可证 | 星标 | 最近推送 | 评价 |
+|---|---|---|---|---|---|
+| **[deep-chat](https://github.com/OvidijusParsiunas/deep-chat)** | **Web Component**（可嵌任意站点；亦有 React/Vue/Svelte/Next 封装） | `MIT` | 3.7k | **2026-10-08（活跃）** | **最契合**：为「网站内直连 API」而生，内置 `directConnection` 客户端直连（OpenAI / Claude / Gemini / DeepSeek / Ollama 等） |
+| **[big-AGI](https://github.com/enricoros/big-AGI)** | Next.js 前端套件 | `MIT` | 7.1k | 2026-10-08（活跃） | 功能最全（多模型、Persona、语音、PDF）；但需 Next.js 构建/托管，非单页静态 |
+| **[NextChat](https://github.com/ChatGPTNextWeb/NextChat)** | Next.js，可静态导出/部署 | `MIT` | 88.8k | 2026-08-11（转缓） | 配置存浏览器、直连端点；⚠️ 官方仓库现主推自家付费云 |
+| **[BetterChatGPT](https://github.com/ztjhz/BetterChatGPT)** | 纯静态前端 | `CC0-1.0` | 8.4k | **2024-08-14（停滞）** | 曾是纯前端标杆；**已近两年无提交**，慎用 |
+| **[chatbot-ui](https://github.com/mckaywrigley/chatbot-ui)** | 纯前端（旧版）/ 新版需 Supabase | `MIT` | 33.3k | **2024-08-03（停滞）** | 同上；仅早期版本为纯前端 |
+| TypingMind（**非开源**，商业授权） | 纯前端单页 | 商业 | — | — | 形态正是「纯前端 BYOK」，但**闭源不可审计**，故不入名册正选 |
+
+**结论**：真正**活跃且专为纯前端 BYOK 设计**的，目前是 **deep-chat**；**big-AGI** 次之（更强但非纯静态）；其余热门纯前端项目多停在 2024 年。
+
+### 7.2 硬约束（纯前端的物理极限）
+
+1. **CORS 是生死线**。浏览器直连要求供应商返回 `Access-Control-Allow-Origin` 并正确响应 `OPTIONS` 预检（`Authorization` + `application/json`）。**逐家实测**，不可假设：
+   - **Ollama**：默认拒绝浏览器跨源请求，需设置环境变量 `OLLAMA_ORIGINS` 放行你的来源；
+   - **LM Studio / vLLM**：需在服务端显式开启/配置 CORS 允许来源；
+   - **Anthropic**：浏览器直连需附加请求头（如 `anthropic-dangerous-direct-browser-access: true`，以官方文档为准）；
+   - **OpenAI / Gemini**：通常允许浏览器直连（但官方均不建议在前端暴露密钥）；
+   - **部分国内厂商与中转站不返回 CORS 头** → 纯前端**直接不可用**，此时唯一解法是自建代理，即放弃纯前端。
+2. **流式输出**：须用 `fetch` + `ReadableStream` 手动解析 SSE（`data:` 行），**不能用 `EventSource`**（它不支持 POST）。
+3. **模型列表接口同样受 CORS 限制**：应允许用户**手工填写模型 ID**，不要依赖 `GET /models`。
+4. **能力上限**：无服务端 = 无法安全地做密钥代理、限流、审计，也无法做联网搜索、代码执行、RAG 等需要后端的能力。
+5. **密钥暴露面**：`localStorage` 持久且可被同源任意脚本读取；`sessionStorage` 关闭标签即失效；仅内存（每次重输）最安全。
+
+### 7.3 安全真相：纯前端 ≠ 安全
+
+纯前端只是把**信任边界整体转移**到「写这个页面的作者 + 该页面加载的每一个脚本」。浏览器扩展、第三方 CDN、页面内任何被注入的代码，都能读走密钥。
+
+**由此引发一条重要警示**：网上任何「免费纯前端 AI 站」让你粘贴自己的 API Key 时，你实际上是把密钥交给了它的全部脚本与依赖——包括日后被投毒的 CDN 包。**这就是「纯前端」最大的陷阱。**
+
+### 7.4 接入 AutumnAUTools 的加固要点
+
+秋功同为纯静态（Vite + React），纯前端方案**架构完全契合**，但本项目同源内存在两个脚本执行面（见 §5）：
+
+- `app/src/legacy/LegacyPage.tsx` 用 `new Function` 执行 fetch 到的遗留脚本；
+- `cn.html` / `cpp.html` 从 unpkg / jsDelivr / cdnjs 同源加载 Univer、SheetJS、CodeMirror。
+
+因此若在 `app/` 内落地纯前端 BYOK 对话页，**必须至少满足其一**：
+
+- Key 仅存 `sessionStorage` 或仅存内存（不用 `localStorage`）；
+- 或把对话页置于**独立源**（不同端口/子域），使其读不到站点其余资源与存储；
+- 并本地化 `cn.html` / `cpp.html` 的 CDN 依赖，消除供应链面；
+- 提供「清除密钥」按钮；对模型输出做转义/白名单渲染。
+
+---
+
+## 8. 附录：未纳入名册的类型
 
 - **商业闭源客户端**：无法审计密钥流向，本名册不收录（不构成对其安全性的判定，仅因「可审计」标准不满足）。
 - **网页版在线 AI 服务**：密钥或账号由服务方托管，不符合 BYOK 自持模型。

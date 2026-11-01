@@ -1323,3 +1323,41 @@
 .spotlight-panel .spotlight-nav {
     padding-left: 140px;
 }
+
+/* 方案生成面板 → 绩点规划：一键带过去（跳转 /gpa） */
+.plan-handoff {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #dbe7e0;
+}
+
+.plan-handoff-btn {
+    padding: 10px 14px;
+    border: 1px solid var(--joint-color, #0f7a47);
+    border-radius: 8px;
+    background: #eef8f2;
+    color: var(--joint-color, #0f7a47);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.plan-handoff-btn:hover:not(:disabled) {
+    background: var(--joint-color, #0f7a47);
+    color: #ffffff;
+}
+
+.plan-handoff-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.plan-handoff-hint {
+    color: #7b8d84;
+    font-size: 12px;
+    line-height: 1.6;
+}

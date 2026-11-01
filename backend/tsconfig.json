@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    /* DOM 仅为提供 fetch/Request/Response/crypto/TextEncoder 等标准类型
+       （Workers 运行时与 DOM 在这些 Web 标准 API 上一致；
+        Cloudflare 专有绑定类型见 src/types.ts 的自声明） */
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": [],
+    /* Worker 由 esbuild（wrangler）打包，tsc 只做类型校验，不产出文件 */
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    /* 与 Node 原生类型擦除（node --experimental-strip-types / Node 24 默认开启）保持兼容：
+       不允许 enum / namespace / 构造函数参数属性等“非可擦除”语法，
+       因此 src/ 下的 .ts 可以不装任何依赖直接用 node 跑冒烟测试。 */
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src"]
+}

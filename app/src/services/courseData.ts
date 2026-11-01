@@ -111,3 +111,28 @@ export function findClassTimetableCandidates(courses: CourseRecord[], rawQuery: 
 
   return Array.from(classNames).map((className) => ({ className, label: className }));
 }
+
+/**
+ * 教学班唯一键（五元组，与原站 getCourseKey 一致）。
+ * 排课表的池内去重、班级组排除项、方案生成都以它为准，这里作为单一实现供各层复用。
+ */
+export function coursePoolKey(record: CourseRecord): string {
+  return [
+    String(record["通知单号"] ?? ""),
+    String(record["课程编号"] ?? ""),
+    String(record["课序号"] ?? ""),
+    String(record["课程名称"] ?? ""),
+    String(record["上课时间"] ?? ""),
+  ].join("|");
+}
+
+/**
+ * 课程是否属于某个班级（与原站 courseMatchesClass 一致）：
+ * 原始班级串包含该班级名，或按分隔符拆分后精确命中。
+ */
+export function courseMatchesClassText(classText: unknown, className: string): boolean {
+  const raw = String(classText ?? "").trim();
+  if (!raw) return false;
+  if (raw.includes(className)) return true;
+  return splitClasses(raw).includes(className);
+}
